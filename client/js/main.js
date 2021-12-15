@@ -1,6 +1,11 @@
-
+// define(['jquery', 'app', 'entrypoint', '../../shared/js/erdstallinterface'], function($, App, EntryPoint, erdstallinterface) {
+// define(['jquery', 'app', 'entrypoint', '/shared/js/erdstallbundle.js'], function($, App, EntryPoint, { getMetamaskSession, getSessionBalance }) {
 define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
     var app, game;
+
+    // const erdstallinterface = require('js/lib/erdstallinterface.js')
+    // var { getMetamaskSession, getSessionBalance } = require('../../shared/js/erdstallbundle.js')
+    // var getMetamaskSession = erdstallbundle.getMetamaskSession
 
     var initApp = function() {
         $(document).ready(function() {
@@ -182,6 +187,16 @@ define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
 
             $('.play span').click(function(event) {
                 app.tryStartingGame();
+            });
+
+            $('.metamask-connect span').click(function(event) {
+                var session = app.initMetamaskSession().then(session => {
+                    // console.log("Got session: ");
+                    // console.log(session.session);
+                    app.getNFTBalance(session.session).then(balance => {
+                        console.log("Got balance: " + balance.balance + "PRN")
+                    });
+                });
             });
 
             document.addEventListener("touchstart", function() {},false);
