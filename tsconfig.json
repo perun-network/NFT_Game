@@ -17,23 +17,14 @@
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"jsx": "react-jsx",
-		"rootDir": ".",
-		"outDir": "dist",
+		"rootDir": "ts",
+		"outDir": ".tscbuild",
 
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
 		"downlevelIteration": true
 	},
-	"exclude": ["node_modules", "dist"],
 	"include": [
-		"ts/**/*",
-		"shared/**/*",
-		"client/**/*",
-		"server/**/*",
-	],
-	//"references": [
-		// {
-		// 	"path": "../backend"
-		// }
-	// ]
+		"ts/**/*"
+	]
 }
