@@ -184,17 +184,11 @@ WS.WebsocketServer = Server.extend({
                         // Sends the real shared/js/gametypes.js to the client
                         sendFile('js/gametypes.js', response, log);
                         break;
-                    case '/shared/js/erdstallbundle.js':
-                        // Sends the real shared/js/erdstallbundle.js to the client
-                        sendFile('js/erdstallbundle.js', response, log);
+                    case '/shared/js/erdstallinterfacebundle.js':
+                        // Sends the real shared/js/erdstallinterfacebundle.js to the client
+                        sendFile('js/erdstallinterfacebundle.js', response, log);
                         break;
                     default:
-                        if (path.indexOf('/node_modules/' == 0))
-                        {
-                            log.info('Serving node_modules file.. ' + path);
-                            return sendAnyFile(path, response, log);
-                        }
-                        log.error('Cannot serve file: ' + path)
                         response.writeHead(404);
                 }
                 response.end();
@@ -301,25 +295,6 @@ function sendFile (file, response, log) {
     try {
         var fs = require('fs');
         var realFile = fs.readFileSync(__dirname + '/../../shared/' + file);
-        var responseHeaders = {
-            'Content-Type': 'text/javascript',
-            'Content-Length': realFile.length
-        };
-        response.writeHead(200, responseHeaders);
-        response.end(realFile);
-    }
-    catch (err) {
-        response.writeHead(500);
-        log.error('Something went wrong when trying to send ' + file);
-        log.error('Error stack: ' + err.stack);
-    }
-}
-
-// Sends any file to the client
-function sendAnyFile (file, response, log) {
-    try {
-        var fs = require('fs');
-        var realFile = fs.readFileSync(__dirname + '/../..' + file);
         var responseHeaders = {
             'Content-Type': 'text/javascript',
             'Content-Length': realFile.length

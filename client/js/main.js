@@ -1,11 +1,6 @@
-// define(['jquery', 'app', 'entrypoint', '../../shared/js/erdstallinterface'], function($, App, EntryPoint, erdstallinterface) {
-// define(['jquery', 'app', 'entrypoint', '/shared/js/erdstallbundle.js'], function($, App, EntryPoint, { getMetamaskSession, getSessionBalance }) {
+
 define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
     var app, game;
-
-    // const erdstallinterface = require('js/lib/erdstallinterface.js')
-    // var { getMetamaskSession, getSessionBalance } = require('../../shared/js/erdstallbundle.js')
-    // var getMetamaskSession = erdstallbundle.getMetamaskSession
 
     var initApp = function() {
         $(document).ready(function() {

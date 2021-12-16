@@ -1,5 +1,6 @@
+
 define(['jquery', 'storage'], function($, Storage) {
-    // const { getMetamaskSession, getSessionBalance } = require('/shared/js/erdstallbundle.js');
+    
     var App = Class.extend({
         init: function() {
             this.currentPage = 1;
@@ -57,16 +58,12 @@ define(['jquery', 'storage'], function($, Storage) {
         },
 
         initMetamaskSession: function() {
-            return erdstallInterfaceBundle.getMetamaskSession();
+            return erdstallInterface.getMetamaskSession();
         },
 
         getNFTBalance: function(session) {
-            return erdstallInterfaceBundle.getSessionBalance(session);
+            return erdstallInterface.getSessionBalance(session);
         },
-        
-        // getNFTBalance: function() {
-        //     return erdstallInterfaceBundle.getSessionBalance(erdstallInterfaceBundle.getMetamaskSession());
-        // },
 
         canStartGame: function() {
             if(this.isDesktop) {
