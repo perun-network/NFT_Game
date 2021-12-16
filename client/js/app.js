@@ -57,14 +57,6 @@ define(['jquery', 'storage'], function($, Storage) {
             window.scrollTo(0, 1);
         },
 
-        initMetamaskSession: function() {
-            return erdstallInterface.getMetamaskSession();
-        },
-
-        getNFTBalance: function(session) {
-            return erdstallInterface.getSessionBalance(session);
-        },
-
         canStartGame: function() {
             if(this.isDesktop) {
                 return (this.game && this.game.map && this.game.map.isLoaded);

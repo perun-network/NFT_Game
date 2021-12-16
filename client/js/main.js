@@ -184,16 +184,6 @@ define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
                 app.tryStartingGame();
             });
 
-            $('.metamask-connect span').click(function(event) {
-                var session = app.initMetamaskSession().then(session => {
-                    // console.log("Got session: ");
-                    // console.log(session.session);
-                    app.getNFTBalance(session.session).then(balance => {
-                        console.log("Got balance: " + balance.balance + "PRN")
-                    });
-                });
-            });
-
             document.addEventListener("touchstart", function() {},false);
 
             $('#resize-check').bind("transitionend", app.resizeUi.bind(app));
