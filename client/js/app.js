@@ -1,6 +1,6 @@
 
 define(['jquery', 'storage'], function($, Storage) {
-    
+
     var App = Class.extend({
         init: function() {
             this.currentPage = 1;
