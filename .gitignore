@@ -12,4 +12,4 @@ browserquest.conf
 *.sublime-workspace
 package-lock.json
 shared/js/erdstall*
-.tscbuild
+ts/*.js

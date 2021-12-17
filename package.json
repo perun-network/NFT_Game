@@ -33,7 +33,7 @@
   "scripts": {
     "start": "node ./server/js/main.js",
     "build": "./node_modules/typescript/bin/tsc",
-    "bundle": "./node_modules/browserify/bin/cmd.js .tscbuild/erdstallinterface.js --standalone erdstallInterface > ./shared/js/erdstallinterfacebundle.js",
+    "bundle": "./node_modules/browserify/bin/cmd.js ./ts/erdstallclientinterface.js --standalone erdstallClientBundle > ./shared/js/erdstallclientinterfacebundle.js",
     "postinstall": "npm run build && npm run bundle",
     "test": "make test"
   },

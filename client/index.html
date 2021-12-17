@@ -397,7 +397,10 @@ Mozilla presents an HTML5 mini-MMORPG by Little Workshop http://www.littleworksh
                 var require = { waitSeconds: 60 };
         </script>
         <script>var exports = {};</script>
-        <script src='/shared/js/erdstallinterfacebundle.js'></script>
+        <script src='/shared/js/erdstallclientinterfacebundle.js'></script>
+        <script>
+            erdstallInterface = new erdstallClientBundle.default();
+        </script>
         <script data-main="js/home" src="js/lib/require-jquery.js"></script>
 	</body>
 </html>
