@@ -36,7 +36,7 @@ export default class erdstallClientInterface {
 
 	async init(
 		networkID: number = 1337,
-		erdOperatorUrl: URL = new URL("ws://127.0.0.1:8401/ws")): Promise<void> {
+		erdOperatorUrl: URL = new URL("ws://127.0.0.1:8401/ws")): Promise<{account : String}> {
 		//TODO: Load parameters from config
 		const res = await getAccountProvider(networkID);
 		if (!res) {
@@ -66,6 +66,7 @@ export default class erdstallClientInterface {
 	
 		this._session = session;
 		console.log("Initialized new session: " + account);
+		return {account};
 	}
 
 	async getNFTs(): Promise< //TODO: implement

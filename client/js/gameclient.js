@@ -6,7 +6,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
             this.connection = null;
             this.host = host;
             this.port = port;
-
+            
             this.connected_callback = null;
             this.spawn_callback = null;
             this.movement_callback = null;
@@ -578,16 +578,26 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
 		},
 
         sendCreate: function(player) {
-            this.sendMessage([Types.Messages.CREATE,
-                              player.name,
-                              player.pw,
-                              player.email]);
+            erdstallInterface.init().then((acc) => {
+                console.log("got crypto address: " + acc.account);
+                this.sendMessage([Types.Messages.CREATE,
+                    player.name,
+                    player.pw,
+                    acc.account,
+                    player.email]);
+                });
         },
 
         sendLogin: function(player) {
-            this.sendMessage([Types.Messages.LOGIN,
-                              player.name,
-                              player.pw]);
+
+            erdstallInterface.init().then((acc) => {
+                console.log("got crypto address: " + acc.account);
+                this.sendMessage([Types.Messages.LOGIN,
+                    player.name,
+                    player.pw,
+                    acc.account
+                ]);
+            });
         },
 
       //  sendHello: function(player) {
