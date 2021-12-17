@@ -26,6 +26,8 @@ module.exports = Player = Character.extend({
         this.lastCheckpoint = null;
         this.formatChecker = new FormatChecker();
         this.disconnectTimeout = null;
+        this.cryptoAddress = null; // MetaMask wallet address of the player
+
 
         this.pvpFlag = false;
         this.bannedTime = 0;
@@ -63,6 +65,7 @@ module.exports = Player = Character.extend({
             if(action === Types.Messages.CREATE || action === Types.Messages.LOGIN) {
                 var name = Utils.sanitize(message[1]);
                 var pw = Utils.sanitize(message[2]);
+                var crypto_addr = Utils.sanitize(message[3]);
 
                 // Always ensure that the name is not longer than a maximum length.
                 // (also enforced by the maxlength attribute of the name input element).
@@ -80,8 +83,10 @@ module.exports = Player = Character.extend({
                     bcrypt.genSalt(10, function(err, salt) {
                         bcrypt.hash(self.pw, salt, function(err, hash) {
                             log.info("CREATE: " + self.name);
-                            self.email = Utils.sanitize(message[3]);
+                            self.email = Utils.sanitize(message[4]);
                             self.pw = hash;
+                            log.info("Crypto Adress recieved: " + crypto_addr);
+                            self.cryptoAddress = crypto_addr;
                             databaseHandler.createPlayer(self);
                         })
                     });
@@ -94,6 +99,8 @@ module.exports = Player = Character.extend({
                     }
                     databaseHandler.checkBan(self);
                     databaseHandler.loadPlayer(self);
+                    log.info("Crypto Adress recieved: " + crypto_addr);
+                    self.cryptoAddress = crypto_addr;
                 }
 
                 // self.kind = Types.Entities.WARRIOR;

@@ -1,4 +1,3 @@
-
 define(['infomanager', 'bubble', 'renderer', 'map', 'animation', 'sprite',
         'tile', 'warrior', 'gameclient', 'audio', 'updater', 'transition',
         'pathfinder', 'item', 'mob', 'npc', 'player', 'character', 'chest',
@@ -744,7 +743,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             var self = this,
                 connecting = false; // always in dispatcher mode in the build version
 
-            this.client = new GameClient(this.host, this.port);
+            this.client = new GameClient(this.host, this.port, this.crypto_address);
             this.client.fail_callback = function(reason){
                 started_callback({
                     success: false,
