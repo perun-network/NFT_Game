@@ -10,3 +10,5 @@ config_local*
 browserquest.conf
 *.sublime-project
 *.sublime-workspace
+shared/js/erdstall*
+ts/*.js

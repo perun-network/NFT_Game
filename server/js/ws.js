@@ -184,6 +184,10 @@ WS.WebsocketServer = Server.extend({
                         // Sends the real shared/js/gametypes.js to the client
                         sendFile('js/gametypes.js', response, log);
                         break;
+                    case '/shared/js/erdstallclientinterfacebundle.js':
+                        // Sends the real shared/js/erdstallclientinterfacebundle.js to the client
+                        sendFile('js/erdstallclientinterfacebundle.js', response, log);
+                        break;
                     default:
                         response.writeHead(404);
                 }
