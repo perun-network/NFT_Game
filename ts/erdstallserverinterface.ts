@@ -1,9 +1,10 @@
 import { Address } from "@polycrypt/erdstall/ledger";
 import { Assets, Tokens } from "@polycrypt/erdstall/ledger/assets";
-import { Session } from "@polycrypt/erdstall/session";
+import { Session } from "@polycrypt/erdstall";
 import NFT from "./nft";
-import erdstallClientInterface from "./erdstallclientinterface"
+import erdstallClientInterface, { NetworkID } from "./erdstallclientinterface"
 import { TxReceipt } from "@polycrypt/erdstall/api/responses";
+import { ethers } from "ethers";
 
 export default class erdstallServerInterface extends erdstallClientInterface {
 	
@@ -12,8 +13,34 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		networkID: number = 1337,
 		erdOperatorUrl: URL = new URL("ws://127.0.0.1:8401/ws")
 	): Promise<{account : String}> {
-		console.log("Initialized new session");
-		return {account: "abcdefg"};
+		const ethRpcUrl = "ws://127.0.0.1:8545/";
+		const provider = new ethers.providers.JsonRpcProvider(ethRpcUrl);
+		if(provider == null) {
+			throw new Error("Unable to get Account Provider for Ethereum URL: " + ethRpcUrl);
+		}
+
+		const mnemonic = "pistol kiwi shrug future ozone ostrich match remove crucial oblige cream critic";
+		const derivationPath = `m/44'/60'/0'/0/2`;
+		const user = ethers.Wallet.fromMnemonic(mnemonic, derivationPath);
+
+		var session;
+		try {
+			session = new Session(Address.fromString(user.address), user.connect(provider), erdOperatorUrl);
+			await session.initialize();
+			await session.subscribeSelf();
+			await session.onboard();
+		} catch (error) {
+			if(error) {
+				throw new Error("Error initializing server session" + error);
+			}
+			else {
+				throw new Error("Error initializing server session");
+			}
+		}
+
+		this._session = session;
+		console.log("Initialized new server session: " + user.address);
+		return {account: user.address};
 	}
 
 	// Mints a new NFT and returns TxReceipt promise
@@ -64,6 +91,8 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		}
 	}
 }
+
+export var erdstallServer = new erdstallServerInterface();
 
 // Converts NFT object to Assets object
 function getAssetsFromNFT(nft: NFT): Assets {
