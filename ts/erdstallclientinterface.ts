@@ -34,6 +34,7 @@ export default class erdstallClientInterface {
 		
 	}
 
+	//Initializes _session member and subscribes and onboards session to the erdstall system, returns wallet address as string
 	async init(
 		networkID: number = 1337,
 		erdOperatorUrl: URL = new URL("ws://127.0.0.1:8401/ws")): Promise<{account : String}> {
@@ -69,6 +70,7 @@ export default class erdstallClientInterface {
 		return {account};
 	}
 
+	//Returns list of NFTs associated with user
 	async getNFTs(): Promise< //TODO: implement
 		{ nfts: NFT[] } | undefined
 	> {
@@ -77,7 +79,7 @@ export default class erdstallClientInterface {
 		for( let i = 0; i < 10; ++i) {
 			const rng = test.newPrng();
 			let nft: NFT = new NFT(
-				test.newRandomAddress(rng), //token
+				test.newRandomAddress(rng), //Token
 				test.newRandomUint64(rng), //ID
 				test.newRandomAddress(rng), //Owner
 				undefined, //Offer
@@ -87,6 +89,7 @@ export default class erdstallClientInterface {
 		return { nfts };
 	}
 
+	//Registers listener function for Erdstall Events
 	registerCallback(
 		event: ErdstallEvent,
 		callback: eventCallback
@@ -96,6 +99,7 @@ export default class erdstallClientInterface {
 		console.log("Added new callback: " + event);
 	}
 
+	//Returns PRN Balance
 	async getPRNBalance(): Promise<
 		{ balance: number } | undefined
 	> {
@@ -110,6 +114,7 @@ export default class erdstallClientInterface {
 	}
 }
 
+//Returns MetaMask Web3Provider and account address string
 async function getAccountProvider(
 	networkId: number,
 ): Promise<
@@ -165,6 +170,7 @@ async function getAccountProvider(
 	return { account, web3Provider };
 }
 
+//Extracts PRN Balance from assets
 function getPrnAmount(assets: Assets): number | undefined {
 	// Workaround: return the first ERC20 token we can find.
 	// FIXME: add proper querying of PRN token.
@@ -174,6 +180,7 @@ function getPrnAmount(assets: Assets): number | undefined {
 	return undefined;
 }
 
+//Initializes MetaMask Web3Provider
 async function initWeb3(): Promise<ethers.providers.Web3Provider> {
 	const prov = await detectEthereumProvider();
 	if (prov) {
