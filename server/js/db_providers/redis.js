@@ -55,6 +55,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
                         .hget(userKey, "achievement8:found") // 33
                         .hget(userKey, "achievement8:progress") // 34
                         .hget("cb:" + player.connection._connection.remoteAddress, "etime") // 35
+                        .hget(userKey, "cryptoaddress") // 36
                         .exec(function(err, replies){
                             var pw = replies[0];
                             var armor = replies[1];
@@ -96,6 +97,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
                             var x = Utils.NaN2Zero(replies[29]);
                             var y = Utils.NaN2Zero(replies[30]);
                             var chatBanEndTime = Utils.NaN2Zero(replies[35]);
+                            var cryptoAddress = replies[36];
 
                             // Check Password
 
@@ -103,6 +105,13 @@ module.exports = DatabaseHandler = cls.Class.extend({
                                 if(!res) {
                                     player.connection.sendUTF8("invalidlogin");
                                     player.connection.close("Wrong Password: " + player.name);
+                                    return;
+                                }
+
+                                // Check crypto address
+                                if(player.cryptoAddress != cryptoAddress) {
+                                    player.connection.sendUTF8("invalidcryptoaddress");
+                                    player.connection.close("Crypto address {" + player.cryptoAddress + "} does not match stored crypto address {" + cryptoAddress + "}");
                                     return;
                                 }
 
@@ -200,6 +209,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
                 // Add the player
                 client.multi()
                     .sadd("usr", player.name)
+                    .hset(userKey, "cryptoaddress", player.cryptoAddress)
                     .hset(userKey, "pw", player.pw)
                     .hset(userKey, "email", player.email)
                     .hset(userKey, "armor", "clotharmor")
@@ -208,7 +218,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
                     .hset(userKey, "exp", 0)
                     .hset("b:" + player.connection._connection.remoteAddress, "loginTime", curTime)
                     .exec(function(err, replies){
-                        log.info("New User: " + player.name);
+                        log.info("New User: " + player.name + " {" + player.cryptoAddress + "}");
                         player.sendWelcome(
                             "clotharmor", "sword1", "clotharmor", "sword1", 0,
                              null, 0, 0,

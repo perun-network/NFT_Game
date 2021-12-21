@@ -151,6 +151,10 @@ define(['jquery', 'storage'], function($, Storage) {
                                 // The username contains characters that are not allowed (rejected by the sanitizer)
                                 self.addValidationError(self.getUsernameField(), 'The username you entered contains invalid characters.');
                                 break;
+                            case 'invalidcryptoaddress':
+                                // The crypto wallet address was not initialized
+                                self.addValidationError(self.getUsernameField(), 'Your crypto wallet address could not be loaded or does not match the one stored in the database.');
+                                break;
                             case 'loggedin':
                                 // Attempted to log in with the same user multiple times simultaneously
                                 self.addValidationError(self.getUsernameField(), 'A player with the specified username is already logged in.');
