@@ -78,6 +78,13 @@ module.exports = Player = Character.extend({
                     return;
                 }
                 self.pw = pw.substr(0, 15);
+                if(crypto_addr == null){
+                    self.connection.sendUTF8("invalidcryptoaddress");
+                    self.connection.close("Crypto Address not loaded");
+                    return;
+                }
+                log.info("Crypto Adress recieved: " + crypto_addr);
+                self.cryptoAddress = crypto_addr;
 
                 if(action === Types.Messages.CREATE) {
                     bcrypt.genSalt(10, function(err, salt) {
@@ -86,7 +93,6 @@ module.exports = Player = Character.extend({
                             self.email = Utils.sanitize(message[4]);
                             self.pw = hash;
                             log.info("Crypto Adress recieved: " + crypto_addr);
-                            self.cryptoAddress = crypto_addr;
                             databaseHandler.createPlayer(self);
                         })
                     });
@@ -99,8 +105,6 @@ module.exports = Player = Character.extend({
                     }
                     databaseHandler.checkBan(self);
                     databaseHandler.loadPlayer(self);
-                    log.info("Crypto Adress recieved: " + crypto_addr);
-                    self.cryptoAddress = crypto_addr;
                 }
 
                 // self.kind = Types.Entities.WARRIOR;
