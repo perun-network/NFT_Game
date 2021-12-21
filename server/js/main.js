@@ -3,11 +3,6 @@ var Metrics = require('./metrics');
 var ProductionConfig = require('./productionconfig');
 var _ = require('underscore');
 
-// load and initialize Erdstall interface server sited
-var erdstallServerInterface = require("../../ts/erdstallserverinterface").default;
-var erdstallServer = new erdstallServerInterface();
-erdstallServer.init();
-
 function main(config) {
     var Log = require('log');
     switch(config.debug_level) {
@@ -23,6 +18,10 @@ function main(config) {
     if(production_config.inProduction()) {
         _.extend(config, production_config.getProductionSettings());
     }
+
+    // Load and initialize Erdstall server interface
+    var erdstallServer = require("../../ts/erdstallserverinterface").erdstallServer;
+    erdstallServer.init();
 
     var ws = require("./ws");
     var WorldServer = require("./worldserver");
