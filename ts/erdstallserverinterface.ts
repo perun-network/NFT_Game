@@ -13,6 +13,7 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		networkID: number = 1337,
 		erdOperatorUrl: URL = new URL("ws://127.0.0.1:8401/ws")
 	): Promise<{account : String}> {
+		// TODO: Load parameters from config
 		const ethRpcUrl = "ws://127.0.0.1:8545/";
 		const provider = new ethers.providers.JsonRpcProvider(ethRpcUrl);
 		if(provider == null) {
@@ -45,24 +46,27 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 
 	// Mints a new NFT and returns TxReceipt promise
 	async mintNFT(
-		address: Address,
 		id: bigint = BigInt(Math.round(Math.random() * Number.MAX_SAFE_INTEGER))
 	): Promise<{txReceipt: TxReceipt}> {
 		if(!this._session) {
 			throw new Error("Server session uninitialized");
 		}
-		return{txReceipt: await this._session.mint( address, id )};
+		// TODO: Put NFT in database
+		var txReceipt = await this._session.mint(this._session.address, id);
+		console.log("Minted NFT with ID: " + id);
+		return{txReceipt};
 	}
 
 	// Burns NFT and returns TxReceipt promise
 	async burnNFT(
 		nft: NFT
 	): Promise<{txReceipt: TxReceipt}> {
+		// TODO: Remove NFT from database
 		if(!this._session) {
 			throw new Error("Server session uninitialized");
 		}
 		try {
-			return{txReceipt:await this._session.burn(getAssetsFromNFT(nft))};
+			return{txReceipt: await this._session.burn(getAssetsFromNFT(nft))};
 		} catch (error) {
 			if(error) {
 				throw new Error("Server unable to burn NFT" + error);
