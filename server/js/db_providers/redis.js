@@ -592,5 +592,15 @@ module.exports = DatabaseHandler = cls.Class.extend({
           }
         });
       }
+    },
+
+    getNFT: function(nftKey){
+
+    },
+    putNFT: function(nftKey, metadata){
+
+    },
+    deleteNFT: function(nftKey){
+
     }
 });
