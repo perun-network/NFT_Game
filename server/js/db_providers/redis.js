@@ -594,13 +594,28 @@ module.exports = DatabaseHandler = cls.Class.extend({
       }
     },
 
-    getNFT: function(nftKey){
-
+    getNFTMetadata: function(nftKey){
+        log.info("Getting NFT Metadata: " + nftKey);
     },
-    putNFT: function(nftKey, metadata){
-
+    putNFTMetadata: function(nftKey, metadata){
+        log.info("Putting NFT Metadata: " + nftKey);
+        // Check if NFT is already stored
+        client.sismember('nft', nftKey, function(err, reply) {
+          if(reply === 1) {
+              log.error("NFT Metadata already in database: " + nftKey);
+              return;
+          } else {
+              // Add the NFT
+              client.multi()
+                  .sadd("nft", nftKey)
+                  .hset(nftKey, "metadata", metadata)
+                  .exec(function(err, replies){
+                      log.info("New NFT: " + nftKey + " {" + metadata + "}");
+                  });
+          }
+      });
     },
-    deleteNFT: function(nftKey){
-
+    deleteNFTMetadata: function(nftKey){
+        log.info("Deleting NFT Metadata: " + nftKey);
     }
 });
