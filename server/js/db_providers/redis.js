@@ -597,7 +597,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
     getNFTMetadata: function(nftKey){
         log.info("Getting NFT Metadata: " + nftKey);
         client.multi()
-          .hget(nftKey, "metadata")
+          .hget(nftKey, 'metadata')
           .exec(function(err, replies){
             var metadata = replies[0];
             if(metadata == null || err) {
@@ -619,8 +619,8 @@ module.exports = DatabaseHandler = cls.Class.extend({
           } else {
               // Add the NFT
               client.multi()
-                  .sadd("nft", nftKey)
-                  .hset(nftKey, "metadata", metadata)
+                  .sadd('nft', nftKey)
+                  .hset(nftKey, 'metadata', metadata)
                   .exec(function(err, replies){
                       log.info("New NFT: " + nftKey + " {" + metadata + "}");
                   });
@@ -629,5 +629,15 @@ module.exports = DatabaseHandler = cls.Class.extend({
     },
     deleteNFTMetadata: function(nftKey){
         log.info("Deleting NFT Metadata: " + nftKey);
+        client.multi()
+          .hdel(nftKey, 'metadata')
+          .srem('nft', nftKey)
+          .exec(function(err, replies){
+            if((replies[0] == 1) && (replies[1] == 1) || err) {
+              log.error("Could not delete all keys for NFT: " + nftKey + ": " + err);
+              return;
+            }
+            log.info("Deleted NFT: " + nftKey);
+          });
     }
 });
