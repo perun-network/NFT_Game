@@ -196,7 +196,7 @@ export class NFTMetaServer {
 		}
 
 		this.tokens.add(token.key);
-		await this.db.put(key, req.body);
+		await this.db.put(key, req.body); // straight up pump recieved values into the db without any sanitazation or parsing...
 		await this.afterMetadataSet(key);
 		res.sendStatus(StatusNoContent);
 	}
