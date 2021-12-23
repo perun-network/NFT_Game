@@ -20,10 +20,6 @@ import { NFTMetadata } from "@polycrypt/erdstall/ledger/backend";
 import { OwnershipEntry, PerunArtMetadata } from "#nerd/nft";
 import {
 	tokenIdPath,
-	readTokenId,
-	StatusNoContent,
-	StatusNotFound,
-	StatusConflict,
 } from "./common";
 import { key as nftKey, parseKey } from "./nft";
 import { levelRight, LevelRight } from "./leveldb";
@@ -31,6 +27,10 @@ import { levelRight, LevelRight } from "./leveldb";
 import { RawItemMeta } from "./itemmeta";
 
 export const DB_PREFIX_METADATA = "md";
+
+export const StatusNoContent = 204;
+export const StatusNotFound = 404;
+export const StatusConflict = 409;
 
 /**
  * Main class for meta data handling. Includes storage to Redis and request handling
@@ -105,9 +105,9 @@ export class NFTMetaServer {
 	 * @param tokenAddr string or Address
 	 * @returns metadata
 	 */
-	async getMetadata(
+	getMetadata(
 		tokenAddr: string | Address,
-	): Promise<RawItemMeta | undefined> {
+	): RawItemMeta | undefined {
 		const meta = this.databaseHandler.getNFTMetadata(tokenAddr);
 		if (meta === undefined && this.cfg.serveDummies)
 			return this.dummyMetadata();
@@ -140,13 +140,15 @@ export class NFTMetaServer {
 	 * @returns 
 	 */
 	private async getNft(req: Request, res: Response) {
-		const { token, id } = readTokenId(req);
-		const md = await this.getMetadata(token, id);
-		if (!md) {
+		const tokenAddr = Address.fromString(req.params.token); // parse Address params field in http request
+		const meta = this.getMetadata(tokenAddr); // lookup meta data
+		if (!meta) {
+			// send 404
 			res.status(StatusNotFound).send("No Metadata present.");
 			return;
 		}
-		res.send(md);
+
+		res.send(meta.asJSON()); // origianly sending without conversion
 	}
 
 	/**
