@@ -45,13 +45,14 @@ export class NFTMetaServer {
 	 */
 	protected readonly metaMap: Map<string | Address, RawItemMeta>;
 
-	/** &&& add comment with fitting params */
+	/**
+	 * Creates a new Metadata server instance
+	 * @param databaseHandler main database connector
+	 * @param cfg metadata config
+	 */
 	constructor(databaseHandler: any, cfg?: MetadataConfig) {
 
 		this.metaMap = new Map(); // init empty map for saved metadata
-
-		// &&& TODO: to be replaced by Redis config and other 
-
 		this.databaseHandler = databaseHandler;
 
 		if (!cfg) cfg = {};
@@ -69,9 +70,6 @@ export class NFTMetaServer {
 	 * Initializes the meta data server. Connects to Redis DB and loades saved tokens 
 	 */
 	async init(): Promise<void> {
-
-		// &&& also Redis intit	
-
 		await this.populateHandledTokens();
 		this.log(`init: Added ${this.tokens.size} handled token(s).`);
 	}
@@ -104,62 +102,33 @@ export class NFTMetaServer {
 
 	/**
 	 * Looks up Metadata for token with given address and id
-	 * @param token string or Address
-	 * @param id bigint id
-	 * @returns TODO &&&
+	 * @param tokenAddr string or Address
+	 * @returns metadata
 	 */
 	async getMetadata(
-		token: string | Address,
-		id: bigint,
-	): Promise<NFTMetadata | undefined> {
-		const md = await this.databaseHandler.getu(nftKey(token, id));
-		if (md === undefined && this.cfg.serveDummies)
-			return this.dummyMetadata(token, id);
-		return md;
-	}
-
-	/**
-	 * Looks up Metadata for tokens with given addresses and ids
-	 * @param tkns {strings or Addresses, bigint ids}
-	 * @returns TODO &&&
-	 */
-	async getManyMetadata(
-		tkns: { token: string | Address; id: bigint }[],
-	): Promise<(NFTMetadata | undefined)[]> {
-		const mds = await this.databaseHandler.getMany(
-			tkns.map((tkn) => nftKey(tkn.token, tkn.id)),
-		);
-		if (this.cfg.serveDummies)
-			return mds.map(
-				(md, i) => md ?? this.dummyMetadata(tkns[i].token, tkns[i].id),
-			);
-		return mds;
+		tokenAddr: string | Address,
+	): Promise<RawItemMeta | undefined> {
+		const meta = this.databaseHandler.getNFTMetadata(tokenAddr);
+		if (meta === undefined && this.cfg.serveDummies)
+			return this.dummyMetadata();
+		return meta;
 	}
 
 	/**
 	 * Checks if the given token is loaded (contained in tokens list)
 	 * @param token string or Address
-	 * @returns 
+	 * @returns if nft meta already loaded
 	 */
 	handlesToken(token: string | Address): boolean {
-		return this.tokens.has(token.toString().toLowerCase());
+		return this.metaMap.has(token);
 	}
 
 	/**
-	 * Creates representative, on the fly generated, Metadata for token. Used for the case that saved MetaData can not be found
-	 * @param token 
-	 * @param id 
-	 * @returns 
+	 * Creates representative, on the fly generated, Metadata for token. Used as fallback in the case that saved MetaData can not be found
+	 * @returns dummy meta data object
 	 */
-	dummyMetadata(token: string | Address, id: bigint): NFTMetadata {
-		const prefix = this.handlesToken(token) ? "PerunArt" : "SomeNFT";
-		const md = new PerunArtMetadata(
-			`${prefix} #${id}`, // name
-			`${prefix}(${token}) #${id}`, // description
-			`https://picsum.photos/id/${id % 1000n}/350`, // image
-			false, // confidential
-		).toMetadata();
-		return Object.assign(md, { dummy: true });
+	dummyMetadata(): RawItemMeta {
+		return new RawItemMeta("dummy", []);
 	}
 	/********** REST API **********/
 
