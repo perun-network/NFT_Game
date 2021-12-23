@@ -596,7 +596,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
 
     getAllMetadata: function(){
 
-      /*  Not working... ?????
+      /*  Not working... ????? TODO To be replaced by working query 
         client.multi()
           .hget('nft', 'metadata') // does it work like this????
           .exec(function(err, replies){

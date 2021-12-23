@@ -28,6 +28,8 @@ import {
 import { key as nftKey, parseKey } from "./nft";
 import { levelRight, LevelRight } from "./leveldb";
 
+import { RawItemMeta } from "./itemmeta";
+
 export const DB_PREFIX_METADATA = "md";
 
 /**
@@ -35,19 +37,22 @@ export const DB_PREFIX_METADATA = "md";
  */
 export class NFTMetaServer {
 	readonly cfg: MetadataConfig;
-	protected readonly db: LevelRight<string, NFTMetadata>;
+	protected readonly databaseHandler: any;
 	readonly tokens = new Set<string>(); // tracks token addresses handled by this server
+	
+	/**
+	 * HashMap to map Address/string to Metadata
+	 */
+	protected readonly metaMap: Map<string | Address, RawItemMeta>;
 
 	/** &&& add comment with fitting params */
-	constructor(db: LevelUp, cfg?: MetadataConfig) {
+	constructor(databaseHandler: any, cfg?: MetadataConfig) {
+
+		this.metaMap = new Map(); // init empty map for saved metadata
 
 		// &&& TODO: to be replaced by Redis config and other 
 
-		this.db = levelRight(
-			sublevel(db, DB_PREFIX_METADATA, {
-				valueEncoding: "json", // encoding-down option
-			}),
-		);
+		this.databaseHandler = databaseHandler;
 
 		if (!cfg) cfg = {};
 		this.cfg = {
@@ -76,16 +81,11 @@ export class NFTMetaServer {
 	 */
 	private async populateHandledTokens() {
 
-		// &&& load tokens from Redis
-
-		// iterate over all tokens from the db
-		for await (let key of this.db.createKeyStream()) {
-			if (key instanceof Buffer) {
-				key = key.toString();
-			}
-			const { token } = parseKey(key);
-			// add token to tokens list
-			this.tokens.add(token.key);
+		// iterate over all addresses and corresponding metadata from the db
+		for (let nft in this.databaseHandler.getAllMetadata()) {
+			Address: let addr = Address.fromString(nft[0]);
+			RawItemMeta: let meta = RawItemMeta.getMetaFromJSON(nft[1]);
+			this.metaMap.set(addr, meta);
 		}
 	}
 
@@ -112,7 +112,7 @@ export class NFTMetaServer {
 		token: string | Address,
 		id: bigint,
 	): Promise<NFTMetadata | undefined> {
-		const md = await this.db.getu(nftKey(token, id));
+		const md = await this.databaseHandler.getu(nftKey(token, id));
 		if (md === undefined && this.cfg.serveDummies)
 			return this.dummyMetadata(token, id);
 		return md;
@@ -126,7 +126,7 @@ export class NFTMetaServer {
 	async getManyMetadata(
 		tkns: { token: string | Address; id: bigint }[],
 	): Promise<(NFTMetadata | undefined)[]> {
-		const mds = await this.db.getMany(
+		const mds = await this.databaseHandler.getMany(
 			tkns.map((tkn) => nftKey(tkn.token, tkn.id)),
 		);
 		if (this.cfg.serveDummies)
@@ -190,13 +190,13 @@ export class NFTMetaServer {
 		const { token, id } = readTokenId(req);
 		const key = nftKey(token, id);
 
-		if (!this.cfg.allowUpdates && (await this.db.has(key))) {
+		if (!this.cfg.allowUpdates && (await this.databaseHandler.has(key))) {
 			res.status(StatusConflict).send("NFT Metadata already set.");
 			return;
 		}
 
 		this.tokens.add(token.key);
-		await this.db.put(key, req.body); // straight up pump recieved values into the db without any sanitazation or parsing...
+		await this.databaseHandler.put(key, req.body); // straight up pump recieved values into the db without any sanitazation or parsing...
 		await this.afterMetadataSet(key);
 		res.sendStatus(StatusNoContent);
 	}
@@ -216,12 +216,12 @@ export class NFTMetaServer {
 		const { token, id } = readTokenId(req);
 		const key = nftKey(token, id);
 
-		if (!(await this.db.has(key))) {
+		if (!(await this.databaseHandler.has(key))) {
 			res.status(StatusNotFound).send("Unknown NFT.");
 			return;
 		}
 
-		await this.db.del(key);
+		await this.databaseHandler.del(key);
 		res.sendStatus(StatusNoContent);
 		return;
 	}

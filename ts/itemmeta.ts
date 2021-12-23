@@ -10,14 +10,12 @@ export interface BasicMeta {
 
 /**
  * RawItemMeta aims to provide an upward compatible standard for item NFT Metadata.
- * Convert to JSON using JSON.stringify(obj)
  * A RawItemMeta object consists of an item name, and extentions. All values are in string format hence "raw". To parse values is task of a deriving class.
  * Extentions specify further attributes such as the color code or damage, image, animation, music, etc...
- * Using Extentions is optional and and an item is supposed to be fully functionaly described without the use of any. Alternativly a default value fallback has to be provided.
+ * Using Extentions is optional and an item is supposed to be fully functionaly described without the use of any. Alternativly a default value fallback has to be provided.
  * (TODO: To be derived from a superclass to allow achievement metadata?)
  */
 export class RawItemMeta implements BasicMeta {
-
 
     public static EXTENTION_COLORCODE : string = "cc"; // example extention
 
@@ -99,16 +97,17 @@ export class RawItemMeta implements BasicMeta {
     public asJSON() : string {
         return JSON.stringify(this);
     }
-}
 
-/**
- * Parses JSON with metadata to meta instance
- * @param json json string
- * @returns RawItemMeta object containing data from json object
- */
-export function getMetaFromJSON(json: string): RawItemMeta {
-    // TODO: Format checking
-    BasicMeta: var metaLookup = <BasicMeta> JSON.parse(json);
-    RawItemMeta: var metaObject = new RawItemMeta(metaLookup.name, metaLookup.extentions);
-    return metaObject;
+
+    /**
+     * Parses JSON with metadata to meta instance
+     * @param json json string
+     * @returns RawItemMeta object containing data from json object
+     */
+    public static getMetaFromJSON(json: string): RawItemMeta {
+        // TODO: Format checking
+        BasicMeta: var metaLookup = <BasicMeta> JSON.parse(json);
+        RawItemMeta: var metaObject = new RawItemMeta(metaLookup.name, metaLookup.extentions);
+        return metaObject;
+    }
 }
