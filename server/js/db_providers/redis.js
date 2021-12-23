@@ -594,20 +594,36 @@ module.exports = DatabaseHandler = cls.Class.extend({
       }
     },
 
-    getNFTMetadata: function(nftKey){
-        log.info("Getting NFT Metadata: " + nftKey);
+    getAllMetadata: function(){
+
+      /*  Not working... ?????
         client.multi()
-          .hget(nftKey, 'metadata')
+          .hget('nft', 'metadata') // does it work like this????
           .exec(function(err, replies){
-            var metadata = replies[0];
-            if(metadata == null || err) {
+            if(err) {
               var error = "NFT Metadata could not be loaded from database: " + err;
               log.error(error);
               throw new Error(error);
             }
-            return metadata;
+            return replies;
           });
+          */
     },
+
+    getNFTMetadata: function(nftKey){
+      log.info("Getting NFT Metadata: " + nftKey);
+      client.multi()
+        .hget(nftKey, 'metadata')
+        .exec(function(err, replies){
+          var metadata = replies[0];
+          if(metadata == null || err) {
+            var error = "NFT Metadata could not be loaded from database: " + err;
+            log.error(error);
+            throw new Error(error);
+          }
+          return metadata;
+        });
+  },
 
     putNFTMetadata: function(nftKey, metadata){
         log.info("Putting NFT Metadata: " + nftKey);
