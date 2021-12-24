@@ -43,7 +43,7 @@ export class NFTMetaServer {
 	/**
 	 * HashMap to map Address/string to Metadata
 	 */
-	protected readonly metaMap: Map<string | Address, RawItemMeta>;
+	protected readonly metaMap: Map<Address, RawItemMeta>;
 
 	/**
 	 * Creates a new Metadata server instance
@@ -120,6 +120,9 @@ export class NFTMetaServer {
 	 * @returns if nft meta already loaded
 	 */
 	handlesToken(token: string | Address): boolean {
+		if (typeof token == "string") {
+			return this.metaMap.has(Address.fromString(token)); // ## or "from JSON"?
+		}
 		return this.metaMap.has(token);
 	}
 
@@ -158,22 +161,31 @@ export class NFTMetaServer {
 	 * @returns 
 	 */
 	private async putNft(req: Request, res: Response) {
-		const { token, id } = readTokenId(req);
-		const key = nftKey(token, id);
 
+		// params is part of the request f.e. http://yadayada.de/yomama?parameter=deeznutz
+		const tokenAddr = Address.fromString(req.params.token); // parse Address params field in http request
+		
+		/*  TODO: implement funktion in redis.js to check if nft is present. For now just accept duplicates
 		if (!this.cfg.allowUpdates && (await this.databaseHandler.has(key))) {
 			res.status(StatusConflict).send("NFT Metadata already set.");
 			return;
 		}
+		*/
 
-		this.tokens.add(token.key);
-		await this.databaseHandler.put(key, req.body); // straight up pump recieved values into the db without any sanitazation or parsing...
-		await this.afterMetadataSet(key);
-		res.sendStatus(StatusNoContent);
+		// how will the request body look like? Is only the metadata JSON? 
+		// parse request to Metadata
+		string: var requestBody = req.body;
+		RawItemMeta: var meta = RawItemMeta.getMetaFromJSON(requestBody); // assuming body has meta JSON format... (TODO: format checking?)
+
+		this.metaMap.set(tokenAddr, meta); // update buffer
+		this.databaseHandler.putNFTMetadata(req.params.token, meta.asJSON()); // directly adding requestBody maybe more efficient but this is more save
+
+		await this.afterMetadataSet(tokenAddr);
+		res.sendStatus(StatusNoContent); // send success without anything else
 	}
 
 	// can be overridden in derived classes
-	protected async afterMetadataSet(_key: string): Promise<void> {
+	protected async afterMetadataSet(_key: Address): Promise<void> {
 		return;
 	}
 
