@@ -86,11 +86,11 @@ export class NFTMetaServer {
 	private async populateHandledTokens() {
 
 		// iterate over all addresses and corresponding metadata from the db
-		// assuming databaseHandler.getAllMetadata() returns pairs of {string (Address) and number (BigInt)} and JSON Metatada
+		// assuming databaseHandler.getAllMetadata() returns string (Address),  number (BigInt), string (JSON Metatada)
 		for (let nft of this.databaseHandler.getAllMetadata()) {
-			Address: let addr = Address.fromString(nft[0][0]);
-			BigInt: let id = <BigInt> nft[0][1];
-			RawItemMeta: let meta = RawItemMeta.getMetaFromJSON(nft[1]);
+			Address: let addr = Address.fromString(nft[0]);
+			BigInt: let id = <BigInt> nft[1];
+			RawItemMeta: let meta = RawItemMeta.getMetaFromJSON(nft[2]);
 			this.metaMap.set(id, meta);
 			this.ownerMap.set(id, addr);
 		}
