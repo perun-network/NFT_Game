@@ -37,7 +37,7 @@ export class RawItemMeta implements BasicMeta {
         this.extentions = extentions;
 
         // copy array content to hash map for easy and fast access
-        for (var ext in extentions) {
+        for (var ext of extentions) {
             // allow empty keys and values, disallow duplicates
             if (this.extentionsMaped.has(ext[0])) {
                 if (RawItemMeta.VERBOSE)
