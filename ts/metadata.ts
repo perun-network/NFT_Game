@@ -43,7 +43,12 @@ export class NFTMetaServer {
 	/**
 	 * HashMap to map Address/string to Metadata
 	 */
-	protected readonly metaMap: Map<Address, RawItemMeta>;
+	protected readonly metaMap: Map<BigInt, RawItemMeta>;
+
+	/**
+	 * HashMap to map an NFT id to its owner
+	 */
+	protected readonly ownerMap: Map<BigInt, Address>;
 
 	/**
 	 * Creates a new Metadata server instance
@@ -53,6 +58,7 @@ export class NFTMetaServer {
 	constructor(databaseHandler: any, cfg?: MetadataConfig) {
 
 		this.metaMap = new Map(); // init empty map for saved metadata
+		this.ownerMap = new Map(); // init empty map for id mapping 
 		this.databaseHandler = databaseHandler;
 
 		if (!cfg) cfg = {};
@@ -71,7 +77,7 @@ export class NFTMetaServer {
 	 */
 	async init(): Promise<void> {
 		await this.populateHandledTokens();
-		this.log(`init: Added ${this.tokens.size} handled token(s).`);
+		this.log(`init: Added ${this.metaMap.size} handled token(s).`);
 	}
 
 	/**
@@ -80,10 +86,13 @@ export class NFTMetaServer {
 	private async populateHandledTokens() {
 
 		// iterate over all addresses and corresponding metadata from the db
-		for (let nft in this.databaseHandler.getAllMetadata()) {
-			Address: let addr = Address.fromString(nft[0]);
+		// assuming databaseHandler.getAllMetadata() returns pairs of {string (Address) and number (BigInt)} and JSON Metatada
+		for (let nft of this.databaseHandler.getAllMetadata()) {
+			Address: let addr = Address.fromString(nft[0][0]);
+			BigInt: let id = <BigInt> nft[0][1];
 			RawItemMeta: let meta = RawItemMeta.getMetaFromJSON(nft[1]);
-			this.metaMap.set(addr, meta);
+			this.metaMap.set(id, meta);
+			this.ownerMap.set(id, addr);
 		}
 	}
 
@@ -102,13 +111,11 @@ export class NFTMetaServer {
 
 	/**
 	 * Looks up Metadata for token with given address and id
-	 * @param tokenAddr string or Address
+	 * @param tokenId 256bit integer ID of NFT
 	 * @returns metadata
 	 */
-	getMetadata(
-		tokenAddr: string | Address,
-	): RawItemMeta | undefined {
-		const meta = this.databaseHandler.getNFTMetadata(tokenAddr);
+	getMetadata(tokenId: BigInt): RawItemMeta | undefined {
+		const meta = this.databaseHandler.getNFTMetadata(tokenId); // ## Redis interface to accept NFT IDs as keys
 		if (meta === undefined && this.cfg.serveDummies)
 			return this.dummyMetadata();
 		return meta;
@@ -116,14 +123,11 @@ export class NFTMetaServer {
 
 	/**
 	 * Checks if the given token is loaded (contained in tokens list)
-	 * @param token string or Address
+	 * @param tokenId 256bit integer ID of NFT
 	 * @returns if nft meta already loaded
 	 */
-	handlesToken(token: string | Address): boolean {
-		if (typeof token == "string") {
-			return this.metaMap.has(Address.fromString(token)); // ## or "from JSON"?
-		}
-		return this.metaMap.has(token);
+	handlesToken(tokenId: BigInt): boolean {
+		return this.metaMap.has(tokenId);
 	}
 
 	/**
@@ -143,8 +147,9 @@ export class NFTMetaServer {
 	 * @returns 
 	 */
 	private async getNft(req: Request, res: Response) {
-		const tokenAddr = Address.fromString(req.params.token); // parse Address params field in http request
-		const meta = this.getMetadata(tokenAddr); // lookup meta data
+		const tokenId = BigInt(req.params.id); // parse Token identifier (assumed globaly unique) in http request
+		// assume token id's to be unique systemwide and treat them as primary key
+		const meta = this.getMetadata(tokenId); // lookup meta data
 		if (!meta) {
 			// send 404
 			res.status(StatusNotFound).send("No Metadata present.");
@@ -156,14 +161,15 @@ export class NFTMetaServer {
 
 	/**
 	 * Saves a new NFT with metadata to the DB
-	 * @param req
-	 * @param res 
+	 * @param req http request
+	 * @param res http response
 	 * @returns 
 	 */
 	private async putNft(req: Request, res: Response) {
 
-		// params is part of the request f.e. http://yadayada.de/yomama?parameter=deeznutz
-		const tokenAddr = Address.fromString(req.params.token); // parse Address params field in http request
+		// params is part of the request f.e. http://yadayada.de/yomama?token=0x69696969696969420...
+		const ownerAddr = Address.fromString(req.params.token); // parse Address params field in http request
+		const tokenId = BigInt(req.params.id); // parse Token identifier (assumed globaly unique) in http request
 		
 		/*  TODO: implement funktion in redis.js to check if nft is present. For now just accept duplicates
 		if (!this.cfg.allowUpdates && (await this.databaseHandler.has(key))) {
@@ -177,35 +183,37 @@ export class NFTMetaServer {
 		string: var requestBody = req.body;
 		RawItemMeta: var meta = RawItemMeta.getMetaFromJSON(requestBody); // assuming body has meta JSON format... (TODO: format checking?)
 
-		this.metaMap.set(tokenAddr, meta); // update buffer
+		this.metaMap.set(tokenId, meta); // update buffer
+		this.ownerMap.set(tokenId, ownerAddr); // update owners
 		this.databaseHandler.putNFTMetadata(req.params.token, meta.asJSON()); // directly adding requestBody maybe more efficient but this is more save
 
-		await this.afterMetadataSet(tokenAddr);
+		await this.afterMetadataSet(tokenId); // run Observers
 		res.sendStatus(StatusNoContent); // send success without anything else
 	}
 
 	// can be overridden in derived classes
-	protected async afterMetadataSet(_key: Address): Promise<void> {
+	protected async afterMetadataSet(_key: BigInt): Promise<void> {
 		return;
 	}
 
 	/**
 	 * Deletes NFT from database
-	 * @param req 
-	 * @param res 
-	 * @returns 
+	 * @param req http request
+	 * @param res http response
 	 */
 	private async deleteNft(req: Request, res: Response) {
-		const { token, id } = readTokenId(req);
-		const key = nftKey(token, id);
 
-		if (!(await this.databaseHandler.has(key))) {
+		const tokenId = BigInt(req.params.id); // parse Token identifier (assumed globaly unique) in http request
+
+		/* TODO: implement funktion in redis.js to check if nft is present. For don't care
+			if (!(await this.databaseHandler.has(key))) {
 			res.status(StatusNotFound).send("Unknown NFT.");
 			return;
 		}
+		*/
 
-		await this.databaseHandler.del(key);
-		res.sendStatus(StatusNoContent);
+		await this.databaseHandler.deleteNFTMetadata(tokenId);
+		res.sendStatus(StatusNoContent); // (assuming) success, send nothing
 		return;
 	}
 }
