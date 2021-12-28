@@ -1,3 +1,4 @@
+import { NFTMetadata } from "@polycrypt/erdstall/ledger/backend";
 
 /**
  * Interface of meta construct for JSON conversion
@@ -5,6 +6,7 @@
 export interface BasicMeta {
     name: string;
     extentions : [string, string][]; // two dimensional array of extention name and value
+    toMetadata(): NFTMetadata;
 }
 
 
@@ -88,6 +90,37 @@ export class RawItemMeta implements BasicMeta {
         return undefined;
     }
 
+    
+    /**
+     * Returns description of Metadata. To be overriden by subclass, goal: Weapon meta desc "Weapon", Armor meta desc "Armor", Achievement "Achievement"...
+     * @returns Description of Object abstracted by meta data
+     */
+    public getDescription() : string {
+        return "";
+    }
+
+
+    /**
+     * Returns image to be displayed for item. To be overriden by subclass
+     * @returns image url
+     */
+    public getImage() : string {
+        return "";
+    }
+
+
+    /**
+     * Converts raw meta object to erdstall NFT metadata
+     * @returns Erdstall NFTMetadata
+     */
+    public toMetadata(): NFTMetadata {	
+		return {
+			name: this.name,
+			description: this.getDescription() ,
+			image: this.getImage(),
+			attributes: undefined, // no attribute. No ownership, no confidentiality
+		};
+	}
 
     /**
      * converts the metadata object to a saveable and parsable string (JSON) to be saved in the database or send to a peer.
