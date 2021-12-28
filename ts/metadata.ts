@@ -2,27 +2,19 @@
 
 import express, { Request, Router, Response } from "express";
 import asyncHandler from "express-async-handler";
-import { LevelUp } from "levelup";
-import sublevel from "subleveldown";
 
-import { ErdstallClient } from "@polycrypt/erdstall";
-import { TxReceipt } from "@polycrypt/erdstall/api/responses";
-import {
-	Burn,
-	Mint,
-	Trade,
-	Transfer,
-} from "@polycrypt/erdstall/api/transactions";
+//import { ErdstallClient } from "@polycrypt/erdstall";
+//import { TxReceipt } from "@polycrypt/erdstall/api/responses";
+//import {
+//	Burn,
+//	Mint,
+//	Trade,
+//	Transfer,
+//} from "@polycrypt/erdstall/api/transactions";
 import { Address } from "@polycrypt/erdstall/ledger";
-import { mapNFTs } from "@polycrypt/erdstall/ledger/assets";
-import { NFTMetadata } from "@polycrypt/erdstall/ledger/backend";
-
-import { OwnershipEntry, PerunArtMetadata } from "#nerd/nft";
-import {
-	tokenIdPath,
-} from "./common";
-import { key as nftKey, parseKey } from "./nft";
-import { levelRight, LevelRight } from "./leveldb";
+//import { mapNFTs } from "@polycrypt/erdstall/ledger/assets";
+//import { NFTMetadata } from "@polycrypt/erdstall/ledger/backend";
+//import { key as nftKey, parseKey } from "./nft";
 
 import { RawItemMeta } from "./itemmeta";
 
@@ -31,6 +23,9 @@ export const DB_PREFIX_METADATA = "md";
 export const StatusNoContent = 204;
 export const StatusNotFound = 404;
 export const StatusConflict = 409;
+
+export const addrRE = "0x[0-9a-fA-F]{40}";
+export const tokenIdPath = "/:token(" + addrRE + ")/:id(\\d+)";
 
 /**
  * Main class for meta data handling. Includes storage to Redis and request handling
@@ -85,7 +80,7 @@ export class NFTMetaServer {
 	 */
 	private async populateHandledTokens() {
 
-		// iterate over all addresses and corresponding metadata from the db
+		// iterate over all addresses and corresponding metadata from the db and save in corresponding map
 		// assuming databaseHandler.getAllMetadata() returns string (Address),  number (BigInt), string (JSON Metatada)
 		for (let nft of this.databaseHandler.getAllMetadata()) {
 			Address: let addr = Address.fromString(nft[0]);
