@@ -595,19 +595,28 @@ module.exports = DatabaseHandler = cls.Class.extend({
     },
 
     getAllMetadata: function(){
-
-      /*  Not working... ????? TODO To be replaced by working query 
-        client.multi()
-          .hget('nft', 'metadata') // does it work like this????
-          .exec(function(err, replies){
-            if(err) {
-              var error = "NFT Metadata could not be loaded from database: " + err;
-              log.error(error);
-              throw new Error(error);
-            }
-            return replies;
-          });
-          */
+      log.info("Getting all NFT Metadata");
+      // Get all NFTs stored in database
+      client.smembers('nft', function(err, replies){
+        var allMetadata = new Array(replies.length);
+        // Iterate over all NFTs stored in database
+        for(var index = 0; index < replies.length; index++){
+          const nftKey = replies[index].toString();
+          // Get metadata for NFT
+          client.multi()
+            .hget(nftKey, 'metadata')
+            .exec(function(err, replies){
+              var metadata = replies[0];
+              if(metadata == null || err) {
+                var error = "NFT Metadata for " + nftKey + " could not be loaded from database: " + err;
+                log.error(error);
+                throw new Error(error);
+              }
+              allMetadata.push(metadata);
+            });
+        }
+        return allMetadata;
+      });
     },
 
     getNFTMetadata: function(nftKey){
@@ -617,43 +626,43 @@ module.exports = DatabaseHandler = cls.Class.extend({
         .exec(function(err, replies){
           var metadata = replies[0];
           if(metadata == null || err) {
-            var error = "NFT Metadata could not be loaded from database: " + err;
+            var error = "NFT Metadata for " + nftKey + " could not be loaded from database: " + err;
             log.error(error);
             throw new Error(error);
           }
           return metadata;
         });
-  },
+    },
 
     putNFTMetadata: function(nftKey, metadata){
-        log.info("Putting NFT Metadata: " + nftKey);
-        // Check if NFT is already stored
-        client.sismember('nft', nftKey, function(err, reply) {
-          if(reply === 1) {
-              log.error("NFT Metadata already in database: " + nftKey);
-              return;
-          } else {
-              // Add the NFT
-              client.multi()
-                  .sadd('nft', nftKey)
-                  .hset(nftKey, 'metadata', metadata)
-                  .exec(function(err, replies){
-                      log.info("New NFT: " + nftKey + " {" + metadata + "}");
-                  });
-          }
+      log.info("Putting NFT Metadata: " + nftKey);
+      // Check if NFT is already stored
+      client.sismember('nft', nftKey, function(err, reply) {
+        if(reply === 1) {
+          log.error("NFT Metadata already in database: " + nftKey);
+          return;
+        } else {
+          // Add the NFT
+          client.multi()
+            .sadd('nft', nftKey)
+            .hset(nftKey, 'metadata', metadata)
+            .exec(function(err, replies){
+              log.info("New NFT: " + nftKey + " {" + metadata + "}");
+            });
+        }
       });
     },
     deleteNFTMetadata: function(nftKey){
-        log.info("Deleting NFT Metadata: " + nftKey);
-        client.multi()
-          .hdel(nftKey, 'metadata')
-          .srem('nft', nftKey)
-          .exec(function(err, replies){
-            if((replies[0] == 1) && (replies[1] == 1) || err) {
-              log.error("Could not delete all keys for NFT: " + nftKey + ": " + err);
-              return;
-            }
-            log.info("Deleted NFT: " + nftKey);
-          });
+      log.info("Deleting NFT Metadata: " + nftKey);
+      client.multi()
+        .hdel(nftKey, 'metadata')
+        .srem('nft', nftKey)
+        .exec(function(err, replies){
+          if((replies[0] == 1) && (replies[1] == 1) || err) {
+            log.error("Could not delete all keys for NFT: " + nftKey + ": " + err);
+            return;
+          }
+          log.info("Deleted NFT: " + nftKey);
+        });
     }
 });
