@@ -19,7 +19,7 @@ export interface BasicMeta {
  */
 export class RawItemMeta implements BasicMeta {
 
-    public static EXTENTION_COLORCODE : string = "cc"; // example extension
+    public static EXTENSION_COLORCODE : string = "cc"; // example extension
 
     public static VERBOSE = true;
 
