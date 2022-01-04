@@ -30,7 +30,7 @@ export const tokenIdPath = "/:token(" + addrRE + ")/:id(\\d+)";
 /**
  * Main class for meta data handling. Includes storage to Redis and request handling
  */
-export class NFTMetaServer {
+export default class NFTMetaServer {
 	readonly cfg: MetadataConfig;
 	protected readonly databaseHandler: any;
 	readonly tokens = new Set<string>(); // tracks token addresses handled by this server
@@ -72,7 +72,7 @@ export class NFTMetaServer {
 	 */
 	async init(): Promise<void> {
 		await this.populateHandledTokens();
-		this.log(`init: Added ${this.metaMap.size} handled token(s).`);
+		this.log('init: Added ' + this.metaMap.size + ' handled token(s).');
 	}
 
 	/**
@@ -82,12 +82,15 @@ export class NFTMetaServer {
 
 		// iterate over all addresses and corresponding metadata from the db and save in corresponding map
 		// assuming databaseHandler.getAllMetadata() returns string (Address),  number (BigInt), string (JSON Metatada)
-		for (let nft of this.databaseHandler.getAllMetadata()) {
-			Address: let addr = Address.fromString(nft[0]);
-			BigInt: let id = <BigInt> nft[1];
-			RawItemMeta: let meta = RawItemMeta.getMetaFromJSON(nft[2]);
-			this.metaMap.set(id, meta);
-			this.ownerMap.set(id, addr);
+		var allMetadata = this.databaseHandler.getAllMetadata();
+		for(var index = 0; index < allMetadata.length; index++){
+			var md : RawItemMeta = allMetadata[index] as RawItemMeta;
+			// TODO: Fix
+			// Address: let addr = Address.fromString(nft[0]);
+			// BigInt: let id = <BigInt> nft[1];
+			// RawItemMeta: let meta = RawItemMeta.getMetaFromJSON(nft[2]);
+			// this.metaMap.set(id, meta);
+			// this.ownerMap.set(id, addr);
 		}
 	}
 
@@ -120,9 +123,8 @@ export class NFTMetaServer {
 		} catch (error) {
 			if(this.cfg.serveDummies) {
 				return this.dummyMetadata();
-			} else {
-				throw new Error(error as string);
 			}
+			return undefined;
 		}
 	}
 
@@ -154,6 +156,7 @@ export class NFTMetaServer {
 	private async getNft(req: Request, res: Response) {
 		const tokenId = BigInt(req.params.id); // parse Token identifier (assumed globaly unique) in http request
 		// assume token id's to be unique systemwide and treat them as primary key
+		// TODO: Fix uncaught exception somehow (simple try catch doesn't work for whatever reason)
 		const meta = this.getMetadata(tokenId); // lookup meta data
 		if (!meta) {
 			// send 404

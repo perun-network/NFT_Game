@@ -23,9 +23,7 @@ function main(config) {
     var erdstallServer = require("../../ts/erdstallserverinterface").erdstallServer;
     erdstallServer.init();
 
-    var ws = require("./ws");
     var WorldServer = require("./worldserver");
-    var server = new ws.WebsocketServer(config.port, config.use_one_port, config.ip);
     var metrics = config.metrics_enabled ? new Metrics(config) : null;
     var worlds = [];
     var lastTotalPlayers = 0;
@@ -47,6 +45,12 @@ function main(config) {
     log.info("Starting BrowserQuest game server...");
     var selector = DatabaseSelector(config);
     databaseHandler = new selector(config);
+
+    var metaServ = require("../../ts/metadata");
+    var metadataServer = new metaServ.default(databaseHandler);
+
+    var ws = require("./ws");
+    var server = new ws.WebsocketServer(config.port, config.use_one_port, config.ip, metadataServer);
 
     server.onConnect(function(connection) {
         var world; // the one in which the player will be spawned

@@ -596,9 +596,9 @@ module.exports = DatabaseHandler = cls.Class.extend({
 
     getAllMetadata: function(){
       log.info("Getting all NFT Metadata");
+      var allMetadata = new Array();
       // Get all NFTs stored in database
       client.smembers('nft', function(err, replies){
-        var allMetadata = new Array(replies.length);
         // Iterate over all NFTs stored in database
         for(var index = 0; index < replies.length; index++){
           const nftKey = replies[index].toString();
@@ -610,13 +610,13 @@ module.exports = DatabaseHandler = cls.Class.extend({
               if(metadata == null || err) {
                 var error = "NFT Metadata for " + nftKey + " could not be loaded from database: " + err;
                 log.error(error);
-                throw new Error(error);
+                // throw new Error(error);
               }
               allMetadata.push(metadata);
             });
         }
-        return allMetadata;
       });
+      return allMetadata;
     },
 
     getNFTMetadata: function(nftKey){
