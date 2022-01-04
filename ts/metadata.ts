@@ -113,13 +113,12 @@ export default class NFTMetaServer {
 	 * @returns metadata
 	 */
 	getMetadata(tokenId: BigInt): RawItemMeta | undefined {
-		var meta;
 		try {
-			meta = this.databaseHandler.getNFTMetadata(tokenId); // ## Redis interface to accept NFT IDs as keys
+			const meta = this.databaseHandler.getNFTMetadata(tokenId); // ## Redis interface to accept NFT IDs as keys
 			if((meta == undefined) && this.cfg.serveDummies) {
 				return this.dummyMetadata();
 			}
-			return meta;
+			return RawItemMeta.getMetaFromJSON(meta);
 		} catch (error) {
 			if(this.cfg.serveDummies) {
 				return this.dummyMetadata();
@@ -181,8 +180,8 @@ export default class NFTMetaServer {
 
 		// how will the request body look like? Is only the metadata JSON? 
 		// parse request to Metadata
-		string: var requestBody = req.body;
-		RawItemMeta: var meta = RawItemMeta.getMetaFromJSON(requestBody); // assuming body has meta JSON format... (TODO: format checking?)
+		var requestBody : string = req.body;
+		var meta : RawItemMeta = RawItemMeta.getMetaFromJSON(requestBody); // assuming body has meta JSON format... (TODO: format checking?)
 
 		try {
 			this.databaseHandler.putNFTMetadata(req.params.token, meta.asJSON()); // directly adding requestBody maybe more efficient but this is more save
