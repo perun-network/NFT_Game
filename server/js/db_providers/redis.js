@@ -639,8 +639,9 @@ module.exports = DatabaseHandler = cls.Class.extend({
       // Check if NFT is already stored
       client.sismember('nft', nftKey, function(err, reply) {
         if(reply === 1) {
-          log.error("NFT Metadata already in database: " + nftKey);
-          return;
+          var error = "NFT Metadata already in database: " + nftKey;
+          log.error(error);
+          throw new Error(error);
         } else {
           // Add the NFT
           client.multi()
@@ -652,17 +653,27 @@ module.exports = DatabaseHandler = cls.Class.extend({
         }
       });
     },
+
     deleteNFTMetadata: function(nftKey){
       log.info("Deleting NFT Metadata: " + nftKey);
-      client.multi()
-        .hdel(nftKey, 'metadata')
-        .srem('nft', nftKey)
-        .exec(function(err, replies){
-          if((replies[0] == 1) && (replies[1] == 1) || err) {
-            log.error("Could not delete all keys for NFT: " + nftKey + ": " + err);
-            return;
-          }
-          log.info("Deleted NFT: " + nftKey);
-        });
+      // Check if NFT is stored
+      client.sismember('nft', nftKey, function(err, reply) {
+        if(!(reply === 1)) {
+          var error = "NFT Metadata not in database for NFT: " + nftKey;
+          log.error(error);
+          throw new Error(error);
+        }
+        client.multi()
+          .hdel(nftKey, 'metadata')
+          .srem('nft', nftKey)
+          .exec(function(err, replies){
+            if((replies[0] == 1) && (replies[1] == 1) || err) {
+              var error = "Could not delete all keys for NFT: " + nftKey + ": " + err;
+              log.error(error);
+              throw new Error(error);
+            }
+            log.info("Deleted NFT: " + nftKey);
+          });
+      });
     }
 });

@@ -110,10 +110,20 @@ export class NFTMetaServer {
 	 * @returns metadata
 	 */
 	getMetadata(tokenId: BigInt): RawItemMeta | undefined {
-		const meta = this.databaseHandler.getNFTMetadata(tokenId); // ## Redis interface to accept NFT IDs as keys
-		if (meta === undefined && this.cfg.serveDummies)
-			return this.dummyMetadata();
-		return meta;
+		var meta;
+		try {
+			meta = this.databaseHandler.getNFTMetadata(tokenId); // ## Redis interface to accept NFT IDs as keys
+			if((meta == undefined) && this.cfg.serveDummies) {
+				return this.dummyMetadata();
+			}
+			return meta;
+		} catch (error) {
+			if(this.cfg.serveDummies) {
+				return this.dummyMetadata();
+			} else {
+				throw new Error(error as string);
+			}
+		}
 	}
 
 	/**
@@ -165,25 +175,22 @@ export class NFTMetaServer {
 		// params is part of the request f.e. http://yadayada.de/yomama?token=0x69696969696969420...
 		const ownerAddr = Address.fromString(req.params.token); // parse Address params field in http request
 		const tokenId = BigInt(req.params.id); // parse Token identifier (assumed globaly unique) in http request
-		
-		/*  TODO: implement funktion in redis.js to check if nft is present. For now just accept duplicates
-		if (!this.cfg.allowUpdates && (await this.databaseHandler.has(key))) {
-			res.status(StatusConflict).send("NFT Metadata already set.");
-			return;
-		}
-		*/
 
 		// how will the request body look like? Is only the metadata JSON? 
 		// parse request to Metadata
 		string: var requestBody = req.body;
 		RawItemMeta: var meta = RawItemMeta.getMetaFromJSON(requestBody); // assuming body has meta JSON format... (TODO: format checking?)
 
-		this.metaMap.set(tokenId, meta); // update buffer
-		this.ownerMap.set(tokenId, ownerAddr); // update owners
-		this.databaseHandler.putNFTMetadata(req.params.token, meta.asJSON()); // directly adding requestBody maybe more efficient but this is more save
-
-		await this.afterMetadataSet(tokenId); // run Observers
-		res.sendStatus(StatusNoContent); // send success without anything else
+		try {
+			this.databaseHandler.putNFTMetadata(req.params.token, meta.asJSON()); // directly adding requestBody maybe more efficient but this is more save
+			this.metaMap.set(tokenId, meta); // update buffer
+			this.ownerMap.set(tokenId, ownerAddr); // update owners
+			await this.afterMetadataSet(tokenId); // run Observers
+			res.sendStatus(StatusNoContent); // send success without anything else
+		// TODO: Maybe implement this.cfg.allowUpdates handling
+		} catch (error) { // Handle NFT already being present in database
+			res.status(StatusConflict).send(error);
+		}
 	}
 
 	// can be overridden in derived classes
@@ -200,16 +207,16 @@ export class NFTMetaServer {
 
 		const tokenId = BigInt(req.params.id); // parse Token identifier (assumed globaly unique) in http request
 
-		/* TODO: implement funktion in redis.js to check if nft is present. For don't care
-			if (!(await this.databaseHandler.has(key))) {
-			res.status(StatusNotFound).send("Unknown NFT.");
-			return;
+		try {
+			await this.databaseHandler.deleteNFTMetadata(tokenId);
+			res.sendStatus(StatusNoContent); // (assuming) success, send nothing
+		} catch (error) {
+			if(error == ("NFT Metadata not in database for NFT: " + tokenId)) {
+				res.status(StatusNotFound).send(error);
+			} else {
+				res.status(500).send(error);
+			}
 		}
-		*/
-
-		await this.databaseHandler.deleteNFTMetadata(tokenId);
-		res.sendStatus(StatusNoContent); // (assuming) success, send nothing
-		return;
 	}
 }
 
