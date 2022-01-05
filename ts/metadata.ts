@@ -19,6 +19,7 @@ import { Address } from "@polycrypt/erdstall/ledger";
 import { RawItemMeta } from "./itemmeta";
 
 export const DB_PREFIX_METADATA = "md";
+export const USE_LEGACY_KEY_FORMAT = true;
 
 export const StatusNoContent = 204;
 export const StatusNotFound = 404;
@@ -31,19 +32,9 @@ export const tokenIdPath = "/:token(" + addrRE + ")/:id(\\d+)";
  * Main class for meta data handling. Includes storage to Redis and request handling
  */
 export default class NFTMetaServer {
+
 	readonly cfg: MetadataConfig;
 	protected readonly databaseHandler: any;
-	readonly tokens = new Set<string>(); // tracks token addresses handled by this server
-	
-	/**
-	 * HashMap to map Address/string to Metadata
-	 */
-	protected readonly metaMap: Map<BigInt, RawItemMeta>;
-
-	/**
-	 * HashMap to map an NFT id to its owner
-	 */
-	protected readonly ownerMap: Map<BigInt, Address>;
 
 	/**
 	 * Creates a new Metadata server instance
@@ -52,8 +43,6 @@ export default class NFTMetaServer {
 	 */
 	constructor(databaseHandler: any, cfg?: MetadataConfig) {
 
-		this.metaMap = new Map(); // init empty map for saved metadata
-		this.ownerMap = new Map(); // init empty map for id mapping 
 		this.databaseHandler = databaseHandler;
 
 		if (!cfg) cfg = {};
@@ -68,30 +57,9 @@ export default class NFTMetaServer {
 	}
 
 	/**
-	 * Initializes the meta data server. Connects to Redis DB and loades saved tokens 
+	 * TODO: Remove 
 	 */
 	async init(): Promise<void> {
-		await this.populateHandledTokens();
-		this.log('init: Added ' + this.metaMap.size + ' handled token(s).');
-	}
-
-	/**
-	 * Loads saved tokens from DB to tokens
-	 */
-	private async populateHandledTokens() {
-
-		// iterate over all addresses and corresponding metadata from the db and save in corresponding map
-		// assuming databaseHandler.getAllMetadata() returns string (Address),  number (BigInt), string (JSON Metatada)
-		var allMetadata = this.databaseHandler.getAllMetadata();
-		for(var index = 0; index < allMetadata.length; index++){
-			var md : RawItemMeta = allMetadata[index] as RawItemMeta;
-			// TODO: Fix
-			// Address: let addr = Address.fromString(nft[0]);
-			// BigInt: let id = <BigInt> nft[1];
-			// RawItemMeta: let meta = RawItemMeta.getMetaFromJSON(nft[2]);
-			// this.metaMap.set(id, meta);
-			// this.ownerMap.set(id, addr);
-		}
 	}
 
 	/**
@@ -125,15 +93,6 @@ export default class NFTMetaServer {
 			}
 			return undefined;
 		}
-	}
-
-	/**
-	 * Checks if the given token is loaded (contained in tokens list)
-	 * @param tokenId 256bit integer ID of NFT
-	 * @returns if nft meta already loaded
-	 */
-	handlesToken(tokenId: BigInt): boolean {
-		return this.metaMap.has(tokenId);
 	}
 
 	/**
@@ -185,8 +144,6 @@ export default class NFTMetaServer {
 
 		try {
 			this.databaseHandler.putNFTMetadata(req.params.token, meta.asJSON()); // directly adding requestBody maybe more efficient but this is more save
-			this.metaMap.set(tokenId, meta); // update buffer
-			this.ownerMap.set(tokenId, ownerAddr); // update owners
 			await this.afterMetadataSet(tokenId); // run Observers
 			res.sendStatus(StatusNoContent); // send success without anything else
 		// TODO: Maybe implement this.cfg.allowUpdates handling
