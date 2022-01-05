@@ -1,92 +1,79 @@
-import { NFTMetadata } from "@polycrypt/erdstall/ledger/backend";
-
-/**
- * Interface of meta construct for JSON conversion
- */
-export interface BasicMeta {
-    name: string;
-    extensions : [string, string][]; // two dimensional array of extension name and value
-    toMetadata(): NFTMetadata;
-}
+import { Attribute, NFTMetadata } from "@polycrypt/erdstall/ledger/backend";
 
 
 /**
  * RawItemMeta aims to provide an upward compatible standard for item NFT Metadata.
- * A RawItemMeta object consists of an item name, and extensions. All values are in string format hence "raw". To parse values is task of a deriving class.
- * Extensions specify further attributes such as the color code or damage, image, animation, music, etc...
- * Using Extensions is optional and an item is supposed to be fully functionaly described without the use of any. Alternativly a default value fallback has to be provided.
+ * A RawItemMeta object consists of an item name, and attributes. All values are in string format hence "raw". To parse values is task of a deriving class.
+ * Attributes specify further stats such as the color code or damage, image, animation, music, etc...
+ * Using Attributes is optional and an item is supposed to be fully functionaly described without the use of any. Alternativly a default value fallback has to be provided.
  * (TODO: To be derived from a superclass to allow achievement metadata?)
  */
-export class RawItemMeta implements BasicMeta {
+export class RawItemMeta implements NFTMetadata {
 
-    public static EXTENSION_COLORCODE : string = "cc"; // example extension
+    public static ATTRIBUTE_COLORCODE : string = "cc"; // example attribute
+    public static ATTRIBUTE_NAME : string = "name";
 
     public static VERBOSE = true;
 
-
-    public name : string = "noname";
-    public extensions : [string, string][] = [];
-    protected readonly extensionsMapped = new Map();
-
+    public attributes : Attribute[] = [];
+    protected readonly attributesMapped = new Map();
 
     /**
      * Creates a raw item metadata object from a name and an extension map
-     * @param name item name
-     * @param extensions extension ids with values
+     * @param attributes attributes array
      */
-    constructor(name: string, extensions: [string, string][]) {
-        this.name = name;
-        this.extensions = extensions;
+    constructor( attributes: Attribute[]) {
+        this.attributes = attributes;
 
         // copy array content to hash map for easy and fast access
-        for (var ext of extensions) {
+        for (var attr of attributes) {
             // allow empty keys and values, disallow duplicates
-            if (this.extensionsMapped.has(ext[0])) {
+            if (this.attributesMapped.has(attr.trait_type)) {
                 if (RawItemMeta.VERBOSE)
-                    console.log("skipping duplicate meta key: " + ext[0]);
+                    console.log("skipping duplicate meta key: " + attr.trait_type);
                 continue;
             }
-            this.extensionsMapped.set(ext[0], ext[1]);
+            this.attributesMapped.set(attr.trait_type, attr.value);
         }
     }
 
 
     /**
-     * Adds an extension to the meta stack
-     * @param id extension id, see IDs as string constants in this class 
+     * Adds an attribute to the meta stack
+     * @param id attribute id, see IDs as string constants in this class 
      * @param value extension value
      */
-    public addExtension(id: string, value: string) {
+    public addAttribute(id: string, value: string) {
 
-        if (this.extensionsMapped.has(id)) {
+        if (this.attributesMapped.has(id)) { // attribute already contained. report if verbose enabled
             if (RawItemMeta.VERBOSE)
                 console.log("ignoring duplicate meta key: " + id);
             return;
         }
 
-        this.extensions.push([id, value]);
-        this.extensionsMapped.set(id, value);
+        this.attributes.push({trait_type: id, value: value});
+        this.attributesMapped.set(id, value);
     }
 
 
     /**
-     * Checks wether an extension with the specified ID is contained
-     * @param id extension id
+     * Checks wether an attribute with the specified ID is contained
+     * @param id attribute id
      * @returns true if contained, false if not
      */
-    public hasExtension(id: string) : boolean {
-        return this.extensionsMapped.has(id);
+    public hasAttribute(id: string) : boolean {
+        return this.attributesMapped.has(id);
     }
 
 
     /**
-     * Returns the extension value if extension with id is contained in metadata
-     * @param id extension id
-     * @returns string as extension value if contained, undefined if extension not present
+     * Returns the attribute value if attribute with id is contained in metadata
+     * @param id attribute id
+     * @returns string as attribute value if contained, undefined if attribute not present
      */
-    public getExtension(id: string) : string | undefined {
-        if (this.hasExtension(id))
-            return this.getExtension(id);
+    public getAttribute(id: string) : string | undefined {
+        if (this.hasAttribute(id))
+            return this.attributesMapped.get(id);
         return undefined;
     }
 
@@ -110,19 +97,6 @@ export class RawItemMeta implements BasicMeta {
 
 
     /**
-     * Converts raw meta object to erdstall NFT metadata
-     * @returns Erdstall NFTMetadata
-     */
-    public toMetadata(): NFTMetadata {	
-		return {
-			name: this.name,
-			description: this.getDescription() ,
-			image: this.getImage(),
-			attributes: undefined, // no attribute. No ownership, no confidentiality
-		};
-	}
-
-    /**
      * converts the metadata object to a saveable and parsable string (JSON) to be saved in the database or send to a peer.
      * isnt called toJSON not to cause stackoverflow
      * @returns metadata object as JSON
@@ -137,10 +111,19 @@ export class RawItemMeta implements BasicMeta {
      * @param json json string
      * @returns RawItemMeta object containing data from json object
      */
-    public static getMetaFromJSON(json: string): RawItemMeta {
-        // TODO: Format checking
-        BasicMeta: var metaLookup = <BasicMeta> JSON.parse(json);
-        RawItemMeta: var metaObject = new RawItemMeta(metaLookup.name, metaLookup.extensions);
+    public static getMetaFromJSON(json: string) : RawItemMeta {
+        var metaLookup : NFTMetadata = <NFTMetadata> JSON.parse(json);
+        var metaObject : RawItemMeta = this.getRawMetaFromNFTMetadata(metaLookup);
         return metaObject;
+    }
+
+
+    /**
+     * Parses a NFTMetadata object to a RawItemMeta object. Only attributes are copied! All other values vanish!
+     * @param nftmetadata 
+     * @returns 
+     */
+    public static getRawMetaFromNFTMetadata(nftmetadata : NFTMetadata) : RawItemMeta {
+        return new RawItemMeta(nftmetadata.attributes);
     }
 }
