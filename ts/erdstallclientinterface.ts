@@ -1,29 +1,15 @@
- 
+
 import { utils, ethers } from "ethers";
 
 import { Assets, Amount } from "@polycrypt/erdstall/ledger/assets";
 import { Address } from "@polycrypt/erdstall/ledger";
 import { ErdstallEvent, Session } from "@polycrypt/erdstall";
 import detectEthereumProvider from "@metamask/detect-provider";
+import config from './config/clientConfig.json';
 
 import NFT from "./nft"
 
 import * as test from "@polycrypt/erdstall/test";
-
-export type NetworkName =
-	| "Ropsten"
-	| "Rinkeby"
-	| "Goerli"
-	| "Kovan"
-	| "localhost";
-
-export const NetworkID = new Map<number, NetworkName>([
-	[3, "Ropsten"],
-	[4, "Rinkeby"],
-	[5, "Goerli"],
-	[42, "Kovan"],
-	[1337, "localhost"],
-]);
 
 export type eventCallback = (error: string | Error) => void;
 
@@ -31,13 +17,14 @@ export default class erdstallClientInterface {
 	_session: Session | undefined;
 
 	constructor() {
-		
+
 	}
 
 	// Initializes _session member and subscribes and onboards session to the erdstall system, returns wallet address as string
 	async init(
-		networkID: number = 1337,
-		erdOperatorUrl: URL = new URL("ws://127.0.0.1:8401/ws")): Promise<{account : String}> {
+		networkID: number = config.NetworkID,
+		erdOperatorUrl: URL = new URL("ws://" + config.erdOperatorUrl + "/ws")
+	): Promise<{ account: String }> {
 		// TODO: Load parameters from config
 		const res = await getAccountProvider(networkID);
 		if (!res) {
@@ -56,17 +43,17 @@ export default class erdstallClientInterface {
 			await session.subscribeSelf();
 			await session.onboard();
 		} catch (error) {
-			if(error) {
+			if (error) {
 				throw new Error("Error initializing metamask session" + error);
 			}
 			else {
 				throw new Error("Error initializing metamask session");
 			}
 		}
-	
+
 		this._session = session;
 		console.log("Initialized new session: " + account);
-		return {account};
+		return { account };
 	}
 
 	// Returns list of NFTs associated with user
@@ -75,7 +62,7 @@ export default class erdstallClientInterface {
 	> {
 		if (!this._session) return undefined;
 		let nfts: NFT[] = new Array[10];
-		for( let i = 0; i < 10; ++i) {
+		for (let i = 0; i < 10; ++i) {
 			const rng = test.newPrng();
 			let nft: NFT = new NFT(
 				test.newRandomAddress(rng), // Token
@@ -105,7 +92,7 @@ export default class erdstallClientInterface {
 		if (!this._session) return undefined;
 		const account = await this._session.getOwnAccount();
 		const balance = getPrnAmount(account.values);
-		if(balance) {
+		if (balance) {
 			return { balance };
 		} else {
 			return undefined;
@@ -145,7 +132,7 @@ async function getAccountProvider(
 
 	const netid = Number(ethereum.chainId);
 	if (netid !== networkId) {
-		const network = NetworkID.get(networkId);
+		const network = config.NetworkName;
 		const error = `Not connected to correct network, please connect to ${network}`;
 		alert(error);
 		return;
