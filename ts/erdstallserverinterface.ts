@@ -15,7 +15,7 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		erdOperatorUrl: URL = new URL("ws://" + config.erdOperatorUrl +"/ws")
 	): Promise<{ account: String }> {
 
-		// TODO: Load parameters from config
+		// parameters from json file config/clientConfig.json
 		const ethRpcUrl = "ws://"+ config.ethRpcUrl + "/";
 		const provider = new ethers.providers.JsonRpcProvider(ethRpcUrl);
 		if (provider == null) {

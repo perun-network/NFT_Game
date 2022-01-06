@@ -25,7 +25,7 @@ export default class erdstallClientInterface {
 		networkID: number = config.NetworkID,
 		erdOperatorUrl: URL = new URL("ws://" + config.erdOperatorUrl + "/ws")
 	): Promise<{ account: String }> {
-		// TODO: Load parameters from config
+		// parameters from json file config/serverConfig.json
 		const res = await getAccountProvider(networkID);
 		if (!res) {
 			throw new Error("Unable to get Account Provider for network ID " + networkID);
