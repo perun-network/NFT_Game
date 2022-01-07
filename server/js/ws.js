@@ -113,7 +113,6 @@ WS.WebsocketServer = Server.extend({
             var logger = require('morgan');
             app.use(logger('dev'));
 
-            this.metaServ.init();
             app.use("/metadata", this.metaServ.router());
 
             // Generate (on the fly) the pages needing special treatment
