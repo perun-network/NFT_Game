@@ -22,11 +22,11 @@ export class RawItemMeta implements NFTMetadata {
      * Creates a raw item metadata object from a name and an extension map
      * @param attributes attributes array
      */
-    constructor( attributes: Attribute[]) {
-        this.attributes = attributes;
+    constructor( attributes: Attribute[] | undefined) {
+        this.attributes = attributes ? attributes : [];
 
         // copy array content to hash map for easy and fast access
-        for (var attr of attributes) {
+        for (var attr of this.attributes) {
             // allow empty keys and values, disallow duplicates
             if (this.attributesMapped.has(attr.trait_type)) {
                 if (RawItemMeta.VERBOSE)

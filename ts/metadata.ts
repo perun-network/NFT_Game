@@ -2,22 +2,10 @@
 
 import express, { Request, Router, Response } from "express";
 import asyncHandler from "express-async-handler";
-
-//import { ErdstallClient } from "@polycrypt/erdstall";
-//import { TxReceipt } from "@polycrypt/erdstall/api/responses";
-//import {
-//	Burn,
-//	Mint,
-//	Trade,
-//	Transfer,
-//} from "@polycrypt/erdstall/api/transactions";
 import { Address } from "@polycrypt/erdstall/ledger";
-//import { mapNFTs } from "@polycrypt/erdstall/ledger/assets";
-//import { NFTMetadata } from "@polycrypt/erdstall/ledger/backend";
-//import { key as nftKey, parseKey } from "./nft";
-
 import { RawItemMeta } from "./itemmeta";
-import { key } from "./nft";
+import NFT, { key } from "./nft";
+import { NFTMetadata } from "@polycrypt/erdstall/ledger/backend";
 
 export const DB_PREFIX_METADATA = "md";
 
@@ -49,6 +37,7 @@ export default class NFTMetaServer {
 		this.cfg = {
 			allowUpdates: !!cfg.allowUpdates,
 			serveDummies: !!cfg.serveDummies,
+			allowEmptyMetadata: !!cfg.allowEmptyMetadata
 		};
 	}
 
@@ -123,8 +112,41 @@ export default class NFTMetaServer {
 		res.send(meta.asJSON()); // originaly sending without conversion
 	}
 
+
+	/**
+	 * Saves an NFTs metadata to the database
+	 * @param nft Nft containing owner, id and metadata
+	 * @returns true on success, false on failure
+	 */
+	public registerNFT(nft : NFT) : boolean {
+
+		// check if metadata set or absence permitted
+		if (!nft.metadata && !this.cfg.allowEmptyMetadata) {
+			this.log("registerNFT: NFT medata can not be saved bc no metadata for NFT present. Enable allowEmptyMetadata to circumvent");
+			return false; // return error
+		}
+
+		// gather values
+		const ownerAddr : Address = nft.owner;
+		const tokenId : bigint = nft.id;
+		const metadata : NFTMetadata = !nft.metadata ? new RawItemMeta([]) : nft.metadata; // init if empty
+
+		// save values to db
+		try {
+
+			this.databaseHandler.putNFTMetadata(key(ownerAddr, tokenId), metadata);
+			//await this.afterMetadataSet(ownerAddr, tokenId); // run Observers  commented out bc so far there are none
+			return true; // return success
+
+		} catch (error) { // Handle NFT already being present in database
+			return false; // return error
+		}
+	}
+
+
 	/**
 	 * Saves a new NFT with metadata to the DB
+	 * Deprecated, superceded by registerNft(). Remaining for legacy REST support and external compatibility.
 	 * @param req http request
 	 * @param res http response
 	 * @returns 
@@ -180,4 +202,6 @@ export interface MetadataConfig {
 	serveDummies?: boolean;
 	// Allow updating of NFT Metadate through multiple PUT requests (default: false)
 	allowUpdates?: boolean;
+	// Wether NFTs without metadata are to be registered and an empty Metadata object stored in the database (default: false)
+	allowEmptyMetadata?: boolean;
 }
