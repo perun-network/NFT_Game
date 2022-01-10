@@ -2,25 +2,27 @@ import { Address } from "@polycrypt/erdstall/ledger";
 import { Assets, Tokens } from "@polycrypt/erdstall/ledger/assets";
 import { Session } from "@polycrypt/erdstall";
 import NFT from "./nft";
-import erdstallClientInterface, { NetworkID } from "./erdstallclientinterface"
+import erdstallClientInterface from "./erdstallclientinterface"
 import { TxReceipt } from "@polycrypt/erdstall/api/responses";
 import { ethers } from "ethers";
+import config from './config/serverConfig.json';
 
 export default class erdstallServerInterface extends erdstallClientInterface {
-	
+
 	// Initializes _session member and subscribes and onboards session to the erdstall system, returns wallet address as string
 	async init(
-		networkID: number = 1337,
-		erdOperatorUrl: URL = new URL("ws://127.0.0.1:8401/ws")
-	): Promise<{account : String}> {
-		// TODO: Load parameters from config
-		const ethRpcUrl = "ws://127.0.0.1:8545/";
+		networkID: number = config.NetworkID,
+		erdOperatorUrl: URL = new URL("ws://" + config.erdOperatorUrl +"/ws")
+	): Promise<{ account: String }> {
+
+		// parameters from json file config/clientConfig.json
+		const ethRpcUrl = "ws://"+ config.ethRpcUrl + "/";
 		const provider = new ethers.providers.JsonRpcProvider(ethRpcUrl);
-		if(provider == null) {
+		if (provider == null) {
 			throw new Error("Unable to get Account Provider for Ethereum URL: " + ethRpcUrl);
 		}
 
-		const mnemonic = "pistol kiwi shrug future ozone ostrich match remove crucial oblige cream critic";
+		const mnemonic = config.mnemonic;
 		const derivationPath = `m/44'/60'/0'/0/2`;
 		const user = ethers.Wallet.fromMnemonic(mnemonic, derivationPath);
 
@@ -31,7 +33,7 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 			await session.subscribeSelf();
 			await session.onboard();
 		} catch (error) {
-			if(error) {
+			if (error) {
 				throw new Error("Error initializing server session" + error);
 			}
 			else {
@@ -41,34 +43,34 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 
 		this._session = session;
 		console.log("Initialized new server session: " + user.address);
-		return {account: user.address};
+		return { account: user.address };
 	}
 
 	// Mints a new NFT and returns TxReceipt promise
 	async mintNFT(
 		id: bigint = BigInt(Math.round(Math.random() * Number.MAX_SAFE_INTEGER))
-	): Promise<{txReceipt: TxReceipt}> {
-		if(!this._session) {
+	): Promise<{ txReceipt: TxReceipt }> {
+		if (!this._session) {
 			throw new Error("Server session uninitialized");
 		}
 		// TODO: Put NFT in database
 		var txReceipt = await this._session.mint(this._session.address, id);
 		console.log("Minted NFT with ID: " + id);
-		return{txReceipt};
+		return { txReceipt };
 	}
 
 	// Burns NFT and returns TxReceipt promise
 	async burnNFT(
 		nft: NFT
-	): Promise<{txReceipt: TxReceipt}> {
+	): Promise<{ txReceipt: TxReceipt }> {
 		// TODO: Remove NFT from database
-		if(!this._session) {
+		if (!this._session) {
 			throw new Error("Server session uninitialized");
 		}
 		try {
-			return{txReceipt: await this._session.burn(getAssetsFromNFT(nft))};
+			return { txReceipt: await this._session.burn(getAssetsFromNFT(nft)) };
 		} catch (error) {
-			if(error) {
+			if (error) {
 				throw new Error("Server unable to burn NFT" + error);
 			} else {
 				throw new Error("Server unable to burn NFT");
@@ -80,14 +82,14 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 	async transferTo(
 		nft: NFT,
 		to: Address
-	) : Promise<{txReceipt: TxReceipt}> {
-		if(!this._session) {
+	): Promise<{ txReceipt: TxReceipt }> {
+		if (!this._session) {
 			throw new Error("Server session uninitialized");
 		}
 		try {
-			return{txReceipt: await this._session.transferTo(getAssetsFromNFT(nft), to)};
+			return { txReceipt: await this._session.transferTo(getAssetsFromNFT(nft), to) };
 		} catch (error) {
-			if(error) {
+			if (error) {
 				throw new Error("Server unable to transfer NFT" + error);
 			} else {
 				throw new Error("Server unable to transfer NFT");

@@ -1,5 +1,6 @@
 {
   "name": "BrowserQuest",
+  "type": "commonjs",
   "repository": {
     "type": "git",
     "url": "https://github.com/browserquest/BrowserQuest.git"
