@@ -90,13 +90,17 @@ WS.WebsocketServer = Server.extend({
     _connections: {},
     _counter: 0,
 
-    init: function (port, useOnePort, ip, metadataServer) {
+    init: function (port, useOnePort, ip) {
         var self = this;
 
         this._super(port);
         this.ip = ip;
         
-        this.metaServ = metadataServer;
+        this.metaServ = require("../../ts/metadata").nftMetaServer;
+        if(this.metaServ == undefined)
+        {
+            throw new Error("nftMetadataServer Object must be initiliazed before running websocket server");
+        }
 
         // Are we doing both client and server on one port?
         if (useOnePort === true) {

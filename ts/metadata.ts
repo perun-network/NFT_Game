@@ -21,15 +21,15 @@ export const tokenIdPath = "/:token(" + addrRE + ")/:id(\\d+)";
  */
 export default class NFTMetaServer {
 
-	readonly cfg: MetadataConfig;
-	protected readonly databaseHandler: any;
+	cfg: MetadataConfig | undefined;
+	protected databaseHandler: any;
 
 	/**
 	 * Creates a new Metadata server instance
 	 * @param databaseHandler main database connector
 	 * @param cfg metadata config
 	 */
-	constructor(databaseHandler: any, cfg?: MetadataConfig) {
+	init(databaseHandler: any, cfg?: MetadataConfig) {
 
 		this.databaseHandler = databaseHandler;
 
@@ -39,6 +39,8 @@ export default class NFTMetaServer {
 			serveDummies: !!cfg.serveDummies,
 			allowEmptyMetadata: !!cfg.allowEmptyMetadata
 		};
+
+		this.log("Object Initialized");
 	}
 
 	protected log(msg: string): void {
@@ -68,12 +70,12 @@ export default class NFTMetaServer {
 
 		try {
 			const meta = this.databaseHandler.getNFTMetadata(key(contractAddr, tokenId));
-			if((meta == undefined) && this.cfg.serveDummies) {
+			if((meta == undefined) && this.cfg!.serveDummies) {
 				return this.dummyMetadata();
 			}
 			return RawItemMeta.getMetaFromJSON(meta);
 		} catch (error) {
-			if(this.cfg.serveDummies) {
+			if(this.cfg!.serveDummies) {
 				return this.dummyMetadata();
 			}
 			return undefined;
@@ -121,7 +123,7 @@ export default class NFTMetaServer {
 	public registerNFT(nft : NFT) : boolean {
 
 		// check if metadata set or absence permitted
-		if (!nft.metadata && !this.cfg.allowEmptyMetadata) {
+		if (!nft.metadata && !this.cfg!.allowEmptyMetadata) {
 			this.log("registerNFT: NFT medata can not be saved bc no metadata for NFT present. Enable allowEmptyMetadata to circumvent");
 			return false; // return error
 		}
@@ -137,7 +139,6 @@ export default class NFTMetaServer {
 			this.databaseHandler.putNFTMetadata(key(contractAddr, tokenId), metadata);
 			//await this.afterMetadataSet(contractAddr, tokenId); // run Observers  commented out bc so far there are none
 			return true; // return success
-
 		} catch (error) { // Handle NFT already being present in database
 			return false; // return error
 		}
@@ -196,6 +197,8 @@ export default class NFTMetaServer {
 	}
 
 }
+
+export var nftMetaServer = new NFTMetaServer();
 
 export interface MetadataConfig {
 	// Always serve dummy metadata if a token is unknown (default: false)
