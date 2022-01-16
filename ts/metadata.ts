@@ -60,14 +60,14 @@ export default class NFTMetaServer {
 
 	/**
 	 * Looks up Metadata for token with given address and id
-	 * @param ownerAddr address of NFT owner (aka "token")
+	 * @param contractAddr address of smart contract (aka "token")
 	 * @param tokenId 256bit integer ID of NFT
 	 * @returns metadata
 	 */
-	getMetadata(ownerAddr : Address, tokenId: bigint): RawItemMeta | undefined {
+	getMetadata(contractAddr : Address, tokenId: bigint): RawItemMeta | undefined {
 
 		try {
-			const meta = this.databaseHandler.getNFTMetadata(key(ownerAddr, tokenId));
+			const meta = this.databaseHandler.getNFTMetadata(key(contractAddr, tokenId));
 			if((meta == undefined) && this.cfg.serveDummies) {
 				return this.dummyMetadata();
 			}
@@ -127,15 +127,15 @@ export default class NFTMetaServer {
 		}
 
 		// gather values
-		const ownerAddr : Address = nft.owner;
+		const contractAddr : Address = nft.token;
 		const tokenId : bigint = nft.id;
 		const metadata : NFTMetadata = !nft.metadata ? new RawItemMeta([]) : nft.metadata; // init if empty
 
 		// save values to db
 		try {
 
-			this.databaseHandler.putNFTMetadata(key(ownerAddr, tokenId), metadata);
-			//await this.afterMetadataSet(ownerAddr, tokenId); // run Observers  commented out bc so far there are none
+			this.databaseHandler.putNFTMetadata(key(contractAddr, tokenId), metadata);
+			//await this.afterMetadataSet(contractAddr, tokenId); // run Observers  commented out bc so far there are none
 			return true; // return success
 
 		} catch (error) { // Handle NFT already being present in database
@@ -154,12 +154,12 @@ export default class NFTMetaServer {
 	private async putNft(req: Request, res: Response) {
 
 		// params is part of the request f.e. http://yadayada.de/yomama?token=0x69696969696969420...
-		const ownerAddr : Address = Address.fromString(req.params.token); // parse Address params field in http request
+		const contractAddr : Address = Address.fromString(req.params.token); // parse Address params field in http request
 		const tokenId : bigint = BigInt(req.params.id); // parse Token identifier (assumed globaly unique) in http request
 
 		try {
-			this.databaseHandler.putNFTMetadata(key(ownerAddr, tokenId), req.body);
-			await this.afterMetadataSet(ownerAddr, tokenId); // run Observers
+			this.databaseHandler.putNFTMetadata(key(contractAddr, tokenId), req.body);
+			await this.afterMetadataSet(contractAddr, tokenId); // run Observers
 			res.sendStatus(StatusNoContent); // send success without anything else
 		// TODO: Maybe implement this.cfg.allowUpdates handling
 		} catch (error) { // Handle NFT already being present in database
@@ -168,7 +168,7 @@ export default class NFTMetaServer {
 	}
 
 	// can be overridden in derived classes
-	protected async afterMetadataSet(ownerAddr : Address, tokenId: bigint): Promise<void> {
+	protected async afterMetadataSet(contractAddr : Address, tokenId: bigint): Promise<void> {
 		return;
 	}
 
@@ -180,11 +180,11 @@ export default class NFTMetaServer {
 	private async deleteNft(req: Request, res: Response) {
 
 		// params is part of the request f.e. http://yadayada.de/yomama?token=0x69696969696969420...
-		const ownerAddr : Address = Address.fromString(req.params.token); // parse Address params field in http request
+		const contractAddr : Address = Address.fromString(req.params.token); // parse Address params field in http request
 		const tokenId : bigint = BigInt(req.params.id); // parse Token identifier (assumed globaly unique) in http request
 
 		try {
-			await this.databaseHandler.deleteNFTMetadata(key(ownerAddr, tokenId));
+			await this.databaseHandler.deleteNFTMetadata(key(contractAddr, tokenId));
 			res.sendStatus(StatusNoContent); // (assuming) success, send nothing
 		} catch (error) {
 			if(error == ("NFT Metadata not in database for NFT: " + tokenId)) {
