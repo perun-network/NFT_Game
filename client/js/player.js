@@ -22,6 +22,10 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
             this.armorName = "clotharmor";
             this.weaponName = "sword1";
 
+            // NFT attributes
+            this.weaponNftData = undefined; // undefined = no NFT present
+            this.armorNftData = undefined;
+
             // modes
             this.isLootMoving = false;
             this.isSwitchingWeapon = true;
@@ -95,7 +99,9 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
 
                 if(rank && currentRank) {
                     if(rank === currentRank) {
-                        throw new Exceptions.LootException("You already have this "+item.type);
+                        
+                        // Disabled so that NFTs can be picked up after each other
+                        //throw new Exceptions.LootException("You already have this "+item.type);
                     } else if(rank <= currentRank) {
                         throw new Exceptions.LootException(msg);
                     }
@@ -148,6 +154,22 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
             this.weaponName = name;
         },
 
+        getWeaponNftData: function() {
+            return this.weaponNftData;
+        },
+        
+        setWeaponNftData: function(data) {
+            this.weaponNftData = data;
+        },
+
+        getArmorNftData: function() {
+            return this.armorNftData;
+        },
+        
+        setArmorNftData: function(data) {
+            this.armorNftData = data;
+        },
+
         hasWeapon: function() {
             return this.weaponName !== null;
         },
@@ -178,7 +200,7 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
               this.switch_callback();
             }
         },
-        switchWeapon: function(newWeaponName) {
+        switchWeapon: function(newWeaponName, nftData=undefined) {
             var count = 14,
                 value = false,
                 self = this;
@@ -188,7 +210,7 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
                 return value;
             };
 
-            if(newWeaponName !== this.getWeaponName()) {
+            if(newWeaponName !== this.getWeaponName() || nftData != undefined) {
                 if(this.isSwitchingWeapon) {
                     clearInterval(blanking);
                 }
@@ -197,6 +219,9 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
                 var blanking = setInterval(function() {
                     if(toggle()) {
                         self.setWeaponName(newWeaponName);
+                        if (nftData != undefined) {
+                            self.setWeaponNftData(nftData);
+                        }
                     } else {
                         self.setWeaponName(null);
                     }
@@ -214,7 +239,7 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
             }
         },
 
-        switchArmor: function(newArmorSprite) {
+        switchArmor: function(newArmorSprite, nftData=undefined) {
             var count = 14,
                 value = false,
                 self = this;
@@ -224,7 +249,7 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
                 return value;
             };
 
-            if(newArmorSprite && newArmorSprite.id !== this.getSpriteName()) {
+            if(newArmorSprite && newArmorSprite.id !== this.getSpriteName() || nftData != undefined) {
                 if(this.isSwitchingArmor) {
                     clearInterval(blanking);
                 }
@@ -232,6 +257,9 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
                 this.isSwitchingArmor = true;
                 self.setSprite(newArmorSprite);
                 self.setSpriteName(newArmorSprite.id);
+                if (nftData != undefined) {
+                    self.setArmorNftData(nftData);
+                }
                 var blanking = setInterval(function() {
                     self.setVisible(toggle());
 

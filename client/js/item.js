@@ -2,12 +2,13 @@
 define(['entity'], function(Entity) {
 
     var Item = Entity.extend({
-        init: function(id, kind, type) {
+        init: function(id, kind, type, nftData=undefined) {
             this._super(id, kind);
 
             this.itemKind = Types.getKindAsString(kind);
             this.type = type;
             this.wasDropped = false;
+            this.nftData = nftData;
         },
 
         hasShadow: function() {

@@ -45,6 +45,13 @@ define(['item'], function(Item) {
             },
         }),
 
+        NftWeapon: Item.extend({
+            init: function(id, nftData) {
+                this._super(id, Types.Entities.NFTWEAPON, "weapon", nftData=nftData);
+                this.lootMessage = "You pick up a unique weapon";
+            },
+        }),
+
         LeatherArmor: Item.extend({
             init: function(id) {
                 this._super(id, Types.Entities.LEATHERARMOR, "armor");
@@ -77,6 +84,13 @@ define(['item'], function(Item) {
             init: function(id) {
                 this._super(id, Types.Entities.GOLDENARMOR, "armor");
                 this.lootMessage = "You equip a golden armor";
+            },
+        }),
+
+        NftArmor: Item.extend({
+            init: function(id, nftData) {
+                this._super(id, Types.Entities.NFTARMOR, "armor", nftData=nftData);
+                this.lootMessage = "You equip a unique armor";
             },
         }),
 

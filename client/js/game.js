@@ -167,7 +167,9 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             var self = this;
 
             Types.forEachArmorKind(function(kind, kindName) {
-                self.sprites[kindName].createHurtSprite();
+                if (!Types.isNFT(kind)) { // exclude NFT items from sprite initialization, TODO: create compatible renderer
+                    self.sprites[kindName].createHurtSprite();
+                }
             });
         },
 
