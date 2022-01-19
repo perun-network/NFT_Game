@@ -32,7 +32,8 @@ describe("getMetadata", async function () {
     var selector = await DatabaseSelector(config);
     var databaseHandler = await new selector(config);
 
-    let metaserver = new NFTMetaServer(databaseHandler); 
+    let metaserver = new NFTMetaServer(); 
+    metaserver.init(databaseHandler);
 
     let metadata0 = new RawItemMeta([]);
     metadata0.addAttribute(RawItemMeta.ATTRIBUTE_NAME, "test1");

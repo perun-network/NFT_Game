@@ -21,11 +21,18 @@ export const tokenIdPath = "/:token(" + addrRE + ")/:id(\\d+)";
  */
 export default class NFTMetaServer {
 
-	cfg: MetadataConfig | undefined;
+	cfg: MetadataConfig;
 	protected databaseHandler: any;
 
 	/**
 	 * Creates a new Metadata server instance
+	 */
+	constructor() {
+		this.cfg = {};
+	}
+
+	/**
+	 * Initializes the Metadata server instance
 	 * @param databaseHandler main database connector
 	 * @param cfg metadata config
 	 */
