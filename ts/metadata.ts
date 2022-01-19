@@ -73,10 +73,9 @@ export default class NFTMetaServer {
 	 * @param tokenId 256bit integer ID of NFT
 	 * @returns metadata
 	 */
-	getMetadata(contractAddr : Address, tokenId: bigint): RawItemMeta | undefined {
-
+	async getMetadata(contractAddr : Address, tokenId: bigint): Promise<RawItemMeta | undefined> {
 		try {
-			const meta = this.databaseHandler.getNFTMetadata(key(contractAddr, tokenId));
+			const meta = await this.databaseHandler.getNFTMetadata(key(contractAddr, tokenId));
 			if((meta == undefined) && this.cfg!.serveDummies) {
 				return this.dummyMetadata();
 			}
@@ -111,7 +110,7 @@ export default class NFTMetaServer {
 		const tokenId : bigint = BigInt(req.params.id); // parse Token identifier (assumed globaly unique) in http request
 		// assume token id's to be unique systemwide and treat them as primary key
 		// TODO: Fix uncaught exception somehow (simple try catch doesn't work for whatever reason)
-		const meta : RawItemMeta | undefined = this.getMetadata(ownerAddr, tokenId); // lookup meta data
+		const meta : RawItemMeta | undefined = await this.getMetadata(ownerAddr, tokenId); // lookup meta data
 		if (!meta) {
 			// send 404
 			res.status(StatusNotFound).send("No Metadata present.");
@@ -127,7 +126,7 @@ export default class NFTMetaServer {
 	 * @param nft Nft containing owner, id and metadata
 	 * @returns true on success, false on failure
 	 */
-	public registerNFT(nft : NFT) : boolean {
+	public async registerNFT(nft : NFT) : Promise<boolean> {
 
 		// check if metadata set or absence permitted
 		if (!nft.metadata && !this.cfg!.allowEmptyMetadata) {
@@ -138,12 +137,11 @@ export default class NFTMetaServer {
 		// gather values
 		const contractAddr : Address = nft.token;
 		const tokenId : bigint = nft.id;
-		const metadata : NFTMetadata = !nft.metadata ? new RawItemMeta([]) : nft.metadata; // init if empty
+		const metadata : RawItemMeta = !nft.metadata ? new RawItemMeta([]) : RawItemMeta.getRawMetaFromNFTMetadata(nft.metadata); // init if empty
 
 		// save values to db
 		try {
-
-			this.databaseHandler.putNFTMetadata(key(contractAddr, tokenId), metadata);
+			await this.databaseHandler.putNFTMetadata(key(contractAddr, tokenId), metadata.asJSON());
 			//await this.afterMetadataSet(contractAddr, tokenId); // run Observers  commented out bc so far there are none
 			return true; // return success
 		} catch (error) { // Handle NFT already being present in database
@@ -166,7 +164,7 @@ export default class NFTMetaServer {
 		const tokenId : bigint = BigInt(req.params.id); // parse Token identifier (assumed globaly unique) in http request
 
 		try {
-			this.databaseHandler.putNFTMetadata(key(contractAddr, tokenId), req.body);
+			await this.databaseHandler.putNFTMetadata(key(contractAddr, tokenId), req.body);
 			await this.afterMetadataSet(contractAddr, tokenId); // run Observers
 			res.sendStatus(StatusNoContent); // send success without anything else
 		// TODO: Maybe implement this.cfg.allowUpdates handling
