@@ -5,7 +5,7 @@ import NFT, { key } from "./nft";
 import {RawItemMeta} from "./itemmeta";
 
 
-// BROKEN AS FUCK, dont use. I dont get how tests work....... 
+// Non-Functional for now
 
 describe("getMetadata", async function () {
 
