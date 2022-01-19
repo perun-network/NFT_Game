@@ -592,5 +592,88 @@ module.exports = DatabaseHandler = cls.Class.extend({
           }
         });
       }
+    },
+
+    getAllMetadata: function(){
+      log.info("Getting all NFT Metadata");
+      var allMetadata = new Array();
+      // Get all NFTs stored in database
+      client.smembers('nft', function(err, replies){
+        // Iterate over all NFTs stored in database
+        for(var index = 0; index < replies.length; index++){
+          const nftKey = replies[index].toString();
+          // Get metadata for NFT
+          client.multi()
+            .hget(nftKey, 'metadata')
+            .exec(function(err, replies){
+              var metadata = replies[0];
+              if(metadata == null || err) {
+                var error = "NFT Metadata for " + nftKey + " could not be loaded from database: " + err;
+                log.error(error);
+                // throw new Error(error);
+              }
+              allMetadata.push(metadata);
+            });
+        }
+      });
+      return allMetadata;
+    },
+
+    getNFTMetadata: function(nftKey){
+      log.info("Getting NFT Metadata: " + nftKey);
+      client.multi()
+        .hget(nftKey, 'metadata')
+        .exec(function(err, replies){
+          var metadata = replies[0];
+          if(metadata == null || err) {
+            var error = "NFT Metadata for " + nftKey + " could not be loaded from database: " + err;
+            log.error(error);
+            throw new Error(error);
+          }
+          return metadata;
+        });
+    },
+
+    putNFTMetadata: function(nftKey, metadata){
+      log.info("Putting NFT Metadata: " + nftKey);
+      // Check if NFT is already stored
+      client.sismember('nft', nftKey, function(err, reply) {
+        if(reply === 1) {
+          var error = "NFT Metadata already in database: " + nftKey;
+          log.error(error);
+          throw new Error(error);
+        } else {
+          // Add the NFT
+          client.multi()
+            .sadd('nft', nftKey)
+            .hset(nftKey, 'metadata', metadata)
+            .exec(function(err, replies){
+              log.info("New NFT: " + nftKey + " {" + metadata + "}");
+            });
+        }
+      });
+    },
+
+    deleteNFTMetadata: function(nftKey){
+      log.info("Deleting NFT Metadata: " + nftKey);
+      // Check if NFT is stored
+      client.sismember('nft', nftKey, function(err, reply) {
+        if(!(reply === 1)) {
+          var error = "NFT Metadata not in database for NFT: " + nftKey;
+          log.error(error);
+          throw new Error(error);
+        }
+        client.multi()
+          .hdel(nftKey, 'metadata')
+          .srem('nft', nftKey)
+          .exec(function(err, replies){
+            if((replies[0] == 1) && (replies[1] == 1) || err) {
+              var error = "Could not delete all keys for NFT: " + nftKey + ": " + err;
+              log.error(error);
+              throw new Error(error);
+            }
+            log.info("Deleted NFT: " + nftKey);
+          });
+      });
     }
 });

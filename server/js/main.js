@@ -2,6 +2,8 @@ var fs = require('fs');
 var Metrics = require('./metrics');
 var ProductionConfig = require('./productionconfig');
 var _ = require('underscore');
+var erdstallServer = require("../../ts/erdstallserverinterface").erdstallServer;
+var nftMetaServer = require("../../ts/metadata").nftMetaServer;
 
 function main(config) {
     var Log = require('log');
@@ -23,9 +25,7 @@ function main(config) {
     var erdstallServer = require("../../ts/erdstallserverinterface").erdstallServer;
     erdstallServer.init();
 
-    var ws = require("./ws");
     var WorldServer = require("./worldserver");
-    var server = new ws.WebsocketServer(config.port, config.use_one_port, config.ip);
     var metrics = config.metrics_enabled ? new Metrics(config) : null;
     var worlds = [];
     var lastTotalPlayers = 0;
@@ -47,6 +47,11 @@ function main(config) {
     log.info("Starting BrowserQuest game server...");
     var selector = DatabaseSelector(config);
     databaseHandler = new selector(config);
+
+    nftMetaServer.init(databaseHandler);
+
+    var ws = require("./ws");
+    var server = new ws.WebsocketServer(config.port, config.use_one_port, config.ip);
 
     server.onConnect(function(connection) {
         var world; // the one in which the player will be spawned

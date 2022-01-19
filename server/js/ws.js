@@ -95,14 +95,19 @@ WS.WebsocketServer = Server.extend({
 
         this._super(port);
         this.ip = ip;
+        
+        this.metaServ = require("../../ts/metadata").nftMetaServer;
+        if(this.metaServ == undefined)
+        {
+            throw new Error("nftMetadataServer Object must be initiliazed before running websocket server");
+        }
 
         // Are we doing both client and server on one port?
         if (useOnePort === true) {
             // Yes, we are; this is the default configuration option.
 
-            // Use 'connect' for its static module
-            var connect = require('connect');
-            var app = connect();
+            var express = require('express');
+            var app = express();
 
             // Serve everything in the client subdirectory statically
             var serveStatic = require('serve-static');
@@ -111,6 +116,8 @@ WS.WebsocketServer = Server.extend({
             // Display errors (such as 404's) in the server log
             var logger = require('morgan');
             app.use(logger('dev'));
+
+            app.use("/metadata", this.metaServ.router());
 
             // Generate (on the fly) the pages needing special treatment
             app.use(function handleDynamicPageRequests(request, response) {

@@ -7,9 +7,13 @@
   },
   "version": "0.0.1",
   "dependencies": {
+    "@metamask/detect-provider": "^1.2.0",
+    "@polycrypt/erdstall": "0.1.3",
     "bcrypt": ">=0",
     "bison": "~1.1.1",
-    "connect": "~3.3.3",
+    "ethers": "^5.4.2",
+    "express": "4.17.2",
+    "express-async-handler": "1.2.0",
     "log": "~1.4.0",
     "memcache": "~0.3.0",
     "morgan": "^1.5.0",
@@ -19,24 +23,24 @@
     "semver": ">=0",
     "serve-static": "^1.7.1",
     "socket.io": "^1.3.2",
-    "underscore": "~1.7.0",
-		"@metamask/detect-provider": "^1.2.0",
-    "ethers": "^5.4.2",
-		"typescript": "^4.1.2",
-	  "@polycrypt/erdstall": "0.1.3"
+    "typescript": "^4.1.2",
+    "underscore": "~1.7.0"
   },
   "devDependencies": {
+    "@types/jest": "^27.4.0",
     "browserify": ">=10.0.0",
+    "jest": "^27.4.7",
     "mocha": ">=1",
     "should": ">=1",
-    "sinon": ">=1"
+    "sinon": ">=1",
+    "ts-jest": "^27.1.3"
   },
   "scripts": {
     "start": "node ./server/js/main.js",
     "build": "./node_modules/typescript/bin/tsc",
     "bundle": "./node_modules/browserify/bin/cmd.js ./ts/erdstallclientinterface.js --standalone erdstallClientBundle > ./shared/js/erdstallclientinterfacebundle.js",
     "postinstall": "npm run build && npm run bundle",
-    "test": "make test"
+    "test": "jest"
   },
   "engines": {
     "node": "0.10.x",
