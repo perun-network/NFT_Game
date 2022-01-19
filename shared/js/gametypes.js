@@ -80,6 +80,8 @@ Types = {
         PLATEARMOR: 24,
         REDARMOR: 25,
         GOLDENARMOR: 26,
+        // NFT Weapon kind, meta payload carrys further information
+        NFTARMOR: 27,
 
         // Objects
         FLASK: 35,
@@ -113,7 +115,9 @@ Types = {
         GOLDENSWORD: 63,
         MORNINGSTAR: 64,
         AXE: 65,
-        BLUESWORD: 66
+        BLUESWORD: 66,
+        // NFT Weapon kind, meta payload carrys further information
+        NFTWEAPON: 67
     },
 
     Orientations: {
@@ -169,6 +173,7 @@ var kinds = {
     bluesword: [Types.Entities.BLUESWORD, "weapon"],
     goldensword: [Types.Entities.GOLDENSWORD, "weapon"],
     morningstar: [Types.Entities.MORNINGSTAR, "weapon"],
+    nftsword: [Types.Entities.NFTWEAPON, "weapon"],
 
     firefox: [Types.Entities.FIREFOX, "armor"],
     clotharmor: [Types.Entities.CLOTHARMOR, "armor"],
@@ -177,6 +182,7 @@ var kinds = {
     platearmor: [Types.Entities.PLATEARMOR, "armor"],
     redarmor: [Types.Entities.REDARMOR, "armor"],
     goldenarmor: [Types.Entities.GOLDENARMOR, "armor"],
+    nftarmor: [Types.Entities.NFTARMOR, "armor"],
 
     flask: [Types.Entities.FLASK, "object"],
     cake: [Types.Entities.CAKE, "object"],
@@ -220,7 +226,8 @@ Types.rankedWeapons = [
     Types.Entities.MORNINGSTAR,
     Types.Entities.BLUESWORD,
     Types.Entities.REDSWORD,
-    Types.Entities.GOLDENSWORD
+    Types.Entities.GOLDENSWORD,
+    Types.Entities.NFTWEAPON // treat NFT item as most valueable TODO: disable ranking mechanic?
 ];
 
 Types.rankedArmors = [
@@ -229,7 +236,8 @@ Types.rankedArmors = [
     Types.Entities.MAILARMOR,
     Types.Entities.PLATEARMOR,
     Types.Entities.REDARMOR,
-    Types.Entities.GOLDENARMOR
+    Types.Entities.GOLDENARMOR,
+    Types.Entities.NFTARMOR // treat NFT item as most valueable TODO: disable ranking mechanic?
 ];
 
 Types.expForLevel = [
@@ -353,6 +361,16 @@ Types.isExpendableItem = function(kind) {
         || kind === Types.Entities.CAKE;
 };
 
+/**
+ * Checks if kind matching NFT weapon or armor
+ * @param {*} kind item
+ * @returns if NFT weapon or armor
+ */
+Types.isNFT = function(kind) {
+    return kind === Types.Entities.NFTWEAPON
+        || kind === Types.Entities.NFTARMOR;
+};
+
 Types.getKindFromString = function(kind) {
     if(kind in kinds) {
         return kinds[kind][0];
@@ -415,7 +433,8 @@ Types.getOrientationAsString = function(orientation) {
 
 Types.getRandomItemKind = function(item) {
     var all = _.union(this.rankedWeapons, this.rankedArmors),
-        forbidden = [Types.Entities.SWORD1, Types.Entities.CLOTHARMOR],
+        // excluse starter and nft items from random pool
+        forbidden = [Types.Entities.SWORD1, Types.Entities.CLOTHARMOR, Types.Entities.NFTWEAPON, Types.Entities.NFTARMOR],
         itemKinds = _.difference(all, forbidden),
         i = Math.floor(Math.random() * _.size(itemKinds));
 
