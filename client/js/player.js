@@ -24,7 +24,6 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
 
             // NFT attributes
             this.weaponNftData = undefined; // undefined = no NFT present
-            this.armorNftData = undefined;
 
             // modes
             this.isLootMoving = false;
@@ -162,14 +161,6 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
             this.weaponNftData = data;
         },
 
-        getArmorNftData: function() {
-            return this.armorNftData;
-        },
-        
-        setArmorNftData: function(data) {
-            this.armorNftData = data;
-        },
-
         hasWeapon: function() {
             return this.weaponName !== null;
         },
@@ -239,7 +230,7 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
             }
         },
 
-        switchArmor: function(newArmorSprite, nftData=undefined) {
+        switchArmor: function(newArmorSprite) {
             var count = 14,
                 value = false,
                 self = this;
@@ -249,17 +240,13 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
                 return value;
             };
 
-            if(newArmorSprite && newArmorSprite.id !== this.getSpriteName() || nftData != undefined) {
+            if(newArmorSprite && newArmorSprite.id !== this.getSpriteName()) {
                 if(this.isSwitchingArmor) {
                     clearInterval(blanking);
                 }
 
                 this.isSwitchingArmor = true;
                 self.setSprite(newArmorSprite);
-                self.setSpriteName(newArmorSprite.id);
-                if (nftData != undefined) {
-                    self.setArmorNftData(nftData);
-                }
                 var blanking = setInterval(function() {
                     self.setVisible(toggle());
 

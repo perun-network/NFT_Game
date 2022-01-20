@@ -80,8 +80,6 @@ Types = {
         PLATEARMOR: 24,
         REDARMOR: 25,
         GOLDENARMOR: 26,
-        // NFT Weapon kind, meta payload carrys further information
-        NFTARMOR: 27,
 
         // Objects
         FLASK: 35,
@@ -182,7 +180,6 @@ var kinds = {
     platearmor: [Types.Entities.PLATEARMOR, "armor"],
     redarmor: [Types.Entities.REDARMOR, "armor"],
     goldenarmor: [Types.Entities.GOLDENARMOR, "armor"],
-    nftarmor: [Types.Entities.NFTARMOR, "armor"],
 
     flask: [Types.Entities.FLASK, "object"],
     cake: [Types.Entities.CAKE, "object"],
@@ -236,8 +233,7 @@ Types.rankedArmors = [
     Types.Entities.MAILARMOR,
     Types.Entities.PLATEARMOR,
     Types.Entities.REDARMOR,
-    Types.Entities.GOLDENARMOR,
-    Types.Entities.NFTARMOR // treat NFT item as most valueable TODO: disable ranking mechanic?
+    Types.Entities.GOLDENARMOR
 ];
 
 Types.expForLevel = [
@@ -362,13 +358,12 @@ Types.isExpendableItem = function(kind) {
 };
 
 /**
- * Checks if kind matching NFT weapon or armor
+ * Checks if kind matching NFT weapon
  * @param {*} kind item
- * @returns if NFT weapon or armor
+ * @returns if NFT weapon
  */
 Types.isNFT = function(kind) {
-    return kind === Types.Entities.NFTWEAPON
-        || kind === Types.Entities.NFTARMOR;
+    return kind === Types.Entities.NFTWEAPON;
 };
 
 Types.getKindFromString = function(kind) {
@@ -434,7 +429,7 @@ Types.getOrientationAsString = function(orientation) {
 Types.getRandomItemKind = function(item) {
     var all = _.union(this.rankedWeapons, this.rankedArmors),
         // excluse starter and nft items from random pool
-        forbidden = [Types.Entities.SWORD1, Types.Entities.CLOTHARMOR, Types.Entities.NFTWEAPON, Types.Entities.NFTARMOR],
+        forbidden = [Types.Entities.SWORD1, Types.Entities.CLOTHARMOR, Types.Entities.NFTWEAPON],
         itemKinds = _.difference(all, forbidden),
         i = Math.floor(Math.random() * _.size(itemKinds));
 
