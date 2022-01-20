@@ -22,9 +22,6 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
             this.armorName = "clotharmor";
             this.weaponName = "sword1";
 
-            // NFT attributes
-            this.weaponNftData = undefined; // undefined = no NFT present
-
             // modes
             this.isLootMoving = false;
             this.isSwitchingWeapon = true;
@@ -153,14 +150,6 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
             this.weaponName = name;
         },
 
-        getWeaponNftData: function() {
-            return this.weaponNftData;
-        },
-        
-        setWeaponNftData: function(data) {
-            this.weaponNftData = data;
-            console.log("DEBUG: Weapon NFT Data set: " + data);
-        },
 
         hasWeapon: function() {
             return this.weaponName !== null;
@@ -202,7 +191,7 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
                 return value;
             };
 
-            if(newWeaponName !== this.getWeaponName() || nftData != undefined) {
+            if(newWeaponName !== this.getWeaponName() || nftData) { // always switch if NFT data present
                 if(this.isSwitchingWeapon) {
                     clearInterval(blanking);
                 }
@@ -211,11 +200,10 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
                 var blanking = setInterval(function() {
                     if(toggle()) {
                         self.setWeaponName(newWeaponName);
-                        if (nftData != undefined) {
-                            self.setWeaponNftData(nftData);
-                        }
+                        self.setNftData(nftData);
                     } else {
                         self.setWeaponName(null);
+                        self.setNftData(undefined); // clear nft data bc no weapon present
                     }
 
                     count -= 1;

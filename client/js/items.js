@@ -45,7 +45,7 @@ define(['item'], function(Item) {
             },
         }),
 
-        NftWeapon: Item.extend({
+        NftWeapon: Item.extend({ // placeholder for any nft item. Stats will be changed by nftData payload
             init: function(id, nftData) {
                 this._super(id, Types.Entities.NFTWEAPON, "weapon", nftData=nftData);
                 this.lootMessage = "You pick up a unique weapon";

@@ -17,7 +17,7 @@ define(['entity'], function(Entity) {
 
         onLoot: function(player) {
             if(this.type === "weapon") {
-                player.switchWeapon(this.itemKind);
+                player.switchWeapon(this.itemKind, nftData=this.nftData); // set weapon and pass nft data to player entity
             }
             else if(this.type === "armor") {
                 player.armorloot_callback(this.itemKind);

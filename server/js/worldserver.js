@@ -505,6 +505,7 @@ module.exports = World = cls.Class.extend({
         if(kind === Types.Entities.CHEST) {
             item = new Chest(id, x, y);
         } else {
+            //item = new Item(id, kind, x, y, nftData="cooool nft item");   // for testing: set all static items with some nft data
             item = new Item(id, kind, x, y);
         }
         return item;

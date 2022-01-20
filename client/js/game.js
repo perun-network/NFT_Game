@@ -808,7 +808,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             });
 
             this.client.onWelcome(function(id, name, x, y, hp, armor, weapon,
-                                           avatar, weaponAvatar, experience, nftWeaponData=undefined) {
+                                           avatar, weaponAvatar, experience, nftData=undefined) {
                 log.info("Received player ID from server : "+ id);
                 self.player.id = id;
                 self.playerId = id;
@@ -820,7 +820,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                 self.player.setArmorName(armor);
                 self.player.setSpriteName(avatar);
                 self.player.setWeaponName(weapon);
-                self.player.setWeaponNftData(nftWeaponData);
+                self.player.setNftData(nftData);
                 self.initPlayer();
                 self.player.experience = experience;
                 self.player.level = Types.getLevel(experience);
@@ -1539,7 +1539,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                     self.updateBars();
                 });
 
-                self.client.onPlayerEquipItem(function(playerId, itemKind) {
+                self.client.onPlayerEquipItem(function(playerId, itemKind, nftData=undefined) {
                     var player = self.getEntityById(playerId),
                         itemName = Types.getKindAsString(itemKind);
 
@@ -1549,6 +1549,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                         } else if(Types.isWeapon(itemKind)) {
                             player.setWeaponName(itemName);
                         }
+                        player.setNftData(nftData);
                     }
                 });
 
@@ -1574,7 +1575,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                     }
                 });
 
-                self.client.onDropItem(function(item, mobId) {
+                self.client.onDropItem(function(item, mobId, nftData=undefined) {
                     var pos = self.getDeadMobPosition(mobId);
 
                     if(pos) {

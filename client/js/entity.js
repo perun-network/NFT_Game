@@ -25,6 +25,29 @@ define(function() {
             this.visible = true;
             this.isFading = false;
             this.setDirty();
+
+            // nft payload
+            this.nftData = undefined;
+        },
+
+        /**
+         * returns if the entitiy can be related to an NFT or multiple. For example may a player wield an nft sword or an item may have nft data.
+         */
+        hasNftContext: function() {
+            this.nftData != undefined;
+        },
+
+        /**
+         * Sets the nft payload of the entity. To be overwritten by subclasses
+         * @param {*} nftData 
+         */
+        setNftData: function(nftData) {
+            this.nftData = nftData;
+            
+            // ### DEBUG log any NFT context
+            if (nftData != undefined) {
+                console.log("DEBUG: entity " + this.id + " " + Types.getKindAsString(this.kind) + " was assigned nft context '" + nftData + "'");
+            }
         },
 
         setName: function(name) {

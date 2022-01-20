@@ -3,12 +3,15 @@ var Messages = require('./message');
 var Utils = require('./utils');
 
 var Entity = cls.Class.extend({
-    init: function (id, type, kind, x, y) {
+    init: function (id, type, kind, x, y, nftData=undefined) {
+        // Every entity can have nftData, so every mob, every weapon, armor, player, potion...
+        // if no nftData present, nft state is to be ignored
         this.id = parseInt(id, 10);
         this.type = type;
         this.kind = kind;
         this.x = x;
         this.y = y;
+        this.nftData = nftData;
     },
 
     destroy: function () {
@@ -20,7 +23,8 @@ var Entity = cls.Class.extend({
             parseInt(this.id, 10),
             this.kind,
             this.x,
-            this.y
+            this.y,
+            this.nftData
         ];
     },
 
