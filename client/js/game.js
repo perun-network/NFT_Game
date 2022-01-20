@@ -808,7 +808,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             });
 
             this.client.onWelcome(function(id, name, x, y, hp, armor, weapon,
-                                           avatar, weaponAvatar, experience) {
+                                           avatar, weaponAvatar, experience, nftWeaponData=undefined) {
                 log.info("Received player ID from server : "+ id);
                 self.player.id = id;
                 self.playerId = id;
@@ -820,6 +820,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                 self.player.setArmorName(armor);
                 self.player.setSpriteName(avatar);
                 self.player.setWeaponName(weapon);
+                self.player.setWeaponNftData(nftWeaponData);
                 self.initPlayer();
                 self.player.experience = experience;
                 self.player.level = Types.getLevel(experience);

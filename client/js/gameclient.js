@@ -180,9 +180,16 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                 avatar = data[8],
                 weaponAvatar = data[9],
                 experience = data[10];
+                weaponNftData = null;
+                if (data.length >= 12) {
+                    // expect weapon NFT Data
+                    weaponNftData = data[11];
+                }
+
+                // ### Were do achievements go?
 
             if(this.welcome_callback) {
-                this.welcome_callback(id, name, x, y, hp, armor, weapon, avatar, weaponAvatar, experience);
+                this.welcome_callback(id, name, x, y, hp, armor, weapon, avatar, weaponAvatar, experience, weaponNftData=weaponNftData);
             }
         },
 

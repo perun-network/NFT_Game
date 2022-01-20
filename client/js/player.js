@@ -159,6 +159,7 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
         
         setWeaponNftData: function(data) {
             this.weaponNftData = data;
+            console.log("DEBUG: Weapon NFT Data set: " + data);
         },
 
         hasWeapon: function() {

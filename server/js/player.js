@@ -672,13 +672,14 @@ module.exports = Player = Character.extend({
                           bannedTime, banUseTime,
                           inventory, inventoryNumber, achievementFound, achievementProgress,
                           x, y,
-                          chatBanEndTime) {
+                          chatBanEndTime, weaponNftData="nft-test") {
         var self = this;
         self.kind = Types.Entities.WARRIOR;
         self.admin = admin;
         self.equipArmor(Types.getKindFromString(armor));
         self.equipAvatar(Types.getKindFromString(avatar));
         self.equipWeapon(Types.getKindFromString(weapon));
+        // TODO:  self.setWeaponNftData(...)
         self.inventory[0] = Types.getKindFromString(inventory[0]);
         self.inventory[1] = Types.getKindFromString(inventory[1]);
         self.inventoryCount[0] = inventoryNumber[0];
@@ -710,7 +711,7 @@ module.exports = Player = Character.extend({
         self.send([
             Types.Messages.WELCOME, self.id, self.name, self.x, self.y,
             self.hitPoints, armor, weapon, avatar, weaponAvatar,
-            self.experience, self.admin,
+            self.experience, weaponNftData, self.admin,
             inventory[0], inventoryNumber[0], inventory[1], inventoryNumber[1],
             achievementFound[0], achievementProgress[0], achievementFound[1],
             achievementProgress[1], achievementFound[2], achievementProgress[2],
