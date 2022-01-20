@@ -307,7 +307,8 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
 
         receiveEquipItem: function(data) {
             var id = data[1],
-                itemKind = data[2], nftData = undefined;
+                itemKind = data[2],
+                nftData = undefined;
                 
                 if (data.length >= 4) {
                     // expect nft data

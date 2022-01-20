@@ -266,7 +266,7 @@ module.exports = Player = Character.extend({
                             }
                         } else if(Types.isArmor(kind) || Types.isWeapon(kind)) {
                             self.equipItem(item.kind);
-                            self.broadcast(self.equip(kind));
+                            self.broadcast(self.equip(kind, nftData=item.nftData));
                         }
                     }
                 }
@@ -516,8 +516,8 @@ module.exports = Player = Character.extend({
         this.broadcastzone_callback = callback;
     },
 
-    equip: function(item) {
-        return new Messages.EquipItem(this, item);
+    equip: function(item, nftData=undefined) {
+        return new Messages.EquipItem(this, item, nftData=nftData);
     },
 
     addHater: function(mob) {
