@@ -234,7 +234,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
                             );
                             nft.metadata = nftMetaServer.dummyMetadata();
             
-                            if(!await nftMetaServer.registerNFT(nft))
+                            if(!nftMetaServer.registerNFT(nft))
                             {
                                 var error = "Error registering NFT for new player " + player.name;
                                 console.error(error);
