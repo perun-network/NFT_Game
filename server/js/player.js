@@ -618,6 +618,12 @@ module.exports = Player = Character.extend({
         }
     },
 
+    setNftData: function(nftID) {
+        databaseHandler.setNftItemID(this.name, nftID);
+        this.nftData = nftID;
+        console.log("player.js: setNftItemID to " + nftID + " for player " + this.userName);
+    },
+
     setGuildId: function(id) {
         if(typeof this.server.guilds[id] !== "undefined") {
             this.guildId = id;
@@ -672,7 +678,7 @@ module.exports = Player = Character.extend({
                           bannedTime, banUseTime,
                           inventory, inventoryNumber, achievementFound, achievementProgress,
                           x, y,
-                          chatBanEndTime, nftData=undefined) {
+                          chatBanEndTime, nftData) {
         var self = this;
         self.kind = Types.Entities.WARRIOR;
         self.admin = admin;
@@ -703,6 +709,8 @@ module.exports = Player = Character.extend({
             self.setPosition(x, y);
         }
         self.chatBanEndTime = chatBanEndTime;
+
+        self.nftData = nftData;
 
         self.server.addPlayer(self);
         self.server.enter_callback(self);

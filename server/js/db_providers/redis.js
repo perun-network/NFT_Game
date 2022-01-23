@@ -56,6 +56,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
                         .hget(userKey, "achievement8:progress") // 34
                         .hget("cb:" + player.connection._connection.remoteAddress, "etime") // 35
                         .hget(userKey, "cryptoaddress") // 36
+                        .hget(userKey, "nftItemID") // 37
                         .exec(function(err, replies){
                             var pw = replies[0];
                             var armor = replies[1];
@@ -98,6 +99,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
                             var y = Utils.NaN2Zero(replies[30]);
                             var chatBanEndTime = Utils.NaN2Zero(replies[35]);
                             var cryptoAddress = replies[36];
+                            var nftItemId = replies[37];
 
                             // Check Password
 
@@ -181,7 +183,8 @@ module.exports = DatabaseHandler = cls.Class.extend({
                                     inventory, inventoryNumber,
                                     achievementFound, achievementProgress,
                                     x, y,
-                                    chatBanEndTime);
+                                    chatBanEndTime,
+                                    nftItemId );
                             });
                     });
                     return;
@@ -219,13 +222,45 @@ module.exports = DatabaseHandler = cls.Class.extend({
                     .hset("b:" + player.connection._connection.remoteAddress, "loginTime", curTime)
                     .exec(function(err, replies){
                         log.info("New User: " + player.name + " {" + player.cryptoAddress + "}");
-                        player.sendWelcome(
-                            "clotharmor", "sword1", "clotharmor", "sword1", 0,
-                             null, 0, 0,
-                             [null, null], [0, 0],
-                             [false, false, false, false, false, false],
-                             [0, 0, 0, 0, 0, 0],
-                             player.x, player.y, 0);
+                        // Mint NFT for new user
+                        console.log("Minting a fresh NFT for new player " + player.name + "...");
+                        erdstallServer.mintNFT().then(function(receipt) {
+                            // TODO: Fix meta
+                            console.log(receipt);
+                            var nft = new (require("../../ts/nft")).default(
+                                receipt.txReceipt.tx.token,
+                                receipt.txReceipt.tx.id,
+                                receipt.txReceipt.tx.sender
+                            );
+                            nft.metadata = nftMetaServer.dummyMetadata();
+            
+                            if(!await nftMetaServer.registerNFT(nft))
+                            {
+                                var error = "Error registering NFT for new player " + player.name;
+                                console.error(error);
+                                throw new Error(error);
+                            }
+
+                            console.log("Successfully put NFT metadata for new player " + player.name);
+
+                            // Transfer new NFT to user
+                            erdstallServer.transferTo(nft, player.cryptoAddress).then(function(receipt) {
+                                console.log("Successfully transferred NFT to new player " + player.name);
+
+                                nftKey = require("../../../ts/nft").key(receipt.txReceipt.tx.token, receipt.txReceipt.tx.id);
+
+                                setNftItemID(player.name, nftKey);
+
+                                player.sendWelcome(
+                                  "clotharmor", "sword1", "clotharmor", "sword1", 0,
+                                  null, 0, 0,
+                                  [null, null], [0, 0],
+                                  [false, false, false, false, false, false],
+                                  [0, 0, 0, 0, 0, 0],
+                                  player.x, player.y, 0,
+                                  nftKey);
+                            });
+                        });
                     });
             }
         });
@@ -321,6 +356,10 @@ module.exports = DatabaseHandler = cls.Class.extend({
     equipWeapon: function(name, weapon){
         log.info("Set Weapon: " + name + " " + weapon);
         client.hset("u:" + name, "weapon", weapon);
+    },
+    setNftItemID: function(name, nftID){
+      log.info("Set NFTItemID: " + name + " " + nftID);
+      client.hset("u:" + name, "nftItemID", nftID);
     },
     setExp: function(name, exp){
         log.info("Set Exp: " + name + " " + exp);
