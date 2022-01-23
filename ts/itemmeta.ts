@@ -10,11 +10,13 @@ import { Attribute, NFTMetadata } from "@polycrypt/erdstall/ledger/backend";
  */
 export class RawItemMeta implements NFTMetadata {
 
-    public static ATTRIBUTE_COLORCODE : string = "cc"; // example attribute
+    public static ATTRIBUTE_IMAGE_URL : string = "iu"; // to be internaly mapped to 'image'
+    public static ATTRIBUTE_COLORCODE : string = "cc";
     public static ATTRIBUTE_NAME : string = "name";
 
     public static VERBOSE = true;
 
+    public image?: string | undefined;
     public attributes : Attribute[] = [];
     protected readonly attributesMapped = new Map();
 
@@ -51,7 +53,13 @@ export class RawItemMeta implements NFTMetadata {
             return;
         }
 
-        this.attributes.push({trait_type: id, value: value});
+        if (id === RawItemMeta.ATTRIBUTE_IMAGE_URL) {
+            // set image variable of NFTMetadata to given value instead of appending to attributes
+            this.image = value;
+        } else {
+            // add to attribute list as usual
+            this.attributes.push({trait_type: id, value: value});
+        }
         this.attributesMapped.set(id, value);
     }
 
@@ -88,11 +96,11 @@ export class RawItemMeta implements NFTMetadata {
 
 
     /**
-     * Returns image to be displayed for item. To be overriden by subclass
+     * Returns image to be displayed for item.
      * @returns image url
      */
     public getImage() : string {
-        return "";
+        return this.image ? this.image : "";
     }
 
 
@@ -102,7 +110,10 @@ export class RawItemMeta implements NFTMetadata {
      * @returns metadata object as JSON
      */
     public asJSON() : string {
-        return JSON.stringify(this);
+        return JSON.stringify(this, (k, v) => {
+            if (k=="attributesMapped") return undefined;
+            else return v;
+        });
     }
 
 
