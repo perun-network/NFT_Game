@@ -147,12 +147,6 @@ export default class NFTMetaServer {
 		res.send(reply);
 	}
 
-	private async getFile(req: Request, res: Response) {
-		// req
-		// res.send(reply);
-	}
-
-
 	/**
 	 * Saves an NFTs metadata to the database
 	 * @param nft Nft containing owner, id and metadata
