@@ -235,7 +235,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
                               mintReceipt.txReceipt.tx.id,
                               mintReceipt.txReceipt.tx.sender
                             );
-                            nft.metadata = nftMetaServer.dummyMetadata().toMetadata();
+                            nft.metadata = nftMetaServer.dummyMetadata();
             
                             nftMetaServer.registerNFT(nft).then(function(success) {
                                 if(!success) {

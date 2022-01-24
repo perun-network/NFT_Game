@@ -10,7 +10,7 @@ import fs from 'fs';
 import jimp from "jimp";
 
 export const DB_PREFIX_METADATA = "md";
-export const DEFAULT_NFT_IMAGE_PATH_PREFIX = "/nfts/sprites/"; // default folder for nft sprite cacheing, overwritten by config
+export const DEFAULT_NFT_IMAGE_PATH_PREFIX = "nfts/sprites/"; // default folder for nft sprite cacheing, overwritten by config
 
 
 export const StatusNoContent = 204;
@@ -107,26 +107,26 @@ export default class NFTMetaServer {
 	 * @param contractAddr address of smart contract (aka "token")
 	 * @param tokenId 256bit integer ID of NFT
 	 */
-	private async creatAndSavePng(nftKey : String, metaData: RawItemMeta) {
+	private async creatAndSavePng(tokenId: bigint, metaData: RawItemMeta) {
 
-		const kind = metaData?.getAttribute("ATTRIBUTE_ITEM_KIND");
+		const kind = metaData.getAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND);
 		//const color = metaData?.getAttribute("ATTRIBUTE_COLORCODE");
 
 		// Where to find png
-		const readImgsFrom = "../client/img/";
+		const readImgsFrom = "client/img/";
 		// Where to save
-		const saveTo = "/nfts/sprites/";
+		const saveTo = this.cfg.nftPathPrefix;
 		// name of saved file
-		const fileName = nftKey;
+		const fileName = Number(tokenId);
 
 		// reads, manipulates and saves Png in all three scales
 		for (let index = 1; index < 3; index++) {
-			const img = await jimp.read(readImgsFrom + "/${index}/" + kind);
+			const img = await jimp.read(readImgsFrom + `${index}/` + kind + ".png");
 
 			// example manipulates
 			img.invert();
 
-			img.write(saveTo + "/${index}/" + fileName);
+			img.write(saveTo + `/${index}/` + fileName + ".png");
 			
 		}
 
@@ -211,10 +211,11 @@ export default class NFTMetaServer {
 			//await this.afterMetadataSet(contractAddr, tokenId); // run Observers  commented out bc so far there are none
 
 			//create corresponding pngs
-			await this.creatAndSavePng(key(contractAddr, tokenId), metadata);
+			await this.creatAndSavePng(tokenId, metadata);
 
 			return true; // return success
 		} catch (error) { // Handle NFT already being present in database
+			console.log(error)
 			return false; // return error
 		}
 	}
