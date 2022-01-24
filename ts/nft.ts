@@ -9,7 +9,6 @@ import {
 import { Address } from "@polycrypt/erdstall/ledger";
 import { Assets, Tokens } from "@polycrypt/erdstall/ledger/assets";
 import { NFTMetadata } from "@polycrypt/erdstall/ledger/backend";
-// import { PerunArtMetadata } from "#nerd/nft";
 
 export function key(token: Address | string, id: bigint): string {
 	token = token.toString().toLowerCase();

@@ -22,7 +22,6 @@ function main(config) {
     }
 
     // Load and initialize Erdstall server interface
-    var erdstallServer = require("../../ts/erdstallserverinterface").erdstallServer;
     erdstallServer.init();
 
     var WorldServer = require("./worldserver");
