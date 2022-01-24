@@ -409,17 +409,20 @@ function(Camera, Item, Character, Player, Timer) {
 
                 if(entity instanceof Character && !entity.isDead && entity.hasWeapon()) {
                     var nftKey = entity.getNftData();
-                    if(nftKey) { // Entity has NFT Equipped, use NFT Sprite instead
-                        var weapon = this.game.sprites[nftKey];
+                    var weapon = undefined;
 
-                        if(!weapon) { // If NFT Sprite has not been downloaded yet...
-                            // this.game.loadNFTSprite(nftKey); //problematic due to server spam... reconsider
+                    if(nftKey) { // Entity has NFT Equipped, use NFT Sprite instead
+
+                        weapon = this.game.sprites[nftKey];
+
+                        if(!weapon) { // NFT Sprite has not been downloaded yet... await download from gameclient
+
+                            console.log("DEBUG: nft sprite not loaded yet: " + nftKey);
+                            
                         }
+                    } else {
+                         weapon = this.game.sprites[entity.getWeaponName()];
                     }
-                    // else {
-                    //     var weapon = this.game.sprites[entity.getWeaponName()];
-                    // }
-                    var weapon = this.game.sprites[entity.getWeaponName()];
 
                     if(weapon) {
                         var weaponAnimData = weapon.animationData[anim.name],

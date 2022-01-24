@@ -2,6 +2,7 @@
 define(function() {
 
     var Entity = Class.extend({
+
         init: function(id, kind) {
             var self = this;
 

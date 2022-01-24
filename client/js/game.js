@@ -63,6 +63,8 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
 
             this.sprites = {};
 
+            this.spritesRequested = {};
+
             // tile animation
             this.animatedTiles = null;
 
@@ -342,7 +344,8 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             }
         },
 
-        loadNFTSprite: function(nftKey) {
+        loadNFTSprite: async function(nftKey) {
+            console.log("DEBUG: sprite load requested for " + nftKey);
             var self = this;
             this.client.getNFTSpritesJSON(nftKey).then(spriteJSON => {
                 if(!spriteJSON) {
@@ -372,6 +375,20 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                 initSprite(nftKey, spritesObj.entity);
                 initSprite("item-" + nftKey, spritesObj.item);
             });
+        },
+
+        /**
+         * Checks wether a sprite for the given nft key is cached. If not it is loaded.
+         */
+        onNFTAppointed: function(nftKey) {
+
+            if (!game.sprites[nftKey] && !game.spritesRequested[nftKey]) {
+                // sprite not found and no request issued yet
+
+                // Request sprite and save request
+                game.spritesRequested[nftKey] = true;
+                loadNFTSprite(nftKey);
+            }
         },
 
         setSpriteScale: function(scale) {
