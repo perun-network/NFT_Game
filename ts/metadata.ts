@@ -7,9 +7,10 @@ import { RawItemMeta } from "./itemmeta";
 import NFT, { key } from "./nft";
 import { NFTMetadata } from "@polycrypt/erdstall/ledger/backend";
 import fs from 'fs';
+import jimp from "jimp";
 
 export const DB_PREFIX_METADATA = "md";
-export const DEFAULT_NFT_IMAGE_PATH_PREFIX = "/nfts/sprites/"; // default folder for nft sprite cacheing, overwritten by config
+export const DEFAULT_NFT_IMAGE_PATH_PREFIX = "nfts/sprites/"; // default folder for nft sprite cacheing, overwritten by config
 
 
 export const StatusNoContent = 204;
@@ -102,6 +103,36 @@ export default class NFTMetaServer {
 	}
 
 	/**
+	 * reads, manipulates and saves pngs in all three scales form the corresponding meta data
+	 * @param contractAddr address of smart contract (aka "token")
+	 * @param tokenId 256bit integer ID of NFT
+	 */
+	private async creatAndSavePng(tokenId: bigint, metaData: RawItemMeta) {
+
+		const kind = metaData.getAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND);
+		//const color = metaData?.getAttribute("ATTRIBUTE_COLORCODE");
+
+		// Where to find png
+		const readImgsFrom = "client/img/";
+		// Where to save
+		const saveTo = this.cfg.nftPathPrefix;
+		// name of saved file
+		const fileName = Number(tokenId);
+
+		// reads, manipulates and saves Png in all three scales
+		for (let index = 1; index < 3; index++) {
+			const img = await jimp.read(readImgsFrom + `${index}/` + kind + ".png");
+
+			// example manipulates
+			img.invert();
+
+			img.write(saveTo + `/${index}/` + fileName + ".png");
+			
+		}
+
+	}
+
+	/**
 	 * Creates representative, on the fly generated, Metadata for token. Used as fallback in the case that saved MetaData can not be found
 	 * @returns dummy meta data object
 	 */
@@ -178,8 +209,13 @@ export default class NFTMetaServer {
 		try {
 			await this.databaseHandler.putNFTMetadata(key(contractAddr, tokenId), metadata.asJSON());
 			//await this.afterMetadataSet(contractAddr, tokenId); // run Observers  commented out bc so far there are none
+
+			//create corresponding pngs
+			await this.creatAndSavePng(tokenId, metadata);
+
 			return true; // return success
 		} catch (error) { // Handle NFT already being present in database
+			console.log(error)
 			return false; // return error
 		}
 	}

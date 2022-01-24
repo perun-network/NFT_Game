@@ -6,6 +6,9 @@ import erdstallClientInterface from "./erdstallclientinterface"
 import { TxReceipt } from "@polycrypt/erdstall/api/responses";
 import { ethers } from "ethers";
 import config from './config/serverConfig.json';
+import fs from 'fs';
+
+const ids = require('./config/nft_id.json');
 
 export default class erdstallServerInterface extends erdstallClientInterface {
 
@@ -47,9 +50,18 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 	}
 
 	// Mints a new NFT and returns TxReceipt promise
-	async mintNFT(
-		id: bigint = BigInt(Math.round(Math.random() * Number.MAX_SAFE_INTEGER))
-	): Promise<{ txReceipt: TxReceipt }> {
+	async mintNFT(): Promise<{ txReceipt: TxReceipt }> {
+		
+		//reads ID for next NFT from nft_id.json
+		const id = BigInt(ids.nextID);
+		
+		//updates the value for next NFT
+
+		ids.nextID = ids.nextID + 1;
+
+		const fileName = "ts/config/nft_id.json";
+		fs.writeFileSync(fileName, JSON.stringify(ids));
+
 		if (!this._session) {
 			throw new Error("Server session uninitialized");
 		}
@@ -58,6 +70,8 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		console.log("Minted NFT with ID: " + id);
 		return { txReceipt };
 	}
+
+	// Creats and Saves Metadata
 
 	// Burns NFT and returns TxReceipt promise
 	async burnNFT(
