@@ -50,6 +50,10 @@ define(function() {
             }
         },
 
+        getNftData: function() {
+            return this.nftData;
+        },
+
         setName: function(name) {
             this.name = name;
         },

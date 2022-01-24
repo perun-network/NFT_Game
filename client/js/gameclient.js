@@ -115,6 +115,24 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
             }
         },
 
+        getNFTSpritesJSON: function(nftKey) {
+            return new Promise(resolve => {
+                const [token, id] = nftKey.split(":");;
+                const url = "http://" + this.host + ":" + this.port + "/metadata/sprites/" + token + "/" + id;
+                console.log("Fetching Sprite for NFT " + nftKey + " from address: " + url);
+                var xmlHttp = new XMLHttpRequest();
+                xmlHttp.onreadystatechange = function() { 
+                    if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+                        // console.log("GOT RESPONSE FOR NFT " + nftKey);
+                        // console.log(xmlHttp.responseText);
+                        resolve(xmlHttp.responseText);
+                    }
+                }
+                xmlHttp.open("GET", url, true);
+                xmlHttp.send();
+            });
+        },
+
         sendMessage: function(json) {
             var data;
             if(this.connection.connected === true) {
@@ -188,7 +206,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
 
 
             if(this.welcome_callback) {
-                this.welcome_callback(id, name, x, y, hp, armor, weapon, avatar, weaponAvatar, experience, nftData=nftData);
+                this.welcome_callback(id, name, x, y, hp, armor, weapon, avatar, weaponAvatar, experience, nftData);
             }
         },
 

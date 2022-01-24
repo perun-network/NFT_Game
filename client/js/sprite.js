@@ -8,12 +8,23 @@ define(['jquery', 'animation', 'sprites'], function($, Animation, sprites) {
             this.isLoaded = false;
             this.offsetX = 0;
             this.offsetY = 0;
-            this.loadJSON(sprites[name]);
+            if(sprites[name]) {
+                this.loadJSON(sprites[name]);
+            }
+            else
+            {
+                console.log("Sprite JSON for " + name + " not found. Must load JSON manually");
+            }
         },
 
         loadJSON: function(data) {
             this.id = data.id;
-            this.filepath = "img/" + this.scale + "/" + this.id + ".png";
+            var dir_prefix = "img/";
+            if(data.image_path_prefix) {
+                dir_prefix = data.image_path_prefix;
+                console.log("Using prefix " + dir_prefix + " to load image...");
+            }
+            this.filepath = dir_prefix + this.scale + "/" + this.id + ".png";
             this.animationData = data.animations;
             this.width = data.width;
             this.height = data.height;

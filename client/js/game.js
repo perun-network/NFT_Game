@@ -342,6 +342,38 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             }
         },
 
+        loadNFTSprite: function(nftKey) {
+            var self = this;
+            this.client.getNFTSpritesJSON(nftKey).then(spriteJSON => {
+                if(!spriteJSON) {
+                    throw new Error("Unable to load sprite for NFT " + nftKey);
+                }
+                const spritesObj = JSON.parse(spriteJSON);
+                
+                function initSprite(name, json) {
+                    if(self.renderer.upscaledRendering) {
+                        self.spritesets[0][name] = new Sprite(name, 1);
+                        self.spritesets[0][name].loadJSON(json);
+                        self.sprites = self.spritesets[0];
+                    } else {
+                        self.spritesets[1][name] = new Sprite(name, 2);
+                        self.spritesets[1][name].loadJSON(json);
+                        if(!self.renderer.mobile && !self.renderer.tablet) {
+                            self.spritesets[2][name] = new Sprite(name, 3);
+                            self.spritesets[2][name].loadJSON(json);
+                        }
+    
+                        self.sprites = self.spritesets[self.renderer.scale - 1];
+                    }
+
+                    console.log("Successfully set sprite for " + name);
+                };
+
+                initSprite(nftKey, spritesObj.entity);
+                initSprite("item-" + nftKey, spritesObj.item);
+            });
+        },
+
         setSpriteScale: function(scale) {
             var self = this;
 
@@ -824,6 +856,10 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                 self.initPlayer();
                 self.player.experience = experience;
                 self.player.level = Types.getLevel(experience);
+
+                if(nftData) {
+                    self.loadNFTSprite(nftData);
+                }
 
                 self.updateBars();
                 self.updateExpBar();
