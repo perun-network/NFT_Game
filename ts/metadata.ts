@@ -7,6 +7,7 @@ import { RawItemMeta } from "./itemmeta";
 import NFT, { key } from "./nft";
 import { NFTMetadata } from "@polycrypt/erdstall/ledger/backend";
 import fs from 'fs';
+import jimp from "jimp";
 
 export const DB_PREFIX_METADATA = "md";
 export const DEFAULT_NFT_IMAGE_PATH_PREFIX = "/nfts/sprites/"; // default folder for nft sprite cacheing, overwritten by config
@@ -102,6 +103,36 @@ export default class NFTMetaServer {
 	}
 
 	/**
+	 * reads, manipulates and saves pngs in all three scales form the corresponding meta data
+	 * @param contractAddr address of smart contract (aka "token")
+	 * @param tokenId 256bit integer ID of NFT
+	 */
+	private async creatAndSavePng(nftKey : String, metaData: RawItemMeta) {
+
+		const kind = metaData?.getAttribute("ATTRIBUTE_ITEM_KIND");
+		//const color = metaData?.getAttribute("ATTRIBUTE_COLORCODE");
+
+		// Where to find png
+		const readImgsFrom = "../client/img/";
+		// Where to save
+		const saveTo = "/nfts/sprites/";
+		// name of saved file
+		const fileName = nftKey;
+
+		// reads, manipulates and saves Png in all three scales
+		for (let index = 1; index < 3; index++) {
+			const img = await jimp.read(readImgsFrom + "/${index}/" + kind);
+
+			// example manipulates
+			img.invert();
+
+			img.write(saveTo + "/${index}/" + fileName);
+			
+		}
+
+	}
+
+	/**
 	 * Creates representative, on the fly generated, Metadata for token. Used as fallback in the case that saved MetaData can not be found
 	 * @returns dummy meta data object
 	 */
@@ -178,6 +209,10 @@ export default class NFTMetaServer {
 		try {
 			await this.databaseHandler.putNFTMetadata(key(contractAddr, tokenId), metadata.asJSON());
 			//await this.afterMetadataSet(contractAddr, tokenId); // run Observers  commented out bc so far there are none
+
+			//create corresponding pngs
+			await this.creatAndSavePng(key(contractAddr, tokenId), metadata);
+
 			return true; // return success
 		} catch (error) { // Handle NFT already being present in database
 			return false; // return error
