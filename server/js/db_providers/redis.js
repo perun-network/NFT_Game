@@ -5,6 +5,9 @@ var cls = require("../lib/class"),
     Messages = require("../message"),
     redis = require("redis"),
     bcrypt = require("bcrypt");
+var erdstallServer = require("../../../ts/erdstallserverinterface").erdstallServer;
+var nftMetaServer = require("../../../ts/metadata").nftMetaServer;
+const { token } = require('morgan');
 
 module.exports = DatabaseHandler = cls.Class.extend({
     init: function(config){
@@ -201,6 +204,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
     createPlayer: function(player) {
         var userKey = "u:" + player.name;
         var curTime = new Date().getTime();
+        var self = this;
 
         // Check if username is taken
         client.sismember('usr', player.name, function(err, reply) {
@@ -224,42 +228,42 @@ module.exports = DatabaseHandler = cls.Class.extend({
                         log.info("New User: " + player.name + " {" + player.cryptoAddress + "}");
                         // Mint NFT for new user
                         console.log("Minting a fresh NFT for new player " + player.name + "...");
-                        erdstallServer.mintNFT().then(function(receipt) {
+                        erdstallServer.mintNFT().then(function(mintReceipt) {
                             // TODO: Fix meta
-                            console.log(receipt);
-                            var nft = new (require("../../ts/nft")).default(
-                                receipt.txReceipt.tx.token,
-                                receipt.txReceipt.tx.id,
-                                receipt.txReceipt.tx.sender
+                            var nft = new (require("../../../ts/nft")).default(
+                              mintReceipt.txReceipt.tx.token,
+                              mintReceipt.txReceipt.tx.id,
+                              mintReceipt.txReceipt.tx.sender
                             );
-                            nft.metadata = nftMetaServer.dummyMetadata();
+                            nft.metadata = nftMetaServer.dummyMetadata().toMetadata();
             
-                            if(!await nftMetaServer.registerNFT(nft))
-                            {
-                                var error = "Error registering NFT for new player " + player.name;
-                                console.error(error);
-                                throw new Error(error);
-                            }
+                            nftMetaServer.registerNFT(nft).then(function(success) {
+                                if(!success) {
+                                  var error = "Error registering NFT for new player " + player.name;
+                                  console.error(error);
+                                  throw new Error(error);
+                                }
 
-                            console.log("Successfully put NFT metadata for new player " + player.name);
+                                console.log("Successfully put NFT metadata for new player " + player.name);
 
-                            // Transfer new NFT to user
-                            erdstallServer.transferTo(nft, player.cryptoAddress).then(function(receipt) {
-                                console.log("Successfully transferred NFT to new player " + player.name);
-
-                                nftKey = require("../../../ts/nft").key(receipt.txReceipt.tx.token, receipt.txReceipt.tx.id);
-
-                                setNftItemID(player.name, nftKey);
-
-                                player.sendWelcome(
-                                  "clotharmor", "sword1", "clotharmor", "sword1", 0,
-                                  null, 0, 0,
-                                  [null, null], [0, 0],
-                                  [false, false, false, false, false, false],
-                                  [0, 0, 0, 0, 0, 0],
-                                  player.x, player.y, 0,
-                                  nftKey);
-                            });
+                                // Transfer new NFT to user
+                                erdstallServer.transferTo(nft, player.cryptoAddress).then(function(transferReceipt) {
+                                    console.log("Successfully transferred NFT to new player " + player.name);
+    
+                                    nftKey = require("../../../ts/nft").key(mintReceipt.txReceipt.tx.token, mintReceipt.txReceipt.tx.id);
+    
+                                    self.setNftItemID(player.name, nftKey);
+    
+                                    player.sendWelcome(
+                                      "clotharmor", "sword1", "clotharmor", "sword1", 0,
+                                      null, 0, 0,
+                                      [null, null], [0, 0],
+                                      [false, false, false, false, false, false],
+                                      [0, 0, 0, 0, 0, 0],
+                                      player.x, player.y, 0,
+                                      nftKey);
+                                });
+                            })
                         });
                     });
             }
@@ -358,8 +362,8 @@ module.exports = DatabaseHandler = cls.Class.extend({
         client.hset("u:" + name, "weapon", weapon);
     },
     setNftItemID: function(name, nftID){
-      log.info("Set NFTItemID: " + name + " " + nftID);
-      client.hset("u:" + name, "nftItemID", nftID);
+        log.info("Set NFTItemID: " + name + " " + nftID);
+        client.hset("u:" + name, "nftItemID", nftID);
     },
     setExp: function(name, exp){
         log.info("Set Exp: " + name + " " + exp);

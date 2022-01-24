@@ -81,13 +81,13 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 	// Transfers NFT from this address to another address and returns TxReceipt
 	async transferTo(
 		nft: NFT,
-		to: Address
+		to: string
 	): Promise<{ txReceipt: TxReceipt }> {
 		if (!this._session) {
 			throw new Error("Server session uninitialized");
 		}
 		try {
-			return { txReceipt: await this._session.transferTo(getAssetsFromNFT(nft), to) };
+			return { txReceipt: await this._session.transferTo(getAssetsFromNFT(nft), Address.fromString(to)) };
 		} catch (error) {
 			if (error) {
 				throw new Error("Server unable to transfer NFT" + error);

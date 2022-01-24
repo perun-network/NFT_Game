@@ -1,4 +1,5 @@
 import { Attribute, NFTMetadata } from "@polycrypt/erdstall/ledger/backend";
+import fs from 'fs';
 
 
 /**
@@ -137,4 +138,107 @@ export class RawItemMeta implements NFTMetadata {
     public static getRawMetaFromNFTMetadata(nftmetadata : NFTMetadata) : RawItemMeta {
         return new RawItemMeta(nftmetadata.attributes);
     }
+}
+
+export class NFTItemMeta {
+
+    public image_path_prefix: string = "/nfts/sprites/"; // Gets concatenated with /<scale>/item-<item_image_id>.png for items or /<scale>/<item_image_id>.png for entities/weapons to retrieve image
+    public display_image_path: string = ""; // Image to be displayed on external platforms (e.g. Opeansea, marketplace, etc...)
+    public item_kind: string = ""; // Kind of item (e.g. sword1)
+    public item_color: string = ""; // Hex-Color code to color item image with
+    public item_image_id: string = ""; // ID of image, usually = nftKey
+    public item_description: string = ""; // Description of item to be displayed on external platforms
+    public item_name: string = ""; // Name of item for pick up message etc (e.g. "Ultra Rare Sword Item")
+
+    public init(
+        display_image_path: string,
+        item_kind: string,
+        item_color: string,
+        item_image_id: string,
+        item_description: string,
+        item_name: string,
+        image_path_prefix?: string) {
+            this.display_image_path = display_image_path;
+            this.item_kind = item_kind;
+            this.item_color = item_color;
+            this.item_image_id = item_image_id;
+            this.item_description = item_description;
+            this.item_name = item_name;
+
+            if(image_path_prefix) this.image_path_prefix = image_path_prefix;
+    }
+
+    public getItemSpriteJSON(): string {
+        const spriteJsonString = fs.readFileSync('./client/sprites/item-' + this.item_kind + '.json').toString();
+        var spriteJSON = JSON.parse(spriteJsonString);
+        spriteJSON.image_path_prefix = this.image_path_prefix;
+        spriteJSON.id = "item-" + this.item_image_id;
+        return spriteJSON;
+    }
+
+    public getEntitySpriteJSON(): string {
+        const spriteJsonString = fs.readFileSync('./client/sprites/' + this.item_kind + '.json').toString();
+        var spriteJSON = JSON.parse(spriteJsonString);
+        spriteJSON.image_path_prefix = this.image_path_prefix;
+        spriteJSON.id = this.item_image_id;
+        return spriteJSON;
+    }
+
+    public asJSON(): string {
+        return JSON.stringify(this.toMetadata());
+    }
+
+    public static getMetaFromJSON(json: string) : NFTItemMeta {
+        var metaLookup : NFTMetadata = <NFTMetadata> JSON.parse(json);
+        var metaObject : NFTItemMeta = this.getFromNFTMetadata(metaLookup);
+        return metaObject;
+    }
+
+    public static getFromNFTMetadata(nftmetadata : NFTMetadata) : NFTItemMeta {
+        var itemmeta = new NFTItemMeta();
+        
+        if(nftmetadata.attributes) {
+            const item_kind = getAttributeValue(nftmetadata.attributes, "item_kind");
+            const item_color = getAttributeValue(nftmetadata.attributes, "item_color");
+            const image_path_prefix = getAttributeValue(nftmetadata.attributes, "image_path_prefix");
+            const item_image_id = getAttributeValue(nftmetadata.attributes, "item_image_id");
+            if(item_kind) itemmeta.item_kind = item_kind as string;
+            if(item_color) itemmeta.item_color = item_color as string;
+            if(image_path_prefix) itemmeta.image_path_prefix = image_path_prefix as string;
+            if(item_image_id) itemmeta.item_image_id = item_image_id as string;
+        }
+
+        if(nftmetadata.name) itemmeta.item_name = nftmetadata.name;
+        if(nftmetadata.description) itemmeta.item_description = nftmetadata.description;
+        if(nftmetadata.image) itemmeta.display_image_path = nftmetadata.image;
+
+        return itemmeta;
+    }
+
+    public toMetadata(): NFTMetadata {
+		const attributes: Attribute[] = [];
+
+        attributes.push(generateAttribute("item_kind", this.item_kind));
+        attributes.push(generateAttribute("item_color", this.item_color));
+        attributes.push(generateAttribute("image_path_prefix", this.image_path_prefix));
+        attributes.push(generateAttribute("item_image_id", this.item_image_id));
+
+		return {
+			name: this.item_name,
+			description: this.item_description,
+			image: this.display_image_path,
+			attributes: attributes
+		};
+	}
+}
+
+function generateAttribute(type: string, val: string) : Attribute {
+    return { trait_type: type, value: val };
+}
+
+function getAttributeValue(attrs: Attribute[], trait_type: string): string | number | undefined {
+	for (const attr of attrs) {
+		if(attr.value && attr.trait_type === trait_type) return attr.value;
+	}
+	return undefined;
 }
