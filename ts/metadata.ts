@@ -3,11 +3,14 @@
 import express, { Request, Router, Response } from "express";
 import asyncHandler from "express-async-handler";
 import { Address } from "@polycrypt/erdstall/ledger";
-import { NFTItemMeta } from "./itemmeta";
+import { RawItemMeta } from "./itemmeta";
 import NFT, { key } from "./nft";
 import { NFTMetadata } from "@polycrypt/erdstall/ledger/backend";
+import fs from 'fs';
 
 export const DB_PREFIX_METADATA = "md";
+export const DEFAULT_NFT_IMAGE_PATH_PREFIX = "/nfts/sprites/"; // default folder for nft sprite cacheing, overwritten by config
+
 
 export const StatusNoContent = 204;
 export const StatusNotFound = 404;
@@ -45,7 +48,8 @@ export default class NFTMetaServer {
 		this.cfg = {
 			allowUpdates: !!cfg.allowUpdates,
 			serveDummies: !!cfg.serveDummies,
-			allowEmptyMetadata: !!cfg.allowEmptyMetadata
+			allowEmptyMetadata: !!cfg.allowEmptyMetadata,
+			nftPathPrefix: cfg.nftPathPrefix ? cfg.nftPathPrefix : DEFAULT_NFT_IMAGE_PATH_PREFIX
 		};
 
 		this.log("Object Initialized");
@@ -54,6 +58,13 @@ export default class NFTMetaServer {
 	protected log(msg: string): void {
 		console.log("NFTMetaServer: " + msg);
 	}
+
+
+	// placeholder
+	getNextId() {
+		return "dummysword";
+	}
+
 
 	/**
 	 * Creates handler for requests
@@ -75,13 +86,13 @@ export default class NFTMetaServer {
 	 * @param tokenId 256bit integer ID of NFT
 	 * @returns metadata
 	 */
-	async getMetadata(contractAddr : Address, tokenId: bigint): Promise<NFTItemMeta | undefined> {
+	 async getMetadata(contractAddr : Address, tokenId: bigint): Promise<RawItemMeta | undefined> {
 		try {
 			const meta = await this.databaseHandler.getNFTMetadata(key(contractAddr, tokenId));
 			if((meta == undefined) && this.cfg!.serveDummies) {
 				return this.dummyMetadata();
 			}
-			return NFTItemMeta.getMetaFromJSON(meta);
+			return RawItemMeta.getMetaFromJSON(meta);
 		} catch (error) {
 			if(this.cfg!.serveDummies) {
 				return this.dummyMetadata();
@@ -94,15 +105,13 @@ export default class NFTMetaServer {
 	 * Creates representative, on the fly generated, Metadata for token. Used as fallback in the case that saved MetaData can not be found
 	 * @returns dummy meta data object
 	 */
-	dummyMetadata(): NFTItemMeta {
-		let metadata : NFTItemMeta = new NFTItemMeta();
-		metadata.init(
-			"https://static.wikia.nocookie.net/minecraft_gamepedia/images/d/d5/Wooden_Sword_JE2_BE2.png/revision/latest/scale-to-width-down/160?cb=20200217235747",
-			"sword1",
-			"0xFFFFFFFF",
-			"dummysword",
-			"A stupid dummy Sword",
-			"Dummy Sword");
+	 dummyMetadata(): RawItemMeta {
+		let metadata : RawItemMeta = new RawItemMeta([]);
+		metadata.addAttribute(RawItemMeta.ATTRIBUTE_COLORCODE, "0x0");
+		metadata.addAttribute(RawItemMeta.ATTRIBUTE_NAME, "Dummy Item");
+		metadata.addAttribute(RawItemMeta.ATTRIBUTE_DESCRIPTION, "placeholder item");
+		metadata.addAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND, "sword1");
+		// TODO: add URL to dummy meta url 
 		return metadata;
 	}
 
@@ -117,32 +126,32 @@ export default class NFTMetaServer {
 		const ownerAddr : Address = Address.fromString(req.params.token); // parse Address params field in http request
 		const tokenId : bigint = BigInt(req.params.id); // parse Token identifier (assumed globaly unique) in http request
 		// assume token id's to be unique systemwide and treat them as primary key
-		const meta : NFTItemMeta | undefined = await this.getMetadata(ownerAddr, tokenId); // lookup meta data
+		const meta : RawItemMeta | undefined = await this.getMetadata(ownerAddr, tokenId); // lookup meta data
 		if (!meta) {
 			// send 404
 			res.status(StatusNotFound).send("No Metadata present.");
 			return;
 		}
 
-		res.send(meta.toMetadata());
+		res.send(meta.asJSON()); // originaly sending without conversion
 	}
 
 	/**
-	 * looks up sprite for token in request and sends it to the response
+	 * looks up sprites for token in request and sends it to the response
 	 * @param req 
 	 * @param res 
 	 * @returns 
 	 */
 	private async getNftSprites(req: Request, res: Response) {
-		const ownerAddr : Address = Address.fromString(req.params.token);
+		const contractAddr : Address = Address.fromString(req.params.token);
 		const tokenId : bigint = BigInt(req.params.id);
-		const meta : NFTItemMeta | undefined = await this.getMetadata(ownerAddr, tokenId);
+		const meta : RawItemMeta | undefined = await this.getMetadata(contractAddr, tokenId);
 		if (!meta) {
 			// send 404
 			res.status(StatusNotFound).send("No Metadata present.");
 			return;
 		}
-		const reply = { item: meta.getItemSpriteJSON(), entity: meta.getEntitySpriteJSON() };
+		const reply = { item: this.generateNFTItemSpriteJSON(meta, tokenId), entity: this.generateNFTEntitySpriteJSON(meta, tokenId) };
 
 		res.send(reply);
 	}
@@ -152,7 +161,7 @@ export default class NFTMetaServer {
 	 * @param nft Nft containing owner, id and metadata
 	 * @returns true on success, false on failure
 	 */
-	public async registerNFT(nft : NFT) : Promise<boolean> {
+	 public async registerNFT(nft : NFT) : Promise<boolean> {
 
 		// check if metadata set or absence permitted
 		if (!nft.metadata && !this.cfg!.allowEmptyMetadata) {
@@ -163,7 +172,7 @@ export default class NFTMetaServer {
 		// gather values
 		const contractAddr : Address = nft.token;
 		const tokenId : bigint = nft.id;
-		const metadata : NFTItemMeta = !nft.metadata ? new NFTItemMeta() : NFTItemMeta.getFromNFTMetadata(nft.metadata); // init if empty
+		const metadata : RawItemMeta = !nft.metadata ? new RawItemMeta([]) : RawItemMeta.getRawMetaFromNFTMetadata(nft.metadata); // init if empty
 
 		// save values to db
 		try {
@@ -227,6 +236,53 @@ export default class NFTMetaServer {
 		}
 	}
 
+
+
+	/**
+	 * If given metadata contains kind attribute, loads sprite description json for that item kind and alters it to fit NFT sprite description.
+	 * If no kind attribute is contained, undefined is returned.
+	 * @returns NFT sprite description JSON if item kind present, undefined otherwise
+	 */
+	public generateNFTItemSpriteJSON(meta : RawItemMeta,  tokenId : bigint): string | undefined {
+
+		if (!meta.hasAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND)) {
+			// ERROR, nft item sprite json requested but no base item known 
+			return undefined;
+		} else {
+
+			let itemKind = meta.getAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND);
+
+			const spriteJsonString = fs.readFileSync('./client/sprites/item-' + itemKind + '.json').toString();
+			var spriteJSON = JSON.parse(spriteJsonString);
+			spriteJSON.image_path_prefix = this.cfg.nftPathPrefix;
+			spriteJSON.id = "item-" + tokenId;
+			return spriteJSON;
+		}
+    }
+
+		
+	/**
+	 * If given metadata contains kind attribute, loads sprite description json for that item kind and alters it to fit NFT sprite description.
+	 * If no kind attribute is contained, undefined is returned.
+	 * @returns NFT sprite description JSON if item kind present, undefined otherwise
+	 */
+	public generateNFTEntitySpriteJSON(meta : RawItemMeta, tokenId : bigint): string | undefined {
+
+		if (!meta.hasAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND)) {
+			// ERROR, nft item sprite json requested but no base item known 
+			return undefined;
+		} else {
+
+			let itemKind = meta.getAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND);
+
+			const spriteJsonString = fs.readFileSync('./client/sprites/' + itemKind + '.json').toString();
+			var spriteJSON = JSON.parse(spriteJsonString);
+			spriteJSON.image_path_prefix = this.cfg.nftPathPrefix;
+			spriteJSON.id = "" + tokenId;
+        	return spriteJSON;
+    	}
+	}
+
 }
 
 export var nftMetaServer = new NFTMetaServer();
@@ -238,4 +294,6 @@ export interface MetadataConfig {
 	allowUpdates?: boolean;
 	// Wether NFTs without metadata are to be registered and an empty Metadata object stored in the database (default: false)
 	allowEmptyMetadata?: boolean;
+	// Overwrites nft sprite loading path prefix
+	nftPathPrefix?: string;
 }
