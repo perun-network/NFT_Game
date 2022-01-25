@@ -292,7 +292,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                 }
             }
 
-            nftrecieved_callback(nftData);
+            this.nftrecieved_callback(nftData);
         },
 
         receiveDespawn: function(data) {
@@ -499,6 +499,10 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
         onDisconnected: function(callback) {
             this.disconnected_callback = callback;
         },
+        
+        onNftRecieved: function(callback) {
+            this.nftrecieved_callback = callback;
+        },
 
         onWelcome: function(callback) {
             this.welcome_callback = callback;
@@ -621,10 +625,6 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
 		onGuildPopulation: function(callback) {
 			this.guildpopulation_callback = callback;
 		},
-
-        onNftRecieved: function(callback) {
-            this.nftrecieved_callback = callback;
-        },
 
         sendCreate: function(player) {
             erdstallInterface.init().then((acc) => {
