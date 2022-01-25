@@ -2,18 +2,20 @@
 define(['jquery', 'animation', 'sprites'], function($, Animation, sprites) {
 
     var Sprite = Class.extend({
-        init: function(name, scale) {
+        init: function(name, scale, source=undefined) {
             this.name = name;
             this.scale = scale;
             this.isLoaded = false;
             this.offsetX = 0;
             this.offsetY = 0;
-            if(sprites[name]) {
+
+
+            if (source == undefined) {
+                // load from default sprite path
                 this.loadJSON(sprites[name]);
-            }
-            else
-            {
-                console.log("Sprite JSON for " + name + " not found. Must load JSON manually");
+            } else {
+                // external source requested, load from given source
+                this.loadJSON(source);
             }
         },
 

@@ -368,17 +368,14 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                 
                 function initSprite(name, json) {
                     if(self.renderer.upscaledRendering) {
-                        self.spritesets[0][name] = new Sprite(name, 1);
-                        self.spritesets[0][name].loadJSON(json);
+                        self.spritesets[0][name] = new Sprite(name, 1, source=json);
                         self.sprites = self.spritesets[0];
                     } else {
-                        self.spritesets[1][name] = new Sprite(name, 2);
-                        self.spritesets[1][name].loadJSON(json);
+                        self.spritesets[1][name] = new Sprite(name, 2, source=json);
                         if(!self.renderer.mobile && !self.renderer.tablet) {
-                            self.spritesets[2][name] = new Sprite(name, 3);
-                            self.spritesets[2][name].loadJSON(json);
+                            self.spritesets[2][name] = new Sprite(name, 3, source=json);
                         }
-    
+                        
                         self.sprites = self.spritesets[self.renderer.scale - 1];
                     }
 
@@ -859,6 +856,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
              * Checks wether a sprite for the given nft key is cached. If not it is loaded.
              */
             this.client.onNftRecieved(function(nftKey) {
+                console.log("DEBUG: NFT sprite retrieval requested for " + nftKey)
                 self.nftSpriteCheck(nftKey);
             });
 
