@@ -2,43 +2,35 @@ import { Attribute, NFTMetadata } from "@polycrypt/erdstall/ledger/backend";
 
 
 /**
- * RawItemMeta aims to provide an upward compatible standard for item NFT Metadata.
- * A RawItemMeta object consists of an item name, and attributes. All values are in string format hence "raw". To parse values is task of a deriving class.
- * Attributes specify further stats such as the color code or damage, image, animation, music, etc...
- * Using Attributes is optional and an item is supposed to be fully functionaly described without the use of any. Alternativly a default value fallback has to be provided.
- * (TODO: To be derived from a superclass to allow achievement metadata?)
+ * RawItemMeta aims to provide an compatible standard for item NFT Metadata.
+ * Non standard (NFT Metadata) values are saved in attributes and can be accessed via Attribute ID mapping.
  */
 export class RawItemMeta implements NFTMetadata {
 
-    public static ATTRIBUTE_IMAGE_URL : string = "iu"; // to be internaly mapped to 'image'
-    public static ATTRIBUTE_COLORCODE : string = "cc"; // color offset passed to renderer
-    public static ATTRIBUTE_NAME : string = "name"; // item name displayed
+    public static ATTRIBUTE_COLOR_OFFSET_RGB : string = "color_offset_RGB"; // color offset passed to renderer
     public static ATTRIBUTE_ITEM_KIND : string = "kind"; // item base kind (f.e. 'sword2')
-    public static ATTRIBUTE_DESCRIPTION : string = "desc"; // description to be displayed
 
     public static VERBOSE = true;
 
-    public image?: string | undefined;
-    public attributes : Attribute[] = [];
-    protected readonly attributesMapped = new Map();
+    // NFTMetadata variables
+    public image?: string; // externaly displayed image, unused as of rn
+    public image_data?: string; // unused
+    public external_url?: string; // unused
+    public description?: string; // Item description
+    public name?: string; // Item name
+    public background_color?: string; // unused
+    public animation_url?: string; // unused
+    public youtube_url?: string; // unused
+
+    // NFTMetadata variable attributes
+    public attributes: Attribute[]; // further attributes like colorcodes
 
     /**
      * Creates a raw item metadata object from a name and an extension map
      * @param attributes attributes array
      */
-    constructor( attributes: Attribute[] | undefined) {
+    constructor(attributes: Attribute[] | undefined) {
         this.attributes = attributes ? attributes : [];
-
-        // copy array content to hash map for easy and fast access
-        for (var attr of this.attributes) {
-            // allow empty keys and values, disallow duplicates
-            if (this.attributesMapped.has(attr.trait_type)) {
-                if (RawItemMeta.VERBOSE)
-                    console.log("skipping duplicate meta key: " + attr.trait_type);
-                continue;
-            }
-            this.attributesMapped.set(attr.trait_type, attr.value);
-        }
     }
 
 
@@ -47,22 +39,8 @@ export class RawItemMeta implements NFTMetadata {
      * @param id attribute id, see IDs as string constants in this class 
      * @param value extension value
      */
-    public addAttribute(id: string, value: string) {
-
-        if (this.attributesMapped.has(id)) { // attribute already contained. report if verbose enabled
-            if (RawItemMeta.VERBOSE)
-                console.log("ignoring duplicate meta key: " + id);
-            return;
-        }
-
-        if (id === RawItemMeta.ATTRIBUTE_IMAGE_URL) {
-            // set image variable of NFTMetadata to given value instead of appending to attributes to be compatible with marketplace
-            this.image = value;
-        } else {
-            // add to attribute list as usual
-            this.attributes.push({trait_type: id, value: value});
-        }
-        this.attributesMapped.set(id, value);
+    public addAttribute(id: string, value: string | number) {
+        this.attributes.push({trait_type: id, value: value});
     }
 
 
@@ -72,7 +50,10 @@ export class RawItemMeta implements NFTMetadata {
      * @returns true if contained, false if not
      */
     public hasAttribute(id: string) : boolean {
-        return this.attributesMapped.has(id);
+        for (let attr of this.attributes)
+         if (attr.trait_type == id)
+            return true;
+        return false;
     }
 
 
@@ -81,10 +62,53 @@ export class RawItemMeta implements NFTMetadata {
      * @param id attribute id
      * @returns string as attribute value if contained, undefined if attribute not present
      */
-    public getAttribute(id: string) : string | undefined {
-        if (this.hasAttribute(id))
-            return this.attributesMapped.get(id);
+    public getAttribute(id: string) : string | number | undefined {
+        for (let attr of this.attributes)
+            if (attr.trait_type == id)
+                return attr.value;
         return undefined;
+    }
+
+
+    /**
+     * Saves RGB offset values to attribute list as ATTRIBUTE_COLOR_OFFSET_RGB
+     * @param r red offset
+     * @param g green offset
+     * @param b blue offset
+     * @returns 
+     */
+    public setRgbOffset(r: number, g: number, b: number) {
+
+        // insert seperate attributes
+        // check of each attribute already exists and overwrite
+
+        for (let i = 0; i < this.attributes.length; i++) {
+            if (this.attributes[i].trait_type == RawItemMeta.ATTRIBUTE_COLOR_OFFSET_RGB) {
+                // attribute found -> overwrite
+                this.attributes[i] = {trait_type: RawItemMeta.ATTRIBUTE_COLOR_OFFSET_RGB, value: (r + ":" + g + ":" + b)}
+                return;
+            }
+        }
+
+        // no overwrite possible, append attribute
+        this.addAttribute(RawItemMeta.ATTRIBUTE_COLOR_OFFSET_RGB, (r + ":" + g + ":" + b));
+    }
+
+
+    /**
+     * Returns color offset array as numbers if offset attribute contained. undefined if no ATTRIBUTE_COLOR_OFFSET_RGB set.
+     * @returns Returns color offset array as numbers if offset attribute contained. undefined if no ATTRIBUTE_COLOR_OFFSET_RGB set.
+     */
+    public getRgbOffset() : {r: number, g: number, b: number}  | undefined {
+
+        let attr_value = this.getAttribute(RawItemMeta.ATTRIBUTE_COLOR_OFFSET_RGB);
+
+        if (attr_value == undefined)
+            return undefined; // no offset saved in metadata
+
+        let attr_split = (<string> attr_value).split(":");
+
+        return {r: Number(attr_split[0]), g: Number(attr_split[1]), b: Number(attr_split[2])};
     }
 
     
@@ -93,31 +117,17 @@ export class RawItemMeta implements NFTMetadata {
      * @returns Description of Object abstracted by meta data
      */
     public getDescription() : string | undefined {
-        return this.getAttribute(RawItemMeta.ATTRIBUTE_DESCRIPTION);
+        return this.description;
     }
 
 
     /**
-     * Returns image to be displayed for item.
+     * Returns image to be displayed for item. Not to be confused with image path from JSON! Image paths are constructed from nft ID!
      * @returns image url
      */
-    public getImage() : string {
-        return this.image ? this.image : "";
+    public getImage() : string | undefined {
+        return this.image;
     }
-
-
-    /**
-     * converts the metadata object to a saveable and parsable string (JSON) to be saved in the database or send to a peer.
-     * isnt called toJSON not to cause stackoverflow
-     * @returns metadata object as JSON
-     */
-    public asJSON() : string {
-        return JSON.stringify(this, (k, v) => {
-            if (k=="attributesMapped") return undefined;
-            else return v;
-        });
-    }
-
 
     /**
      * Parses JSON with metadata to meta instance
@@ -137,8 +147,18 @@ export class RawItemMeta implements NFTMetadata {
      * @returns 
      */
     public static getRawMetaFromNFTMetadata(nftmetadata : NFTMetadata) : RawItemMeta {
+
+        // TODO: Kann man das NFTMetadata nicht irgendwie direkt konvertieren (also ohne was neues zu erstellen und Variablen zu kopieren)? Es hat genau die gleichen Felder...
+
         let meta = new RawItemMeta(nftmetadata.attributes);
         meta.image = nftmetadata.image;
+        meta.image_data = nftmetadata.image_data;
+        meta.external_url = nftmetadata.external_url;
+        meta.description = nftmetadata.description;
+        meta.name = nftmetadata.name;
+        meta.background_color = nftmetadata.background_color;
+        meta.animation_url = nftmetadata.animation_url;
+        meta.youtube_url = nftmetadata.youtube_url;
         return meta;
     }
 }

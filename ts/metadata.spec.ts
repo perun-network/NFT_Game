@@ -36,7 +36,7 @@ describe("getMetadata", async function () {
     metaserver.init(databaseHandler);
 
     let metadata0 = new RawItemMeta([]);
-    metadata0.addAttribute(RawItemMeta.ATTRIBUTE_NAME, "test1");
+    metadata0.name = "test1";
 
     await databaseHandler.putNFTMetadata(key(<Address> JSON.parse(`{"address" : "0xf731c1cda5bd32e6693d3cb313bd9b9338d96f184"}`), BigInt(999999999999999999999999991)), metadata0);
 

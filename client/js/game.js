@@ -327,9 +327,6 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             if (nftkey == undefined)
                 return; // no nft appointed
 
-            console.log(nftkey);
-            console.log(this.sprites);
-
             if (this.sprites[nftkey] == undefined && this.spritesRequested[nftkey] == undefined) {
                 // sprite not found and no request issued yet
 

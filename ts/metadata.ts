@@ -105,7 +105,7 @@ export default class NFTMetaServer {
 	private async creatAndSavePng(tokenId: bigint, metaData: RawItemMeta) {
 
 		const kind = metaData.getAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND);
-		const color = metaData.getAttribute(RawItemMeta.ATTRIBUTE_COLORCODE);
+		const rgb = metaData.getRgbOffset();
 
 		// Where to find png
 		const readImgsFrom = "client/img/";
@@ -123,8 +123,8 @@ export default class NFTMetaServer {
 			//img_base.invert();
 			//img_item.invert();
 
-			img_base.color([{ apply: 'hue', params: [- Number(color)] }, ]);
-			img_item.color([{ apply: 'hue', params: [- Number(color)] }]);
+			img_base.color([{ apply: 'red', params: [rgb?.r] }, { apply: 'green', params: [rgb?.g] }, { apply: 'blue', params: [rgb?.b] }]);
+			img_item.color([{ apply: 'red', params: [rgb?.r] }, { apply: 'green', params: [rgb?.g] }, { apply: 'blue', params: [rgb?.b] }]);
 
 
 			img_base.write(saveTo + `/${index}/` + fileName + ".png");
@@ -141,11 +141,10 @@ export default class NFTMetaServer {
 	 */
 	getNewMetaData(kind: string){
 		let metadata: RawItemMeta = new RawItemMeta([]);
-		metadata.addAttribute(RawItemMeta.ATTRIBUTE_NAME, this.getFunnyName());
-		metadata.addAttribute(RawItemMeta.ATTRIBUTE_DESCRIPTION, "A nice weapon form the game browserquest.");
+		metadata.name = this.getFunnyName();
+		metadata.description = "A nice weapon form the game browserquest.";
 		metadata.addAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND, kind);
-		metadata.addAttribute(RawItemMeta.ATTRIBUTE_COLORCODE, this.getRandomInt((2 * 360 - 360)) + ""); //{ r: this.getRandomInt(255), g: this.getRandomInt(255), g: this.getRandomInt(255)}
-		// TODO: add URL to dummy meta url 
+		metadata.setRgbOffset(this.getRandomInt(255) - 128, this.getRandomInt(255) - 128, this.getRandomInt(255) - 128);
 		return metadata;
 	}
 
@@ -155,7 +154,7 @@ export default class NFTMetaServer {
 	 */
 	getFunnyName(){
 		//TODO: More names.
-		let names: string[] =  ["Lifebinder","Snowflake","Covergence","Starlight","Vanquisher Idol","Wrathful CruxRuby Infused Bead","Nightfall, Pledge of the Prince","Shadowfall, Ferocity of Titans","Penance, Last Hope of Dragonsouls"]
+		let names: string[] =  ["Lifebinder","Snowflake","Covergence","Starlight","Vanquisher Idol","Wrathful CruxRuby Infused Bead","Nightfall, Pledge of the Prince","Shadowfall, Ferocity of Titans","Penance, Last Hope of Dragonsouls", "DEEZ NUTZ"]
 		return names[this.getRandomInt(9)];
 	}
 
@@ -165,11 +164,11 @@ export default class NFTMetaServer {
 	 */
 	dummyMetadata(): RawItemMeta {
 		let metadata: RawItemMeta = new RawItemMeta([]);
-		metadata.addAttribute(RawItemMeta.ATTRIBUTE_NAME, "Dummy Item");
-		metadata.addAttribute(RawItemMeta.ATTRIBUTE_DESCRIPTION, "placeholder item");
+		metadata.name = "Dummy Item";
+		metadata.description = "placeholder item";
+		metadata.image = "https://static.wikia.nocookie.net/minecraft_gamepedia/images/d/d5/Wooden_Sword_JE2_BE2.png/revision/latest/scale-to-width-down/160?cb=20200217235747"; // minecraft wooden sword
 		metadata.addAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND, "sword1");
-		metadata.addAttribute(RawItemMeta.ATTRIBUTE_COLORCODE, this.getRandomInt((2 * 360 - 360)) + ""); //{ r: this.getRandomInt(255), g: this.getRandomInt(255), g: this.getRandomInt(255)}
-		// TODO: add URL to dummy meta url 
+		metadata.setRgbOffset(this.getRandomInt(255) - 128, this.getRandomInt(255) - 128, this.getRandomInt(255) - 128);
 		return metadata;
 	}
 
@@ -191,7 +190,7 @@ export default class NFTMetaServer {
 			return;
 		}
 
-		res.send(meta.asJSON()); // originaly sending without conversion
+		res.send(JSON.stringify(meta)); // originaly sending without conversion
 	}
 
 	/**
@@ -234,7 +233,7 @@ export default class NFTMetaServer {
 
 		// save values to db
 		try {
-			await this.databaseHandler.putNFTMetadata(key(contractAddr, tokenId), metadata.asJSON());
+			await this.databaseHandler.putNFTMetadata(key(contractAddr, tokenId),JSON.stringify(metadata));
 			//await this.afterMetadataSet(contractAddr, tokenId); // run Observers  commented out bc so far there are none
 
 			//create corresponding pngs
@@ -265,7 +264,6 @@ export default class NFTMetaServer {
 			await this.databaseHandler.putNFTMetadata(key(contractAddr, tokenId), req.body);
 			await this.afterMetadataSet(contractAddr, tokenId); // run Observers
 			res.sendStatus(StatusNoContent); // send success without anything else
-			// TODO: Maybe implement this.cfg.allowUpdates handling
 		} catch (error) { // Handle NFT already being present in database
 			res.status(StatusConflict).send(error);
 		}
