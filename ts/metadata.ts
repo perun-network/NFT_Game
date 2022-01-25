@@ -105,7 +105,9 @@ export default class NFTMetaServer {
 	private async creatAndSavePng(tokenId: bigint, metaData: RawItemMeta) {
 
 		const kind = metaData.getAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND);
-		//const color = metaData?.getAttribute("ATTRIBUTE_COLORCODE");
+		//const color = metaData.getAttribute(RawItemMeta.ATTRIBUTE_COLORCODE);
+
+		//console.log("applying color spin: "  + color);
 
 		// Where to find png
 		const readImgsFrom = "client/img/";
@@ -119,12 +121,24 @@ export default class NFTMetaServer {
 			const img_base = await jimp.read(readImgsFrom + `${index}/` + kind + ".png");
 			const img_item = await jimp.read(readImgsFrom + `${index}/item-` + kind + ".png");
 
-			// example manipulates
 			img_base.invert();
 			img_item.invert();
 
+			/* kinda doesnt work (??)  but invert does
+			img_base.color([
+				{ apply: 'hue', params: [-90] },
+				{ apply: 'xor', params: ['#06D'] }
+			  ]);
+			img_item.color([
+				{ apply: 'hue', params: [-90] },
+				{ apply: 'xor', params: ['#06D'] }
+			  ]);
+			  */
+
+			// example manipulates
 			img_base.write(saveTo + `/${index}/` + fileName + ".png");
 			img_item.write(saveTo + `/${index}/item-` + fileName + ".png");
+
 		}
 
 	}
@@ -135,10 +149,10 @@ export default class NFTMetaServer {
 	 */
 	 dummyMetadata(): RawItemMeta {
 		let metadata : RawItemMeta = new RawItemMeta([]);
-		metadata.addAttribute(RawItemMeta.ATTRIBUTE_COLORCODE, "0x0");
 		metadata.addAttribute(RawItemMeta.ATTRIBUTE_NAME, "Dummy Item");
 		metadata.addAttribute(RawItemMeta.ATTRIBUTE_DESCRIPTION, "placeholder item");
 		metadata.addAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND, "sword1");
+		metadata.addAttribute(RawItemMeta.ATTRIBUTE_COLORCODE, this.getRandomInt(360) + "");
 		// TODO: add URL to dummy meta url 
 		return metadata;
 	}
@@ -315,6 +329,10 @@ export default class NFTMetaServer {
         	return spriteJSON;
     	}
 	}
+
+	private getRandomInt(max) {
+		return Math.floor(Math.random() * max);
+	  }
 
 }
 
