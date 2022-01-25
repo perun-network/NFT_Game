@@ -61,11 +61,6 @@ export default class NFTMetaServer {
 	}
 
 
-	// placeholder
-	getNextId() {
-		return "dummysword";
-	}
-
 
 	/**
 	 * Creates handler for requests
@@ -120,14 +115,16 @@ export default class NFTMetaServer {
 		const fileName = Number(tokenId);
 
 		// reads, manipulates and saves Png in all three scales
-		for (let index = 1; index < 3; index++) {
-			const img = await jimp.read(readImgsFrom + `${index}/` + kind + ".png");
+		for (let index = 1; index <= 3; index++) {
+			const img_base = await jimp.read(readImgsFrom + `${index}/` + kind + ".png");
+			const img_item = await jimp.read(readImgsFrom + `${index}/item-` + kind + ".png");
 
 			// example manipulates
-			img.invert();
+			img_base.invert();
+			img_item.invert();
 
-			img.write(saveTo + `/${index}/` + fileName + ".png");
-			
+			img_base.write(saveTo + `/${index}/` + fileName + ".png");
+			img_item.write(saveTo + `/${index}/item-` + fileName + ".png");
 		}
 
 	}
