@@ -243,7 +243,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                 kind = data[2],
                 x = data[3],
                 y = data[4],
-                nftData = data[5] == "" ? undefined : data[5];
+                nftData = data[5];
 
 
             if(Types.isItem(kind)) {
@@ -291,6 +291,8 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                     this.spawn_character_callback(character, x, y, orientation, target);
                 }
             }
+
+            nftrecieved_callback(nftData);
         },
 
         receiveDespawn: function(data) {
@@ -619,6 +621,10 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
 		onGuildPopulation: function(callback) {
 			this.guildpopulation_callback = callback;
 		},
+
+        onNftRecieved: function(callback) {
+            this.nftrecieved_callback = callback;
+        },
 
         sendCreate: function(player) {
             erdstallInterface.init().then((acc) => {

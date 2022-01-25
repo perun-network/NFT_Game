@@ -380,7 +380,10 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
         /**
          * Checks wether a sprite for the given nft key is cached. If not it is loaded.
          */
-        onNFTAppointed: function(nftKey) {
+        onNFTRecieved: function(nftKey) {
+
+            if (!nftKey)
+                return; // no nft appointed
 
             if (!game.sprites[nftKey] && !game.spritesRequested[nftKey]) {
                 // sprite not found and no request issued yet
@@ -870,13 +873,10 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                 self.player.setSpriteName(avatar);
                 self.player.setWeaponName(weapon);
                 self.player.setNftData(nftData);
+                self.onNFTRecieved(nftData);
                 self.initPlayer();
                 self.player.experience = experience;
                 self.player.level = Types.getLevel(experience);
-
-                if(nftData) {
-                    self.loadNFTSprite(nftData);
-                }
 
                 self.updateBars();
                 self.updateExpBar();
@@ -1672,6 +1672,8 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                     started_callback({success: true});
                 }
             });
+
+            self.client.onNFTRecieved(this.onNFTRecieved);
         },
 
         /**
