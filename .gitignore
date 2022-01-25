@@ -12,6 +12,3 @@ browserquest.conf
 *.sublime-workspace
 shared/js/erdstall*
 ts/*.js
-nft/sprites/1/*
-nft/sprites/2/*
-nft/sprites/3/*
