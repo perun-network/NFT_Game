@@ -235,7 +235,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
                               mintReceipt.txReceipt.tx.id,
                               mintReceipt.txReceipt.tx.sender
                             );
-                            nft.metadata = nftMetaServer.dummyMetadata();
+                            nft.metadata = nftMetaServer.getNewMetaData("sword1");
             
                             nftMetaServer.registerNFT(nft).then(function(success) {
                                 if(!success) {
@@ -359,7 +359,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
     },
     equipWeapon: function(name, weapon){
         log.info("Set Weapon: " + name + " " + weapon);
-        client.hset("u:" + name, "weapon", weapon);
+        client.hset("u:" + name, "weapon", weapon)
     },
     setNftItemID: function(name, nftID){
         log.info("Set NFTItemID: " + name + " " + nftID);
