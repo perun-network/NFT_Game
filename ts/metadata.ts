@@ -84,26 +84,18 @@ export default class NFTMetaServer {
 	 */
 	async getMetadata(contractAddr: Address, tokenId: bigint): Promise<RawItemMeta | undefined> {
 
-		console.log("HÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ");
-
 		try {
 			const meta = await this.databaseHandler.getNFTMetadata(key(contractAddr, tokenId));
 			if ((meta == undefined) && this.cfg!.serveDummies) {
-				console.log("HÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ");
-
 				return this.dummyMetadata();
 			}
-
-			console.log("DEBUG: Attempting meta load: " + meta );
-			console.log("DEBUG: Attempting meta load: " + meta + " " + RawItemMeta.getMetaFromJSON(meta));
-			console.log(RawItemMeta.getMetaFromJSON(meta));
 
 			return RawItemMeta.getMetaFromJSON(meta);
 		} catch (error) {
 			if (this.cfg!.serveDummies) {
 				return this.dummyMetadata();
 			}
-			console.log("HÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖ");
+
 			console.log(error);
 			return undefined;
 		}
@@ -245,7 +237,7 @@ export default class NFTMetaServer {
 
 		// save values to db
 		try {
-			await this.databaseHandler.putNFTMetadata(key(contractAddr, tokenId),JSON.stringify(metadata));
+			await this.databaseHandler.putNFTMetadata(key(contractAddr, tokenId), metadata.toJSON());
 			//await this.afterMetadataSet(contractAddr, tokenId); // run Observers  commented out bc so far there are none
 
 			//create corresponding pngs

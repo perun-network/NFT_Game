@@ -153,9 +153,7 @@ export class RawItemMeta {
      * @returns RawItemMeta object containing data from json object
      */
     public static getMetaFromJSON(json: string) : RawItemMeta {
-        console.log(json);
         var metaLookup : NFTMetadata = <NFTMetadata> JSON.parse(json);
-        console.log(metaLookup);
         return RawItemMeta.getMetaFromNFTMetadata(metaLookup);
     }
 
@@ -165,7 +163,6 @@ export class RawItemMeta {
      */
     public static getMetaFromNFTMetadata(meta: NFTMetadata) : RawItemMeta {
         var metaObject : RawItemMeta = new RawItemMeta([]);
-        console.log(metaObject);
         metaObject.meta = meta;
         if (metaObject.meta.attributes == undefined) {
             metaObject.meta.attributes = [];
