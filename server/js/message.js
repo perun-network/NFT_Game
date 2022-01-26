@@ -94,14 +94,14 @@ Messages.HitPoints = Message.extend({
 });
 
 Messages.EquipItem = Message.extend({
-    init: function (player, itemKind, nftData=undefined) {
+    init: function (player, itemKind, nftKey=undefined) {
         this.playerId = player.id;
         this.itemKind = itemKind;
-        this.nftData = nftData;
+        this.nftKey = nftKey;
     },
     serialize: function () {
 
-        if (nftData == undefined) {
+        if (nftKey == undefined) {
             return [Types.Messages.EQUIP,
                 this.playerId,
                 this.itemKind];
@@ -109,7 +109,7 @@ Messages.EquipItem = Message.extend({
             return [Types.Messages.EQUIP,
                 this.playerId,
                 this.itemKind,
-                this.nftData];
+                this.nftKey];
         }
     }
 });
@@ -121,7 +121,7 @@ Messages.Drop = Message.extend({
     },
     serialize: function() {
 
-        if (this.item.nftData == undefined) {
+        if (this.item.nftKey == undefined) {
             var drop = [Types.Messages.DROP,
                         this.mob.id,
                         this.item.id,
@@ -133,7 +133,7 @@ Messages.Drop = Message.extend({
                 this.item.id,
                 this.item.kind,
                 _.pluck(this.mob.hatelist, 'id'),
-                this.item.nftData
+                this.item.nftKey
             ];
         }
 

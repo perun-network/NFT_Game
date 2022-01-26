@@ -266,7 +266,7 @@ module.exports = Player = Character.extend({
                             }
                         } else if(Types.isArmor(kind) || Types.isWeapon(kind)) {
                             self.equipItem(item.kind);
-                            self.broadcast(self.equip(kind, nftData=item.nftData));
+                            self.broadcast(self.equip(kind, nftKey=item.nftKey));
                         }
                     }
                 }
@@ -516,8 +516,8 @@ module.exports = Player = Character.extend({
         this.broadcastzone_callback = callback;
     },
 
-    equip: function(item, nftData=undefined) {
-        return new Messages.EquipItem(this, item, nftData=nftData);
+    equip: function(item, nftKey=undefined) {
+        return new Messages.EquipItem(this, item, nftKey=nftKey);
     },
 
     addHater: function(mob) {
@@ -618,9 +618,9 @@ module.exports = Player = Character.extend({
         }
     },
 
-    setNftData: function(nftID) {
+    setNftKey: function(nftID) {
         databaseHandler.setNftItemID(this.name, nftID);
-        this.nftData = nftID;
+        this.nftKey = nftID;
         console.log("player.js: setNftItemID to " + nftID + " for player " + this.userName);
     },
 
@@ -678,7 +678,7 @@ module.exports = Player = Character.extend({
                           bannedTime, banUseTime,
                           inventory, inventoryNumber, achievementFound, achievementProgress,
                           x, y,
-                          chatBanEndTime, nftData) {
+                          chatBanEndTime, nftKey) {
         var self = this;
         self.kind = Types.Entities.WARRIOR;
         self.admin = admin;
@@ -710,17 +710,17 @@ module.exports = Player = Character.extend({
         }
         self.chatBanEndTime = chatBanEndTime;
 
-        self.nftData = nftData;
+        self.nftKey = nftKey;
 
         self.server.addPlayer(self);
         self.server.enter_callback(self);
 
-        if (nftData) {
+        if (nftKey) {
             // send welcome with nft data
             self.send([
                 Types.Messages.WELCOME, self.id, self.name, self.x, self.y,
                 self.hitPoints, armor, weapon, avatar, weaponAvatar,
-                self.experience, nftData, self.admin,
+                self.experience, nftKey, self.admin,
                 inventory[0], inventoryNumber[0], inventory[1], inventoryNumber[1],
                 achievementFound[0], achievementProgress[0], achievementFound[1],
                 achievementProgress[1], achievementFound[2], achievementProgress[2],

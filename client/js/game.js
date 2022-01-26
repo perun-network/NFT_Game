@@ -867,7 +867,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             });
 
             this.client.onWelcome(function(id, name, x, y, hp, armor, weapon,
-                                           avatar, weaponAvatar, experience, nftData=undefined) {
+                                           avatar, weaponAvatar, experience, nftKey=undefined) {
                 log.info("Received player ID from server : "+ id);
                 self.player.id = id;
                 self.playerId = id;
@@ -879,12 +879,12 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                 self.player.setArmorName(armor);
                 self.player.setSpriteName(avatar);
                 self.player.setWeaponName(weapon);
-                self.player.setNftData(nftData);
+                self.player.setNftKey(nftKey);
                 self.initPlayer();
                 self.player.experience = experience;
                 self.player.level = Types.getLevel(experience);
 
-                self.nftSpriteCheck(nftData);
+                self.nftSpriteCheck(nftKey);
 
                 self.updateBars();
                 self.updateExpBar();
@@ -1600,7 +1600,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                     self.updateBars();
                 });
 
-                self.client.onPlayerEquipItem(function(playerId, itemKind, nftData=undefined) {
+                self.client.onPlayerEquipItem(function(playerId, itemKind, nftKey=undefined) {
                     var player = self.getEntityById(playerId),
                         itemName = Types.getKindAsString(itemKind);
 
@@ -1610,7 +1610,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                         } else if(Types.isWeapon(itemKind)) {
                             player.setWeaponName(itemName);
                         }
-                        player.setNftData(nftData);
+                        player.setNftKey(nftKey);
                     }
                 });
 

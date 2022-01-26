@@ -7,15 +7,15 @@ define(['entity'], function(Entity) {
          * @param {*} id entity id
          * @param {*} kind  entity kind
          * @param {*} type 
-         * @param {*} nftData nftData tag, always 'contractId:NftId' or undefined if not nft context assumed
+         * @param {*} nftKey nftKey tag, always 'contractId:NftId' or undefined if not nft context assumed
          */
-        init: function(id, kind, type, nftData=undefined) {
+        init: function(id, kind, type, nftKey=undefined) {
             this._super(id, kind);
 
             this.itemKind = Types.getKindAsString(kind);
             this.type = type;
             this.wasDropped = false;
-            this.nftData = nftData;
+            this.nftKey = nftKey;
         },
 
         hasShadow: function() {
@@ -24,7 +24,7 @@ define(['entity'], function(Entity) {
 
         onLoot: function(player) {
             if(this.type === "weapon") {
-                player.switchWeapon(this.itemKind, nftData=this.nftData); // set weapon and pass nft data to player entity
+                player.switchWeapon(this.itemKind, nftKey=this.nftKey); // set weapon and pass nft data to player entity
             }
             else if(this.type === "armor") {
                 player.armorloot_callback(this.itemKind);

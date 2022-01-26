@@ -185,9 +185,9 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
         /**
          * sets players new weapon kind and nft context if nft to be equiped as weapon
          * @param {*} newWeaponName weapon kind
-         * @param {*} nftData nft key from contractId and nftId, undefined if no nft present
+         * @param {*} nftKey nft key from contractId and nftId, undefined if no nft present
          */
-        switchWeapon: function(newWeaponName, nftData=undefined) {
+        switchWeapon: function(newWeaponName, nftKey=undefined) {
             var count = 14,
                 value = false,
                 self = this;
@@ -197,7 +197,7 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
                 return value;
             };
 
-            if(newWeaponName !== this.getWeaponName() || nftData) { // always switch if NFT data present
+            if(newWeaponName !== this.getWeaponName() || nftKey) { // always switch if NFT data present
                 if(this.isSwitchingWeapon) {
                     clearInterval(blanking);
                 }
@@ -206,10 +206,10 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
                 var blanking = setInterval(function() {
                     if(toggle()) {
                         self.setWeaponName(newWeaponName);
-                        self.setNftData(nftData);
+                        self.setNftKey(nftKey);
                     } else {
                         self.setWeaponName(null);
-                        self.setNftData(undefined); // clear nft data bc no weapon present
+                        self.setNftKey(undefined); // clear nft data bc no weapon present
                     }
 
                     count -= 1;
