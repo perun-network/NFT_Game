@@ -363,8 +363,15 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
         loadNFTSprite: async function(nftKey) {
             var self = this;
 
+            console.log("DEBUG: load sprite: " + nftKey);
+
+
             // load json files for sprites
             this.client.getNFTSpritesJSON(nftKey).then(spriteJSON => {
+
+                console.log(spriteJSON);
+
+
                 if(!spriteJSON) {
                     throw new Error("Unable to load sprite for NFT " + nftKey);
                 }
@@ -388,6 +395,8 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
 
                     console.log("Successfully set sprite for " + name);
                 };
+
+                console.log(spritesObj);
 
                 initSprite(nftKey, spritesObj.entity); // load actual character weapon sprite
                 initSprite("item-" + nftKey, spritesObj.item); // load actual item sprite

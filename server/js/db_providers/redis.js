@@ -239,7 +239,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
                               );
 
                               // create metadata for default sword
-                              nft.metadata = nftMetaServer.getNewMetaData("sword1");
+                              nft.metadata = nftMetaServer.getNewMetaData("sword1").getNFTMetadata();
                               
                               // push metadata to db
                               nftMetaServer.registerNFT(nft).then(function(success) {
@@ -265,8 +265,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
                                         [null, null], [0, 0],
                                         [false, false, false, false, false, false],
                                         [0, 0, 0, 0, 0, 0],
-                                        player.x, player.y, 0,
-                                        nftKey);
+                                        player.x, player.y, 0, nftKey=nftKey);
                                   });
                               })
                           });

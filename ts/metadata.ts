@@ -83,16 +83,28 @@ export default class NFTMetaServer {
 	 * @returns metadata
 	 */
 	async getMetadata(contractAddr: Address, tokenId: bigint): Promise<RawItemMeta | undefined> {
+
+		console.log("HÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ");
+
 		try {
 			const meta = await this.databaseHandler.getNFTMetadata(key(contractAddr, tokenId));
 			if ((meta == undefined) && this.cfg!.serveDummies) {
+				console.log("HÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ");
+
 				return this.dummyMetadata();
 			}
+
+			console.log("DEBUG: Attempting meta load: " + meta );
+			console.log("DEBUG: Attempting meta load: " + meta + " " + RawItemMeta.getMetaFromJSON(meta));
+			console.log(RawItemMeta.getMetaFromJSON(meta));
+
 			return RawItemMeta.getMetaFromJSON(meta);
 		} catch (error) {
 			if (this.cfg!.serveDummies) {
 				return this.dummyMetadata();
 			}
+			console.log("HÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖ");
+			console.log(error);
 			return undefined;
 		}
 	}
@@ -141,8 +153,8 @@ export default class NFTMetaServer {
 	 */
 	getNewMetaData(kind: string){
 		let metadata: RawItemMeta = new RawItemMeta([]);
-		metadata.name = this.getFunnyName();
-		metadata.description = "A nice weapon form the game browserquest.";
+		metadata.meta.name = this.getFunnyName();
+		metadata.meta.description = "A nice weapon form the game browserquest.";
 		metadata.addAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND, kind);
 		metadata.setRgbOffset(this.getRandomInt(255) - 128, this.getRandomInt(255) - 128, this.getRandomInt(255) - 128);
 		return metadata;
@@ -164,9 +176,9 @@ export default class NFTMetaServer {
 	 */
 	dummyMetadata(): RawItemMeta {
 		let metadata: RawItemMeta = new RawItemMeta([]);
-		metadata.name = "Dummy Item";
-		metadata.description = "placeholder item";
-		metadata.image = "https://static.wikia.nocookie.net/minecraft_gamepedia/images/d/d5/Wooden_Sword_JE2_BE2.png/revision/latest/scale-to-width-down/160?cb=20200217235747"; // minecraft wooden sword
+		metadata.meta.name = "Dummy Item";
+		metadata.meta.description = "placeholder item";
+		metadata.meta.image = "https://static.wikia.nocookie.net/minecraft_gamepedia/images/d/d5/Wooden_Sword_JE2_BE2.png/revision/latest/scale-to-width-down/160?cb=20200217235747"; // minecraft wooden sword
 		metadata.addAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND, "sword1");
 		metadata.setRgbOffset(this.getRandomInt(255) - 128, this.getRandomInt(255) - 128, this.getRandomInt(255) - 128);
 		return metadata;
@@ -229,7 +241,7 @@ export default class NFTMetaServer {
 		// gather values
 		const contractAddr: Address = nft.token;
 		const tokenId: bigint = nft.id;
-		const metadata: RawItemMeta = !nft.metadata ? new RawItemMeta([]) : RawItemMeta.getRawMetaFromNFTMetadata(nft.metadata); // init if empty
+		const metadata: RawItemMeta = !nft.metadata ? new RawItemMeta([]) : RawItemMeta.getMetaFromNFTMetadata(nft.metadata); // init if empty
 
 		// save values to db
 		try {
