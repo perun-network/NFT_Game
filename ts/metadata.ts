@@ -102,7 +102,7 @@ export default class NFTMetaServer {
 	 * @param contractAddr address of smart contract (aka "token")
 	 * @param tokenId 256bit integer ID of NFT
 	 */
-	private async creatAndSavePng(tokenId: bigint, metaData: RawItemMeta) {
+	private async createAndSavePng(tokenId: bigint, metaData: RawItemMeta) {
 
 		const kind = metaData.getAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND);
 		const rgb = metaData.getRgbOffset();
@@ -237,7 +237,7 @@ export default class NFTMetaServer {
 			//await this.afterMetadataSet(contractAddr, tokenId); // run Observers  commented out bc so far there are none
 
 			//create corresponding pngs
-			await this.creatAndSavePng(tokenId, metadata);
+			await this.createAndSavePng(tokenId, metadata);
 
 			return true; // return success
 		} catch (error) { // Handle NFT already being present in database
