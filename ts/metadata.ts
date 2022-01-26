@@ -208,7 +208,7 @@ export default class NFTMetaServer {
 			res.status(StatusNotFound).send("No Metadata present.");
 			return;
 		}
-		const reply = { item: this.generateNFTItemSpriteJSON(meta, tokenId), entity: this.generateNFTEntitySpriteJSON(meta, tokenId) };
+		const reply = this.generateNFTISpriteJSON(meta, tokenId);
 
 		res.send(reply);
 	}
@@ -302,9 +302,9 @@ export default class NFTMetaServer {
 	/**
 	 * If given metadata contains kind attribute, loads sprite description json for that item kind and alters it to fit NFT sprite description.
 	 * If no kind attribute is contained, undefined is returned.
-	 * @returns NFT sprite description JSON if item kind present, undefined otherwise
+	 * @returns NFT sprite description JSONs if item kind present, undefined otherwise
 	 */
-	public generateNFTItemSpriteJSON(meta: RawItemMeta, tokenId: bigint): string | undefined {
+	public generateNFTISpriteJSON(meta: RawItemMeta, tokenId: bigint): {entity: string, item: string} | undefined {
 
 		if (!meta.hasAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND)) {
 			// ERROR, nft item sprite json requested but no base item known 
@@ -313,11 +313,15 @@ export default class NFTMetaServer {
 
 			let itemKind = meta.getAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND);
 
-			const spriteJsonString = fs.readFileSync('./client/sprites/item-' + itemKind + '.json').toString();
-			var spriteJSON = JSON.parse(spriteJsonString);
-			spriteJSON.image_path_prefix = this.cfg.nftPathPrefix;
-			spriteJSON.id = "item-" + tokenId;
-			return spriteJSON;
+			const spriteJsonEntityString = fs.readFileSync('./client/sprites/' + itemKind + '.json').toString();
+			const spriteJsonItemString = fs.readFileSync('./client/sprites/item-' + itemKind + '.json').toString();
+			var spriteEntityJSON = JSON.parse(spriteJsonEntityString);
+			var spriteItemJSON = JSON.parse(spriteJsonItemString);
+			spriteEntityJSON.image_path_prefix = this.cfg.nftPathPrefix;
+			spriteEntityJSON.id = tokenId;
+			spriteItemJSON.image_path_prefix = this.cfg.nftPathPrefix;
+			spriteItemJSON.id = "item-" + tokenId;
+			return {item: spriteItemJSON, entity: spriteEntityJSON};
 		}
 	}
 
@@ -327,7 +331,7 @@ export default class NFTMetaServer {
 	 * If no kind attribute is contained, undefined is returned.
 	 * @returns NFT sprite description JSON if item kind present, undefined otherwise
 	 */
-	public generateNFTEntitySpriteJSON(meta: RawItemMeta, tokenId: bigint): string | undefined {
+	public generateNFTEntitySpriteJSON(meta: RawItemMeta, tokenId: bigint): {entity: string, item: string} | undefined {
 
 		if (!meta.hasAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND)) {
 			// ERROR, nft item sprite json requested but no base item known 
