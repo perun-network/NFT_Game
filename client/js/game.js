@@ -357,9 +357,13 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             }
         },
 
+        /** 
+         * Retrieves JSON from Metadata server for NFT sprite loading. JSON is parsed and NFT sprites are loaded from path.
+        */
         loadNFTSprite: async function(nftKey) {
-            console.log("DEBUG: sprite load requested for " + nftKey);
             var self = this;
+
+            // load json files for sprites
             this.client.getNFTSpritesJSON(nftKey).then(spriteJSON => {
                 if(!spriteJSON) {
                     throw new Error("Unable to load sprite for NFT " + nftKey);
@@ -385,8 +389,8 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                     console.log("Successfully set sprite for " + name);
                 };
 
-                initSprite(nftKey, spritesObj.entity);
-                initSprite("item-" + nftKey, spritesObj.item);
+                initSprite(nftKey, spritesObj.entity); // load actual character weapon sprite
+                initSprite("item-" + nftKey, spritesObj.item); // load actual item sprite
             });
         },
 
@@ -1632,7 +1636,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                     }
                 });
 
-                self.client.onDropItem(function(item, mobId, nftData=undefined) {
+                self.client.onDropItem(function(item, mobId) {
                     var pos = self.getDeadMobPosition(mobId);
 
                     if(pos) {

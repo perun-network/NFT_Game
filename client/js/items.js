@@ -87,13 +87,6 @@ define(['item'], function(Item) {
             },
         }),
 
-        NftArmor: Item.extend({
-            init: function(id, nftData) {
-                this._super(id, Types.Entities.NFTARMOR, "armor", nftData=nftData);
-                this.lootMessage = "You equip a unique armor";
-            },
-        }),
-
         Flask: Item.extend({
             init: function(id) {
                 this._super(id, Types.Entities.FLASK, "object");

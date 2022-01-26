@@ -115,6 +115,11 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
             }
         },
 
+        /**
+         * loads sprite descriptor JSON from metaserver
+         * @param {*} nftKey nft context associated with sprite to be loaded
+         * @returns json of sprite description
+         */
         getNFTSpritesJSON: function(nftKey) {
             return new Promise(resolve => {
                 const [token, id] = nftKey.split(":");
@@ -123,8 +128,6 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                 var xmlHttp = new XMLHttpRequest();
                 xmlHttp.onreadystatechange = function() { 
                     if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
-                        // console.log("GOT RESPONSE FOR NFT " + nftKey);
-                        // console.log(xmlHttp.responseText);
                         resolve(xmlHttp.responseText);
                     }
                 }

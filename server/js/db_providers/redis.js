@@ -229,14 +229,18 @@ module.exports = DatabaseHandler = cls.Class.extend({
                         // Mint NFT for new user
                         console.log("Minting a fresh NFT for new player " + player.name + "...");
                         erdstallServer.mintNFT().then(function(mintReceipt) {
-                            // TODO: Fix meta
-                            var nft = new (require("../../../ts/nft")).default(
+                          // NFT minted
+
+                          var nft = new (require("../../../ts/nft")).default(
                               mintReceipt.txReceipt.tx.token,
                               mintReceipt.txReceipt.tx.id,
                               mintReceipt.txReceipt.tx.sender
                             );
+
+                            // create metadata for default sword
                             nft.metadata = nftMetaServer.getNewMetaData("sword1");
-            
+                            
+                            // push metadata to db
                             nftMetaServer.registerNFT(nft).then(function(success) {
                                 if(!success) {
                                   var error = "Error registering NFT for new player " + player.name;

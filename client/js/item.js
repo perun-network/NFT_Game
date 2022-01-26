@@ -2,6 +2,13 @@
 define(['entity'], function(Entity) {
 
     var Item = Entity.extend({
+        /**
+         * creates a new item entity
+         * @param {*} id entity id
+         * @param {*} kind  entity kind
+         * @param {*} type 
+         * @param {*} nftData nftData tag, always 'contractId:NftId' or undefined if not nft context assumed
+         */
         init: function(id, kind, type, nftData=undefined) {
             this._super(id, kind);
 

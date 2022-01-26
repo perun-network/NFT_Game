@@ -51,6 +51,10 @@ define(function() {
             }
         },
 
+        /**
+         *  NFT context as contractId:nftId or undefined if not nft to be associated present
+         * @returns NFT context as contractId:nftId or undefined if not nft to be associated present
+         */
         getNftData: function() {
             return this.nftData;
         },

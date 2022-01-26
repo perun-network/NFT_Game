@@ -181,6 +181,12 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
               this.switch_callback();
             }
         },
+
+        /**
+         * sets players new weapon kind and nft context if nft to be equiped as weapon
+         * @param {*} newWeaponName weapon kind
+         * @param {*} nftData nft key from contractId and nftId, undefined if no nft present
+         */
         switchWeapon: function(newWeaponName, nftData=undefined) {
             var count = 14,
                 value = false,
