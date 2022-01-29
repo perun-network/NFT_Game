@@ -3,7 +3,7 @@ define(['mobs', 'items', 'npcs', 'warrior', 'chest'], function(Mobs, Items, NPCs
 
     var EntityFactory = {};
 
-    EntityFactory.createEntity = function(kind, id, name) {
+    EntityFactory.createEntity = function(kind, id, name, nftKey=undefined) {
         if(!kind) {
             log.error("kind is undefined", true);
             return;
@@ -21,7 +21,7 @@ define(['mobs', 'items', 'npcs', 'warrior', 'chest'], function(Mobs, Items, NPCs
     EntityFactory.builders = [];
 
     EntityFactory.builders[Types.Entities.WARRIOR] = function(id, name) {
-        return new Warrior(id, name);
+        return new Warrior(id, name, nftKey=nftKey);
     };
 
     EntityFactory.builders[Types.Entities.RAT] = function(id) {

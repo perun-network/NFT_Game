@@ -63,6 +63,8 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
 
             this.sprites = {};
 
+            this.spritesRequested = {};
+
             // tile animation
             this.animatedTiles = null;
 
@@ -320,6 +322,19 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                 this.app.initUnlockedAchievements(this.storage.data.achievements.unlocked);
             }
         },
+        
+        nftSpriteCheck: function(nftkey) {
+            if (nftkey == undefined)
+                return; // no nft appointed
+
+            if (this.sprites[nftkey] == undefined && this.spritesRequested[nftkey] == undefined) {
+                // sprite not found and no request issued yet
+
+                // Request sprite and save request
+                this.spritesRequested[nftkey] = true;
+                this.loadNFTSprite(nftkey);
+            }
+        },
 
         getAchievementById: function(id) {
             var found = null;
@@ -340,6 +355,52 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                     this.spritesets[2][name] = new Sprite(name, 3);
                 }
             }
+        },
+
+        /** 
+         * Retrieves JSON from Metadata server for NFT sprite loading. JSON is parsed and NFT sprites are loaded from path.
+        */
+        loadNFTSprite: async function(nftKey) {
+            var self = this;
+
+            console.log("DEBUG: load sprite: " + nftKey);
+
+
+            // load json files for sprites
+            this.client.getNFTSpritesJSON(nftKey).then(spriteJSON => {
+
+                console.log(spriteJSON);
+
+
+                if(!spriteJSON) {
+                    throw new Error("Unable to load sprite for NFT " + nftKey);
+                }
+                const spritesObj = JSON.parse(spriteJSON);
+                
+                function initSprite(name, json) {
+                    if(self.renderer.upscaledRendering) {
+                        self.spritesets[0][name] = new Sprite(name, 1);
+                        self.spritesets[0][name].loadJSON(json);
+                        self.sprites = self.spritesets[0];
+                    } else {
+                        self.spritesets[1][name] = new Sprite(name, 2);
+                        self.spritesets[1][name].loadJSON(json);
+                        if(!self.renderer.mobile && !self.renderer.tablet) {
+                            self.spritesets[2][name] = new Sprite(name, 3);
+                            self.spritesets[2][name].loadJSON(json);
+                        }
+    
+                        self.sprites = self.spritesets[self.renderer.scale - 1];
+                    }
+
+                    console.log("Successfully set sprite for " + name);
+                };
+
+                console.log(spritesObj);
+
+                initSprite(nftKey, spritesObj.entity); // load actual character weapon sprite
+                initSprite("item-" + nftKey, spritesObj.item); // load actual item sprite
+            });
         },
 
         setSpriteScale: function(scale) {
@@ -807,8 +868,15 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                 }
             });
 
+            /**
+             * Checks wether a sprite for the given nft key is cached. If not it is loaded.
+             */
+            this.client.onNftRecieved(function(nftKey) {
+                self.nftSpriteCheck(nftKey);
+            });
+
             this.client.onWelcome(function(id, name, x, y, hp, armor, weapon,
-                                           avatar, weaponAvatar, experience) {
+                                           avatar, weaponAvatar, experience, nftKey=undefined) {
                 log.info("Received player ID from server : "+ id);
                 self.player.id = id;
                 self.playerId = id;
@@ -820,9 +888,12 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                 self.player.setArmorName(armor);
                 self.player.setSpriteName(avatar);
                 self.player.setWeaponName(weapon);
+                self.player.setNftKey(nftKey);
                 self.initPlayer();
                 self.player.experience = experience;
                 self.player.level = Types.getLevel(experience);
+
+                self.nftSpriteCheck(nftKey);
 
                 self.updateBars();
                 self.updateExpBar();
@@ -1538,7 +1609,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                     self.updateBars();
                 });
 
-                self.client.onPlayerEquipItem(function(playerId, itemKind) {
+                self.client.onPlayerEquipItem(function(playerId, itemKind, nftKey=undefined) {
                     var player = self.getEntityById(playerId),
                         itemName = Types.getKindAsString(itemKind);
 
@@ -1548,6 +1619,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                         } else if(Types.isWeapon(itemKind)) {
                             player.setWeaponName(itemName);
                         }
+                        player.setNftKey(nftKey);
                     }
                 });
 

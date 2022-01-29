@@ -505,7 +505,7 @@ module.exports = World = cls.Class.extend({
         if(kind === Types.Entities.CHEST) {
             item = new Chest(id, x, y);
         } else {
-            item = new Item(id, kind, x, y);
+           item = new Item(id, kind, x, y, nftKey=undefined);
         }
         return item;
     },

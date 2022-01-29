@@ -5,6 +5,9 @@ var cls = require("../lib/class"),
     Messages = require("../message"),
     redis = require("redis"),
     bcrypt = require("bcrypt");
+var erdstallServer = require("../../../ts/erdstallserverinterface").erdstallServer;
+var nftMetaServer = require("../../../ts/metadata").nftMetaServer;
+const { token } = require('morgan');
 
 module.exports = DatabaseHandler = cls.Class.extend({
     init: function(config){
@@ -56,6 +59,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
                         .hget(userKey, "achievement8:progress") // 34
                         .hget("cb:" + player.connection._connection.remoteAddress, "etime") // 35
                         .hget(userKey, "cryptoaddress") // 36
+                        .hget(userKey, "nftItemID") // 37
                         .exec(function(err, replies){
                             var pw = replies[0];
                             var armor = replies[1];
@@ -98,6 +102,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
                             var y = Utils.NaN2Zero(replies[30]);
                             var chatBanEndTime = Utils.NaN2Zero(replies[35]);
                             var cryptoAddress = replies[36];
+                            var nftItemId = replies[37];
 
                             // Check Password
 
@@ -181,7 +186,8 @@ module.exports = DatabaseHandler = cls.Class.extend({
                                     inventory, inventoryNumber,
                                     achievementFound, achievementProgress,
                                     x, y,
-                                    chatBanEndTime);
+                                    chatBanEndTime,
+                                    nftItemId );
                             });
                     });
                     return;
@@ -198,6 +204,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
     createPlayer: function(player) {
         var userKey = "u:" + player.name;
         var curTime = new Date().getTime();
+        var self = this;
 
         // Check if username is taken
         client.sismember('usr', player.name, function(err, reply) {
@@ -219,13 +226,63 @@ module.exports = DatabaseHandler = cls.Class.extend({
                     .hset("b:" + player.connection._connection.remoteAddress, "loginTime", curTime)
                     .exec(function(err, replies){
                         log.info("New User: " + player.name + " {" + player.cryptoAddress + "}");
-                        player.sendWelcome(
+                        // Mint NFT for new user
+                        console.log("Minting a fresh NFT for new player " + player.name + "...");
+                        try {
+                          erdstallServer.mintNFT().then(function(mintReceipt) {
+                            // NFT minted
+
+                            var nft = new (require("../../../ts/nft")).default(
+                                mintReceipt.txReceipt.tx.token,
+                                mintReceipt.txReceipt.tx.id,
+                                mintReceipt.txReceipt.tx.sender
+                              );
+
+                              // create metadata for default sword
+                              nft.metadata = nftMetaServer.getNewMetaData("sword1").getNFTMetadata();
+                              
+                              // push metadata to db
+                              nftMetaServer.registerNFT(nft).then(function(success) {
+                                  if(!success) {
+                                    var error = "Error registering NFT for new player " + player.name;
+                                    console.error(error);
+                                    throw new Error(error);
+                                  }
+
+                                  console.log("Successfully put NFT metadata for new player " + player.name);
+
+                                  // Transfer new NFT to user
+                                  erdstallServer.transferTo(nft, player.cryptoAddress).then(function(transferReceipt) {
+                                      console.log("Successfully transferred NFT to new player " + player.name);
+      
+                                      nftKey = require("../../../ts/nft").key(mintReceipt.txReceipt.tx.token, mintReceipt.txReceipt.tx.id);
+      
+                                      self.setNftItemID(player.name, nftKey);
+      
+                                      player.sendWelcome(
+                                        "clotharmor", "sword1", "clotharmor", "sword1", 0,
+                                        null, 0, 0,
+                                        [null, null], [0, 0],
+                                        [false, false, false, false, false, false],
+                                        [0, 0, 0, 0, 0, 0],
+                                        player.x, player.y, 0, nftKey=nftKey);
+                                  });
+                              })
+                          });
+                        } catch (error) {
+
+                          // on error set non nft weapon
+
+                          player.sendWelcome(
                             "clotharmor", "sword1", "clotharmor", "sword1", 0,
-                             null, 0, 0,
-                             [null, null], [0, 0],
-                             [false, false, false, false, false, false],
-                             [0, 0, 0, 0, 0, 0],
-                             player.x, player.y, 0);
+                            null, 0, 0,
+                            [null, null], [0, 0],
+                            [false, false, false, false, false, false],
+                            [0, 0, 0, 0, 0, 0],
+                            player.x, player.y, 0);
+
+                          throw new Error("Failed to mint item for player" + error);
+                        }
                     });
             }
         });
@@ -320,7 +377,11 @@ module.exports = DatabaseHandler = cls.Class.extend({
     },
     equipWeapon: function(name, weapon){
         log.info("Set Weapon: " + name + " " + weapon);
-        client.hset("u:" + name, "weapon", weapon);
+        client.hset("u:" + name, "weapon", weapon)
+    },
+    setNftItemID: function(name, nftID){
+        log.info("Set NFTItemID: " + name + " " + nftID);
+        client.hset("u:" + name, "nftItemID", nftID);
     },
     setExp: function(name, exp){
         log.info("Set Exp: " + name + " " + exp);

@@ -3,6 +3,7 @@ var Types = require('../../shared/js/gametypes');
 
 (function () {
     FormatChecker = Class.extend({
+        // inbound to server checks only
         init: function () {
             this.formats = [];
             this.formats[Types.Messages.CREATE] = ['s', 's', 's', 's'],

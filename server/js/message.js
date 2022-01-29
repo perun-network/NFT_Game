@@ -45,9 +45,13 @@ Messages.LootMove = Message.extend({
         this.item = item;
     },
     serialize: function() {
+
+        // do not include nft information because nft data of items are assumed not to change and therefore has already been transmitted to the server at SPAWN
+
         return [Types.Messages.LOOTMOVE,
-                this.entity.id,
-                this.item.id];
+            this.entity.id,
+            this.item.id];
+
     }
 });
 
@@ -90,14 +94,23 @@ Messages.HitPoints = Message.extend({
 });
 
 Messages.EquipItem = Message.extend({
-    init: function (player, itemKind) {
+    init: function (player, itemKind, nftKey=undefined) {
         this.playerId = player.id;
         this.itemKind = itemKind;
+        this.nftKey = nftKey;
     },
     serialize: function () {
-        return [Types.Messages.EQUIP,
+
+        if (nftKey == undefined) {
+            return [Types.Messages.EQUIP,
                 this.playerId,
                 this.itemKind];
+        } else {
+            return [Types.Messages.EQUIP,
+                this.playerId,
+                this.itemKind,
+                this.nftKey];
+        }
     }
 });
 
@@ -107,11 +120,22 @@ Messages.Drop = Message.extend({
         this.item = item;
     },
     serialize: function() {
-        var drop = [Types.Messages.DROP,
-                    this.mob.id,
-                    this.item.id,
-                    this.item.kind,
-                    _.pluck(this.mob.hatelist, 'id')];
+
+        if (this.item.nftKey == undefined) {
+            var drop = [Types.Messages.DROP,
+                        this.mob.id,
+                        this.item.id,
+                        this.item.kind,
+                        _.pluck(this.mob.hatelist, 'id')];
+        } else { // if nft data present, include in drop message
+            var drop = [Types.Messages.DROP,
+                this.mob.id,
+                this.item.id,
+                this.item.kind,
+                _.pluck(this.mob.hatelist, 'id'),
+                this.item.nftKey
+            ];
+        }
 
         return drop;
     }

@@ -266,7 +266,7 @@ module.exports = Player = Character.extend({
                             }
                         } else if(Types.isArmor(kind) || Types.isWeapon(kind)) {
                             self.equipItem(item.kind);
-                            self.broadcast(self.equip(kind));
+                            self.broadcast(self.equip(kind, nftKey=item.nftKey));
                         }
                     }
                 }
@@ -516,8 +516,8 @@ module.exports = Player = Character.extend({
         this.broadcastzone_callback = callback;
     },
 
-    equip: function(item) {
-        return new Messages.EquipItem(this, item);
+    equip: function(item, nftKey=undefined) {
+        return new Messages.EquipItem(this, item, nftKey=nftKey);
     },
 
     addHater: function(mob) {
@@ -618,6 +618,12 @@ module.exports = Player = Character.extend({
         }
     },
 
+    setNftKey: function(nftID) {
+        databaseHandler.setNftItemID(this.name, nftID);
+        this.nftKey = nftID;
+        console.log("player.js: setNftItemID to " + nftID + " for player " + this.userName);
+    },
+
     setGuildId: function(id) {
         if(typeof this.server.guilds[id] !== "undefined") {
             this.guildId = id;
@@ -672,7 +678,7 @@ module.exports = Player = Character.extend({
                           bannedTime, banUseTime,
                           inventory, inventoryNumber, achievementFound, achievementProgress,
                           x, y,
-                          chatBanEndTime) {
+                          chatBanEndTime, nftKey) {
         var self = this;
         self.kind = Types.Entities.WARRIOR;
         self.admin = admin;
@@ -704,21 +710,41 @@ module.exports = Player = Character.extend({
         }
         self.chatBanEndTime = chatBanEndTime;
 
+        self.nftKey = nftKey;
+
         self.server.addPlayer(self);
         self.server.enter_callback(self);
 
-        self.send([
-            Types.Messages.WELCOME, self.id, self.name, self.x, self.y,
-            self.hitPoints, armor, weapon, avatar, weaponAvatar,
-            self.experience, self.admin,
-            inventory[0], inventoryNumber[0], inventory[1], inventoryNumber[1],
-            achievementFound[0], achievementProgress[0], achievementFound[1],
-            achievementProgress[1], achievementFound[2], achievementProgress[2],
-            achievementFound[3], achievementProgress[3], achievementFound[4],
-            achievementProgress[4], achievementFound[5], achievementProgress[5],
-            achievementFound[6], achievementProgress[6], achievementFound[7],
-            achievementProgress[7]
-        ]);
+        if (nftKey) {
+            // send welcome with nft data
+            self.send([
+                Types.Messages.WELCOME, self.id, self.name, self.x, self.y,
+                self.hitPoints, armor, weapon, avatar, weaponAvatar,
+                self.experience, nftKey, self.admin,
+                inventory[0], inventoryNumber[0], inventory[1], inventoryNumber[1],
+                achievementFound[0], achievementProgress[0], achievementFound[1],
+                achievementProgress[1], achievementFound[2], achievementProgress[2],
+                achievementFound[3], achievementProgress[3], achievementFound[4],
+                achievementProgress[4], achievementFound[5], achievementProgress[5],
+                achievementFound[6], achievementProgress[6], achievementFound[7],
+                achievementProgress[7]
+            ]);
+        } else {
+            // send default welcome without nft data
+            self.send([
+                Types.Messages.WELCOME, self.id, self.name, self.x, self.y,
+                self.hitPoints, armor, weapon, avatar, weaponAvatar,
+                self.experience, self.admin,
+                inventory[0], inventoryNumber[0], inventory[1], inventoryNumber[1],
+                achievementFound[0], achievementProgress[0], achievementFound[1],
+                achievementProgress[1], achievementFound[2], achievementProgress[2],
+                achievementFound[3], achievementProgress[3], achievementFound[4],
+                achievementProgress[4], achievementFound[5], achievementProgress[5],
+                achievementFound[6], achievementProgress[6], achievementFound[7],
+                achievementProgress[7]
+            ]);
+        }
+        
 
         self.hasEnteredGame = true;
         self.isDead = false;

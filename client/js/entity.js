@@ -2,6 +2,7 @@
 define(function() {
 
     var Entity = Class.extend({
+
         init: function(id, kind) {
             var self = this;
 
@@ -25,6 +26,37 @@ define(function() {
             this.visible = true;
             this.isFading = false;
             this.setDirty();
+
+            // nft payload
+            this.nftKey = undefined;
+        },
+
+        /**
+         * returns if the entitiy can be related to an NFT or multiple. For example may a player wield an nft sword or an item may have nft data.
+         */
+        hasNftContext: function() {
+            this.nftKey != undefined;
+        },
+
+        /**
+         * Sets the nft payload of the entity. To be overwritten by subclasses
+         * @param {*} nftKey 
+         */
+        setNftKey: function(nftKey) {
+            this.nftKey = nftKey;
+            
+            // ### DEBUG log any NFT context
+            if (nftKey != undefined) {
+                console.log("DEBUG: entity " + this.id + " " + Types.getKindAsString(this.kind) + " was assigned nft context '" + nftKey + "'");
+            }
+        },
+
+        /**
+         *  NFT context as contractId:nftId or undefined if not nft to be associated present
+         * @returns NFT context as contractId:nftId or undefined if not nft to be associated present
+         */
+        getNftKey: function() {
+            return this.nftKey;
         },
 
         setName: function(name) {

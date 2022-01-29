@@ -113,6 +113,9 @@ WS.WebsocketServer = Server.extend({
             var serveStatic = require('serve-static');
             app.use(serveStatic('client', {'index': ['index.html']}));
 
+            // Serve nft sprite images statically
+            app.use('/nfts', express.static('nfts'));
+
             // Display errors (such as 404's) in the server log
             var logger = require('morgan');
             app.use(logger('dev'));

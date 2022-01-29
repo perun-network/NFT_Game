@@ -7,9 +7,9 @@ import { ErdstallEvent, Session } from "@polycrypt/erdstall";
 import detectEthereumProvider from "@metamask/detect-provider";
 import config from './config/clientConfig.json';
 
-import NFT from "./nft"
+import NFT from "./nft";
 
-import * as test from "@polycrypt/erdstall/test";
+// import * as test from "@polycrypt/erdstall/test";
 
 export type eventCallback = (error: string | Error) => void;
 
@@ -57,23 +57,23 @@ export default class erdstallClientInterface {
 	}
 
 	// Returns list of NFTs associated with user
-	async getNFTs(): Promise< //TODO: implement
-		{ nfts: NFT[] } | undefined
-	> {
-		if (!this._session) return undefined;
-		let nfts: NFT[] = new Array[10];
-		for (let i = 0; i < 10; ++i) {
-			const rng = test.newPrng();
-			let nft: NFT = new NFT(
-				test.newRandomAddress(rng), // Token
-				test.newRandomUint64(rng), // ID
-				test.newRandomAddress(rng), // Owner
-				undefined, // Offer
-				test.newRandomMetadata(rng)); // Metadata
-			nfts[i] = nft;
-		}
-		return { nfts };
-	}
+	// async getNFTs(): Promise< //TODO: implement
+	// 	{ nfts: NFT[] } | undefined
+	// > {
+	// 	if (!this._session) return undefined;
+	// 	let nfts: NFT[] = new Array[10];
+	// 	for (let i = 0; i < 10; ++i) {
+	// 		const rng = test.newPrng();
+	// 		let nft: NFT = new NFT(
+	// 			test.newRandomAddress(rng), // Token
+	// 			test.newRandomUint64(rng), // ID
+	// 			test.newRandomAddress(rng), // Owner
+	// 			undefined, // Offer
+	// 			test.newRandomMetadata(rng)); // Metadata
+	// 		nfts[i] = nft;
+	// 	}
+	// 	return { nfts };
+	// }
 
 	// Registers listener function for Erdstall Events
 	registerCallback(

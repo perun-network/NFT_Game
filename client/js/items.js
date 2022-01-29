@@ -45,6 +45,13 @@ define(['item'], function(Item) {
             },
         }),
 
+        NftWeapon: Item.extend({ // placeholder for any nft item. Stats will be changed by nftKey payload
+            init: function(id, nftKey) {
+                this._super(id, Types.Entities.NFTWEAPON, "weapon", nftKey=nftKey);
+                this.lootMessage = "You pick up a unique weapon";
+            },
+        }),
+
         LeatherArmor: Item.extend({
             init: function(id) {
                 this._super(id, Types.Entities.LEATHERARMOR, "armor");

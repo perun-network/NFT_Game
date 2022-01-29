@@ -95,7 +95,9 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
 
                 if(rank && currentRank) {
                     if(rank === currentRank) {
-                        throw new Exceptions.LootException("You already have this "+item.type);
+                        
+                        // Disabled so that NFTs can be picked up after each other
+                        //throw new Exceptions.LootException("You already have this "+item.type);
                     } else if(rank <= currentRank) {
                         throw new Exceptions.LootException(msg);
                     }
@@ -148,6 +150,7 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
             this.weaponName = name;
         },
 
+
         hasWeapon: function() {
             return this.weaponName !== null;
         },
@@ -178,7 +181,13 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
               this.switch_callback();
             }
         },
-        switchWeapon: function(newWeaponName) {
+
+        /**
+         * sets players new weapon kind and nft context if nft to be equiped as weapon
+         * @param {*} newWeaponName weapon kind
+         * @param {*} nftKey nft key from contractId and nftId, undefined if no nft present
+         */
+        switchWeapon: function(newWeaponName, nftKey=undefined) {
             var count = 14,
                 value = false,
                 self = this;
@@ -188,7 +197,7 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
                 return value;
             };
 
-            if(newWeaponName !== this.getWeaponName()) {
+            if(newWeaponName !== this.getWeaponName() || nftKey) { // always switch if NFT data present
                 if(this.isSwitchingWeapon) {
                     clearInterval(blanking);
                 }
@@ -197,8 +206,10 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
                 var blanking = setInterval(function() {
                     if(toggle()) {
                         self.setWeaponName(newWeaponName);
+                        self.setNftKey(nftKey);
                     } else {
                         self.setWeaponName(null);
+                        self.setNftKey(undefined); // clear nft data bc no weapon present
                     }
 
                     count -= 1;
@@ -231,7 +242,6 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
 
                 this.isSwitchingArmor = true;
                 self.setSprite(newArmorSprite);
-                self.setSpriteName(newArmorSprite.id);
                 var blanking = setInterval(function() {
                     self.setVisible(toggle());
 
