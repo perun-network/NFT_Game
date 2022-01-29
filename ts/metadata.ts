@@ -178,6 +178,10 @@ export default class NFTMetaServer {
 
 	/**
 	 * looks up meta data for token in request and sends it to the response
+	 * 
+	 * 
+	 * ### UNTESTED!!!
+	 * 
 	 * @param req 
 	 * @param res 
 	 * @returns 
@@ -254,6 +258,9 @@ export default class NFTMetaServer {
 	/**
 	 * Saves a new NFT with metadata to the DB
 	 * Deprecated, superceded by registerNft(). Remaining for legacy REST support and external compatibility.
+	 * 
+	 * ### UNTESTED!!!
+	 * 
 	 * @param req http request
 	 * @param res http response
 	 * @returns 
@@ -280,6 +287,9 @@ export default class NFTMetaServer {
 
 	/**
 	 * Deletes NFT from database
+	 * 
+	 * ### UNTESTED!!!
+	 * 
 	 * @param req http request
 	 * @param res http response
 	 */
