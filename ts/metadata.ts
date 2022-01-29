@@ -194,7 +194,7 @@ export default class NFTMetaServer {
 			return;
 		}
 
-		res.send(JSON.stringify(meta)); // originaly sending without conversion
+		res.send(meta.toJSON()); // originaly sending without conversion
 	}
 
 	/**
