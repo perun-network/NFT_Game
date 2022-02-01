@@ -345,18 +345,18 @@ function(Camera, Item, Character, Player, Timer) {
                 os = this.upscaledRendering ? 1 : this.scale,
                 ds = this.upscaledRendering ? this.scale : 1;
 
-            /*
-            if (entity.getNftData() != undefined && Types.isWeapon(entity.kind)) {
+            
+            if (entity.getNftKey() != undefined && Types.isWeapon(entity.kind)) {
                 // Assume Weapon Item with nft context
                 // Set sprite to "item-...." key instead of default
                 // Notice that at "nftKey" are weapon animnation sprites so the item sprite needs to be loaded from "item-..."
 
                 // set sprite to use nft sprite from meta instance
-                if (this.game.sprites["item-" + entity.getNftData()] != undefined) {
-                    sprite = this.game.sprites["item-" + entity.getNftData()];
+                if (this.game.sprites["item-" + entity.getNftKey()] != undefined) {
+                    sprite = this.game.sprites["item-" + entity.getNftKey()];
                 } // else: assume sprite will be loaded in a later frame
             }
-            */
+            
 
             if(anim && sprite) {
                 var frame = anim.currentFrame,

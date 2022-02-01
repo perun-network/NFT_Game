@@ -511,7 +511,7 @@ module.exports = World = cls.Class.extend({
             item = new Chest(id, x, y);
         } else {
 
-            item = new Item(id, kind, x, y, nftData = undefined);
+            item = new Item(id, kind, x, y, nftKey = undefined);
 
             if (Types.isWeapon(kind)) {
                 // Weapon item spawned. Go ahead and set nft status
@@ -546,7 +546,7 @@ module.exports = World = cls.Class.extend({
 
                         // update nft tag on success. 
                         nftKey = NFT.key(mintReceipt.txReceipt.tx.token, mintReceipt.txReceipt.tx.id);
-                        item.nftData = nftKey;
+                        item.nftKey = nftKey;
                     });
                 });
             }
