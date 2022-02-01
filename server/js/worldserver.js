@@ -20,6 +20,7 @@ var cls = require("./lib/class"),
 
 var erdstallServer = require("../../ts/erdstallserverinterface").erdstallServer;
 var nftMetaServer = require("../../ts/metadata").nftMetaServer;
+var NFT = require("../../ts/nft");
 
 
 // ======= GAME SERVER ========
@@ -520,7 +521,7 @@ module.exports = World = cls.Class.extend({
                 console.log("Minting NFT on item create " + kind_str);
                 erdstallServer.mintNFT().then(function(mintReceipt) {
 
-                    var nft = new (require("../../ts/nft")).default(
+                    var nft = new NFT.default(
                         mintReceipt.txReceipt.tx.token,
                         mintReceipt.txReceipt.tx.id,
                         mintReceipt.txReceipt.tx.sender
@@ -538,7 +539,7 @@ module.exports = World = cls.Class.extend({
                         console.log("Successfully put NFT metadata for item " + kind_str);
 
                         // update nft tag on success. 
-                        nftKey = require("../../ts/nft").key(mintReceipt.txReceipt.tx.token, mintReceipt.txReceipt.tx.id);
+                        nftKey = NFT.key(mintReceipt.txReceipt.tx.token, mintReceipt.txReceipt.tx.id);
                         item.nftData = nftKey;
 
                     })
