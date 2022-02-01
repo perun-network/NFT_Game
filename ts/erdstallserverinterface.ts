@@ -67,7 +67,7 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		}
 		// TODO: Put NFT in database
 		var txReceipt = await this._session.mint(this._session.address, id);
-		console.log("Minted NFT with ID: " + id);
+		//console.log("Minted NFT with ID: " + id);
 		return { txReceipt };
 	}
 

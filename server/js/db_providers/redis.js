@@ -700,7 +700,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
     },
 
     putNFTMetadata: function(nftKey, metadata){
-      log.info("Putting NFT Metadata: " + nftKey);
+      //log.info("Putting NFT Metadata: " + nftKey);
       return new Promise(resolve => {
         // Check if NFT is already stored
         client.sismember('nft', nftKey, function(err, reply) {

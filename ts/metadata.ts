@@ -108,7 +108,10 @@ export default class NFTMetaServer {
 	 */
 	private async createAndSavePng(tokenId: bigint, metaData: RawItemMeta) {
 
-		const kind = metaData.getAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND);
+		console.log("Creating PNGs for: " + metaData.getAttribute("kind")  +  " x " + Number(tokenId));
+
+		const kind = metaData.getAttribute("kind")
+		
 		const rgb = metaData.getRgbOffset();
 
 		// Where to find png
@@ -133,7 +136,6 @@ export default class NFTMetaServer {
 
 			img_base.write(saveTo + `/${index}/` + fileName + ".png");
 			img_item.write(saveTo + `/${index}/item-` + fileName + ".png");
-
 		}
 
 	}
@@ -149,6 +151,9 @@ export default class NFTMetaServer {
 		metadata.meta.description = "A nice weapon form the game browserquest.";
 		metadata.addAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND, kind);
 		metadata.setRgbOffset(this.getRandomInt(255) - 128, this.getRandomInt(255) - 128, this.getRandomInt(255) - 128);
+
+		console.log("MetaData Attribure Kind: " + metadata.getAttribute("kind"))
+
 		return metadata;
 	}
 
@@ -227,6 +232,7 @@ export default class NFTMetaServer {
 	 * @returns true on success, false on failure
 	 */
 	public async registerNFT(nft: NFT): Promise<boolean> {
+
 
 		// check if metadata set or absence permitted
 		if (!nft.metadata && !this.cfg!.allowEmptyMetadata) {

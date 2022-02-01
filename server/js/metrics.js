@@ -1,6 +1,6 @@
 var _ = require('underscore');
 var cls = require('./lib/class');
-var MemChache = require('memcache');
+//var MemChache = require('memcache');
 var Metrics = {};
 
 
@@ -9,7 +9,7 @@ Metrics = cls.Class.extend({
         var self = this;
 
         this.config = config;
-        this.client = new MemChache.Client(config.memcached_port, config.memcached_host);
+        this.client = new (require('memcache')).Client(config.memcached_port, config.memcached_host);
         this.client.connect();
 
         this.isReady = false;
