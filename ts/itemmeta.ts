@@ -32,9 +32,8 @@ export class RawItemMeta {
      * Creates a raw item metadata object from a name and an extension map
      * @param attributes attributes array
      */
-    constructor(attributes: Attribute[] | undefined) {
-        this.meta = {};
-        this.meta.attributes = attributes ? attributes : [];
+    constructor(attributes: Attribute[]) {
+        this.meta = {attributes: attributes};
     }
 
 
@@ -54,6 +53,10 @@ export class RawItemMeta {
      * @returns true if contained, false if not
      */
     public hasAttribute(id: string) : boolean {
+
+        if (this.meta.attributes == undefined)
+            return false;
+
         for (let attr of (<Attribute[]> this.meta.attributes))
          if (attr.trait_type == id)
             return true;
@@ -67,9 +70,16 @@ export class RawItemMeta {
      * @returns string as attribute value if contained, undefined if attribute not present
      */
     public getAttribute(id: string) : string | number | undefined {
-        for (let attr of (<Attribute[]> this.meta.attributes))
-            if (attr.trait_type == id)
+
+
+        if (this.meta.attributes == undefined)
+           return undefined;
+        
+
+        for (let attr of (<Attribute[]> this.meta.attributes)) {
+            if (attr.trait_type == id) 
                 return attr.value;
+        }
         return undefined;
     }
 
@@ -164,9 +174,6 @@ export class RawItemMeta {
     public static getMetaFromNFTMetadata(meta: NFTMetadata) : RawItemMeta {
         var metaObject : RawItemMeta = new RawItemMeta([]);
         metaObject.meta = meta;
-        if (metaObject.meta.attributes == undefined) {
-            metaObject.meta.attributes = [];
-        }
         return metaObject;
     }
 }

@@ -108,9 +108,7 @@ export default class NFTMetaServer {
 	 */
 	private async createAndSavePng(tokenId: bigint, metaData: RawItemMeta) {
 
-		console.log("Creating PNGs for: " + metaData.getAttribute("kind")  +  " x " + Number(tokenId));
-
-		const kind = metaData.getAttribute("kind")
+		const kind = metaData.getAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND);
 		
 		const rgb = metaData.getRgbOffset();
 
@@ -151,9 +149,6 @@ export default class NFTMetaServer {
 		metadata.meta.description = "A nice weapon form the game browserquest.";
 		metadata.addAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND, kind);
 		metadata.setRgbOffset(this.getRandomInt(255) - 128, this.getRandomInt(255) - 128, this.getRandomInt(255) - 128);
-
-		console.log("MetaData Attribure Kind: " + metadata.getAttribute("kind"))
-
 		return metadata;
 	}
 
@@ -240,10 +235,18 @@ export default class NFTMetaServer {
 			return false; // return error
 		}
 
+		if (nft.metadata == undefined) {
+			console.log("WARN: No metadata present on NFT register");
+		}
+
 		// gather values
 		const contractAddr: Address = nft.token;
 		const tokenId: bigint = nft.id;
-		const metadata: RawItemMeta = !nft.metadata ? new RawItemMeta([]) : RawItemMeta.getMetaFromNFTMetadata(nft.metadata); // init if empty
+		console.log(nft.metadata);
+		const metadata: RawItemMeta = nft.metadata == undefined ? this.dummyMetadata() :  RawItemMeta.getMetaFromNFTMetadata(<NFTMetadata> nft.metadata); // init if empty
+
+		console.log(metadata.meta);
+
 
 		// save values to db
 		try {
@@ -251,6 +254,7 @@ export default class NFTMetaServer {
 			//await this.afterMetadataSet(contractAddr, tokenId); // run Observers  commented out bc so far there are none
 
 			//create corresponding pngs
+
 			await this.createAndSavePng(tokenId, metadata);
 
 			return true; // return success

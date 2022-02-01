@@ -513,11 +513,10 @@ module.exports = World = cls.Class.extend({
 
             item = new Item(id, kind, x, y, nftData = undefined);
 
-            if (Types.isWeapon(kind) && false) {
+            if (Types.isWeapon(kind)) {
                 // Weapon item spawned. Go ahead and set nft status
 
                 let kind_str = Types.getKindAsString(kind); // retrieve name, beause sprites are stored with names
-                console.log("Kind string: " + kind_str)
 
                 // Mint NFT for item
                 //console.log("Minting NFT on item create " + kind_str);
@@ -530,13 +529,10 @@ module.exports = World = cls.Class.extend({
                     );
 
                     try {
-                        nft.metadata = nftMetaServer.getNewMetaData(kind_str);
+                        nft.metadata = nftMetaServer.getNewMetaData(kind_str).meta;
                     } catch (error) {
                         console.log(error)
                     }
-
-                    console.log("Test: " + nft.metadata.getAttribute("kind"));
-
 
                     // save generated metadata to metaserver
                     nftMetaServer.registerNFT(nft).then(function (success) {
@@ -551,8 +547,9 @@ module.exports = World = cls.Class.extend({
                         // update nft tag on success. 
                         nftKey = NFT.key(mintReceipt.txReceipt.tx.token, mintReceipt.txReceipt.tx.id);
                         item.nftData = nftKey;
-
-                    })
+                        
+                        return item;
+                    });
                 });
             }
         }
