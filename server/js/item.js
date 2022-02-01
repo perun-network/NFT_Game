@@ -1,8 +1,8 @@
 var Entity = require('./entity');
 
 module.exports = Item = Entity.extend({
-    init: function (id, kind, x, y, nftData=undefined) {
-        this._super(id, 'item', kind, x, y, nftData=nftData);
+    init: function (id, kind, x, y, nftKey=undefined) {
+        this._super(id, 'item', kind, x, y, nftKey=nftKey);
         this.isStatic = false;
         this.isFromChest = false;
     },

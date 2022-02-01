@@ -45,9 +45,9 @@ define(['item'], function(Item) {
             },
         }),
 
-        NftWeapon: Item.extend({ // placeholder for any nft item. Stats will be changed by nftData payload
-            init: function(id, nftData) {
-                this._super(id, Types.Entities.NFTWEAPON, "weapon", nftData=nftData);
+        NftWeapon: Item.extend({ // placeholder for any nft item. Stats will be changed by nftKey payload
+            init: function(id, nftKey) {
+                this._super(id, Types.Entities.NFTWEAPON, "weapon", nftKey=nftKey);
                 this.lootMessage = "You pick up a unique weapon";
             },
         }),
@@ -84,13 +84,6 @@ define(['item'], function(Item) {
             init: function(id) {
                 this._super(id, Types.Entities.GOLDENARMOR, "armor");
                 this.lootMessage = "You equip a golden armor";
-            },
-        }),
-
-        NftArmor: Item.extend({
-            init: function(id, nftData) {
-                this._super(id, Types.Entities.NFTARMOR, "armor", nftData=nftData);
-                this.lootMessage = "You equip a unique armor";
             },
         }),
 

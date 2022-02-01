@@ -357,10 +357,21 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             }
         },
 
+        /** 
+         * Retrieves JSON from Metadata server for NFT sprite loading. JSON is parsed and NFT sprites are loaded from path.
+        */
         loadNFTSprite: async function(nftKey) {
-            console.log("DEBUG: sprite load requested for " + nftKey);
             var self = this;
+
+            console.log("DEBUG: load sprite: " + nftKey);
+
+
+            // load json files for sprites
             this.client.getNFTSpritesJSON(nftKey).then(spriteJSON => {
+
+                console.log(spriteJSON);
+
+
                 if(!spriteJSON) {
                     throw new Error("Unable to load sprite for NFT " + nftKey);
                 }
@@ -382,8 +393,10 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                     console.log("Successfully set sprite for " + name);
                 };
 
-                initSprite(nftKey, spritesObj.entity);
-                initSprite("item-" + nftKey, spritesObj.item);
+                console.log(spritesObj);
+
+                initSprite(nftKey, spritesObj.entity); // load actual character weapon sprite
+                initSprite("item-" + nftKey, spritesObj.item); // load actual item sprite
             });
         },
 
@@ -861,7 +874,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             });
 
             this.client.onWelcome(function(id, name, x, y, hp, armor, weapon,
-                                           avatar, weaponAvatar, experience, nftData=undefined) {
+                                           avatar, weaponAvatar, experience, nftKey=undefined) {
                 log.info("Received player ID from server : "+ id);
                 self.player.id = id;
                 self.playerId = id;
@@ -873,12 +886,12 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                 self.player.setArmorName(armor);
                 self.player.setSpriteName(avatar);
                 self.player.setWeaponName(weapon);
-                self.player.setNftData(nftData);
+                self.player.setNftKey(nftKey);
                 self.initPlayer();
                 self.player.experience = experience;
                 self.player.level = Types.getLevel(experience);
 
-                self.nftSpriteCheck(nftData);
+                self.nftSpriteCheck(nftKey);
 
                 self.updateBars();
                 self.updateExpBar();
@@ -1594,7 +1607,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                     self.updateBars();
                 });
 
-                self.client.onPlayerEquipItem(function(playerId, itemKind, nftData=undefined) {
+                self.client.onPlayerEquipItem(function(playerId, itemKind, nftKey=undefined) {
                     var player = self.getEntityById(playerId),
                         itemName = Types.getKindAsString(itemKind);
 
@@ -1604,7 +1617,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                         } else if(Types.isWeapon(itemKind)) {
                             player.setWeaponName(itemName);
                         }
-                        player.setNftData(nftData);
+                        player.setNftKey(nftKey);
                     }
                 });
 
@@ -1630,7 +1643,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                     }
                 });
 
-                self.client.onDropItem(function(item, mobId, nftData=undefined) {
+                self.client.onDropItem(function(item, mobId) {
                     var pos = self.getDeadMobPosition(mobId);
 
                     if(pos) {

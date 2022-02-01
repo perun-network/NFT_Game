@@ -115,6 +115,11 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
             }
         },
 
+        /**
+         * loads sprite descriptor JSON from metaserver
+         * @param {*} nftKey nft context associated with sprite to be loaded
+         * @returns json of sprite description
+         */
         getNFTSpritesJSON: function(nftKey) {
             return new Promise(resolve => {
                 const [token, id] = nftKey.split(":");
@@ -123,8 +128,6 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                 var xmlHttp = new XMLHttpRequest();
                 xmlHttp.onreadystatechange = function() { 
                     if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
-                        // console.log("GOT RESPONSE FOR NFT " + nftKey);
-                        // console.log(xmlHttp.responseText);
                         resolve(xmlHttp.responseText);
                     }
                 }
@@ -198,15 +201,15 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                 avatar = data[8],
                 weaponAvatar = data[9],
                 experience = data[10];
-                nftData = null;
+                nftKey = null;
                 if (data.length >= 12) {
                     // expect weapon NFT Data
-                    nftData = data[11];
+                    nftKey = data[11];
                 }
 
 
             if(this.welcome_callback) {
-                this.welcome_callback(id, name, x, y, hp, armor, weapon, avatar, weaponAvatar, experience, nftData);
+                this.welcome_callback(id, name, x, y, hp, armor, weapon, avatar, weaponAvatar, experience, nftKey);
             }
         },
 
@@ -243,19 +246,19 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                 kind = data[2],
                 x = data[3],
                 y = data[4],
-                nftData = data[5];
+                nftKey = data[5];
 
 
             if(Types.isItem(kind)) {
                 var item = EntityFactory.createEntity(kind, id);
-                item.setNftData(nftData);
+                item.setNftKey(nftKey);
 
                 if(this.spawn_item_callback) {
                     this.spawn_item_callback(item, x, y);
                 }
             } else if(Types.isChest(kind)) {
                 var item = EntityFactory.createEntity(kind, id);
-                item.setNftData(nftData);
+                item.setNftKey(nftKey);
 
                 if(this.spawn_chest_callback) {
                     this.spawn_chest_callback(item, x, y);
@@ -280,7 +283,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                 }
 
                 var character = EntityFactory.createEntity(kind, id, name);
-                character.setNftData(nftData);
+                character.setNftKey(nftKey);
 
                 if(character instanceof Player) {
                     character.weaponName = Types.getKindAsString(weapon);
@@ -292,7 +295,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                 }
             }
 
-            this.nftrecieved_callback(nftData);
+            this.nftrecieved_callback(nftKey);
         },
 
         receiveDespawn: function(data) {
@@ -328,15 +331,15 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
         receiveEquipItem: function(data) {
             var id = data[1],
                 itemKind = data[2],
-                nftData = undefined;
+                nftKey = undefined;
                 
                 if (data.length >= 4) {
                     // expect nft data
-                    nftData = data[3];
+                    nftKey = data[3];
                 }
 
             if(this.equip_callback) {
-                this.equip_callback(id, itemKind, nftData=nftData);
+                this.equip_callback(id, itemKind, nftKey=nftKey);
             }
         },
 
@@ -345,17 +348,17 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                 id = data[2],
                 kind = data[3],
                 item = EntityFactory.createEntity(kind, id),
-                nftData = undefined;
+                nftKey = undefined;
 
             item.wasDropped = true;
             item.playersInvolved = data[4];
 
             if (data.length >= 6) {
                 // expect nft data
-                nftData = data[5];
+                nftKey = data[5];
             }
 
-            item.nftData = nftData;
+            item.nftKey = nftKey;
 
             if(this.drop_callback) {
                 this.drop_callback(item, mobId);

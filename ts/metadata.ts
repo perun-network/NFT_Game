@@ -83,16 +83,20 @@ export default class NFTMetaServer {
 	 * @returns metadata
 	 */
 	async getMetadata(contractAddr: Address, tokenId: bigint): Promise<RawItemMeta | undefined> {
+
 		try {
 			const meta = await this.databaseHandler.getNFTMetadata(key(contractAddr, tokenId));
 			if ((meta == undefined) && this.cfg!.serveDummies) {
 				return this.dummyMetadata();
 			}
+
 			return RawItemMeta.getMetaFromJSON(meta);
 		} catch (error) {
 			if (this.cfg!.serveDummies) {
 				return this.dummyMetadata();
 			}
+
+			console.log(error);
 			return undefined;
 		}
 	}
@@ -102,7 +106,7 @@ export default class NFTMetaServer {
 	 * @param contractAddr address of smart contract (aka "token")
 	 * @param tokenId 256bit integer ID of NFT
 	 */
-	private async creatAndSavePng(tokenId: bigint, metaData: RawItemMeta) {
+	private async createAndSavePng(tokenId: bigint, metaData: RawItemMeta) {
 
 		const kind = metaData.getAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND);
 		const rgb = metaData.getRgbOffset();
@@ -141,8 +145,8 @@ export default class NFTMetaServer {
 	 */
 	getNewMetaData(kind: string){
 		let metadata: RawItemMeta = new RawItemMeta([]);
-		metadata.name = this.getFunnyName();
-		metadata.description = "A nice weapon form the game browserquest.";
+		metadata.meta.name = this.getFunnyName();
+		metadata.meta.description = "A nice weapon form the game browserquest.";
 		metadata.addAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND, kind);
 		metadata.setRgbOffset(this.getRandomInt(255) - 128, this.getRandomInt(255) - 128, this.getRandomInt(255) - 128);
 		return metadata;
@@ -164,9 +168,9 @@ export default class NFTMetaServer {
 	 */
 	dummyMetadata(): RawItemMeta {
 		let metadata: RawItemMeta = new RawItemMeta([]);
-		metadata.name = "Dummy Item";
-		metadata.description = "placeholder item";
-		metadata.image = "https://static.wikia.nocookie.net/minecraft_gamepedia/images/d/d5/Wooden_Sword_JE2_BE2.png/revision/latest/scale-to-width-down/160?cb=20200217235747"; // minecraft wooden sword
+		metadata.meta.name = "Dummy Item";
+		metadata.meta.description = "placeholder item";
+		metadata.meta.image = "https://static.wikia.nocookie.net/minecraft_gamepedia/images/d/d5/Wooden_Sword_JE2_BE2.png/revision/latest/scale-to-width-down/160?cb=20200217235747"; // minecraft wooden sword
 		metadata.addAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND, "sword1");
 		metadata.setRgbOffset(this.getRandomInt(255) - 128, this.getRandomInt(255) - 128, this.getRandomInt(255) - 128);
 		return metadata;
@@ -174,6 +178,10 @@ export default class NFTMetaServer {
 
 	/**
 	 * looks up meta data for token in request and sends it to the response
+	 * 
+	 * 
+	 * ### UNTESTED!!!
+	 * 
 	 * @param req 
 	 * @param res 
 	 * @returns 
@@ -190,7 +198,7 @@ export default class NFTMetaServer {
 			return;
 		}
 
-		res.send(JSON.stringify(meta)); // originaly sending without conversion
+		res.send(meta.toJSON()); // originaly sending without conversion
 	}
 
 	/**
@@ -208,7 +216,7 @@ export default class NFTMetaServer {
 			res.status(StatusNotFound).send("No Metadata present.");
 			return;
 		}
-		const reply = { item: this.generateNFTItemSpriteJSON(meta, tokenId), entity: this.generateNFTEntitySpriteJSON(meta, tokenId) };
+		const reply = this.generateNFTSpriteJSON(meta, tokenId);
 
 		res.send(reply);
 	}
@@ -229,15 +237,15 @@ export default class NFTMetaServer {
 		// gather values
 		const contractAddr: Address = nft.token;
 		const tokenId: bigint = nft.id;
-		const metadata: RawItemMeta = !nft.metadata ? new RawItemMeta([]) : RawItemMeta.getRawMetaFromNFTMetadata(nft.metadata); // init if empty
+		const metadata: RawItemMeta = !nft.metadata ? new RawItemMeta([]) : RawItemMeta.getMetaFromNFTMetadata(nft.metadata); // init if empty
 
 		// save values to db
 		try {
-			await this.databaseHandler.putNFTMetadata(key(contractAddr, tokenId),JSON.stringify(metadata));
+			await this.databaseHandler.putNFTMetadata(key(contractAddr, tokenId), metadata.toJSON());
 			//await this.afterMetadataSet(contractAddr, tokenId); // run Observers  commented out bc so far there are none
 
 			//create corresponding pngs
-			await this.creatAndSavePng(tokenId, metadata);
+			await this.createAndSavePng(tokenId, metadata);
 
 			return true; // return success
 		} catch (error) { // Handle NFT already being present in database
@@ -250,6 +258,9 @@ export default class NFTMetaServer {
 	/**
 	 * Saves a new NFT with metadata to the DB
 	 * Deprecated, superceded by registerNft(). Remaining for legacy REST support and external compatibility.
+	 * 
+	 * ### UNTESTED!!!
+	 * 
 	 * @param req http request
 	 * @param res http response
 	 * @returns 
@@ -276,6 +287,9 @@ export default class NFTMetaServer {
 
 	/**
 	 * Deletes NFT from database
+	 * 
+	 * ### UNTESTED!!!
+	 * 
 	 * @param req http request
 	 * @param res http response
 	 */
@@ -302,9 +316,9 @@ export default class NFTMetaServer {
 	/**
 	 * If given metadata contains kind attribute, loads sprite description json for that item kind and alters it to fit NFT sprite description.
 	 * If no kind attribute is contained, undefined is returned.
-	 * @returns NFT sprite description JSON if item kind present, undefined otherwise
+	 * @returns NFT sprite description JSONs if item kind present, undefined otherwise
 	 */
-	public generateNFTItemSpriteJSON(meta: RawItemMeta, tokenId: bigint): string | undefined {
+	public generateNFTSpriteJSON(meta: RawItemMeta, tokenId: bigint): {entity: string, item: string} | undefined {
 
 		if (!meta.hasAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND)) {
 			// ERROR, nft item sprite json requested but no base item known 
@@ -313,34 +327,15 @@ export default class NFTMetaServer {
 
 			let itemKind = meta.getAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND);
 
-			const spriteJsonString = fs.readFileSync('./client/sprites/item-' + itemKind + '.json').toString();
-			var spriteJSON = JSON.parse(spriteJsonString);
-			spriteJSON.image_path_prefix = this.cfg.nftPathPrefix;
-			spriteJSON.id = "item-" + tokenId;
-			return spriteJSON;
-		}
-	}
-
-
-	/**
-	 * If given metadata contains kind attribute, loads sprite description json for that item kind and alters it to fit NFT sprite description.
-	 * If no kind attribute is contained, undefined is returned.
-	 * @returns NFT sprite description JSON if item kind present, undefined otherwise
-	 */
-	public generateNFTEntitySpriteJSON(meta: RawItemMeta, tokenId: bigint): string | undefined {
-
-		if (!meta.hasAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND)) {
-			// ERROR, nft item sprite json requested but no base item known 
-			return undefined;
-		} else {
-
-			let itemKind = meta.getAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND);
-
-			const spriteJsonString = fs.readFileSync('./client/sprites/' + itemKind + '.json').toString();
-			var spriteJSON = JSON.parse(spriteJsonString);
-			spriteJSON.image_path_prefix = this.cfg.nftPathPrefix;
-			spriteJSON.id = "" + tokenId;
-			return spriteJSON;
+			const spriteJsonEntityString = fs.readFileSync('./client/sprites/' + itemKind + '.json').toString();
+			const spriteJsonItemString = fs.readFileSync('./client/sprites/item-' + itemKind + '.json').toString();
+			var spriteEntityJSON = JSON.parse(spriteJsonEntityString);
+			var spriteItemJSON = JSON.parse(spriteJsonItemString);
+			spriteEntityJSON.image_path_prefix = this.cfg.nftPathPrefix;
+			spriteEntityJSON.id = "" + tokenId;
+			spriteItemJSON.image_path_prefix = this.cfg.nftPathPrefix;
+			spriteItemJSON.id = "item-" + tokenId;
+			return {item: spriteItemJSON, entity: spriteEntityJSON};
 		}
 	}
 

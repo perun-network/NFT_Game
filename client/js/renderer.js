@@ -419,7 +419,7 @@ function(Camera, Item, Character, Player, Timer) {
                 }
 
                 if(entity instanceof Character && !entity.isDead && entity.hasWeapon()) {
-                    var nftKey = entity.getNftData();
+                    var nftKey = entity.getNftKey();
                     var weapon = undefined;
 
                     if(nftKey) { // Entity has NFT Equipped, use NFT Sprite instead
