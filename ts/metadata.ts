@@ -242,10 +242,7 @@ export default class NFTMetaServer {
 		// gather values
 		const contractAddr: Address = nft.token;
 		const tokenId: bigint = nft.id;
-		console.log(nft.metadata);
 		const metadata: RawItemMeta = nft.metadata == undefined ? this.dummyMetadata() :  RawItemMeta.getMetaFromNFTMetadata(<NFTMetadata> nft.metadata); // init if empty
-
-		console.log(metadata.meta);
 
 
 		// save values to db

@@ -551,6 +551,7 @@ module.exports = World = cls.Class.extend({
                 });
             }
         }
+
         return item;
     },
 
