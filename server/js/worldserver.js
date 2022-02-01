@@ -547,8 +547,6 @@ module.exports = World = cls.Class.extend({
                         // update nft tag on success. 
                         nftKey = NFT.key(mintReceipt.txReceipt.tx.token, mintReceipt.txReceipt.tx.id);
                         item.nftData = nftKey;
-                        
-                        return item;
                     });
                 });
             }
