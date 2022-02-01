@@ -21,9 +21,6 @@ function main(config) {
         _.extend(config, production_config.getProductionSettings());
     }
 
-    // Load and initialize Erdstall server interface
-    erdstallServer.init();
-
     var WorldServer = require("./worldserver");
     var metrics = config.metrics_enabled ? new Metrics(config) : null;
     var worlds = [];
@@ -90,29 +87,35 @@ function main(config) {
         metrics.updateWorldDistribution(getWorldDistribution(worlds));
     };
 
-    _.each(_.range(config.nb_worlds), function(i) {
-        var world = new WorldServer('world'+ (i+1), config.nb_players_per_world, server, databaseHandler);
-        world.run(config.map_filepath);
-        worlds.push(world);
-        if(metrics) {
-            world.onPlayerAdded(onPopulationChange);
-            world.onPlayerRemoved(onPopulationChange);
-        }
-    });
 
-    server.onRequestStatus(function() {
-        return JSON.stringify(getWorldDistribution(worlds));
-    });
+    // Load and initialize Erdstall server interface
+    erdstallServer.init().then((serverAddr) => {
+        // await erdstall init, to be able to burn and mint items during world setup
 
-    if(config.metrics_enabled) {
-        metrics.ready(function() {
-            onPopulationChange(); // initialize all counters to 0 when the server starts
+        _.each(_.range(config.nb_worlds), function(i) {
+            var world = new WorldServer('world'+ (i+1), config.nb_players_per_world, server, databaseHandler);
+            world.run(config.map_filepath);
+            worlds.push(world);
+            if(metrics) {
+                world.onPlayerAdded(onPopulationChange);
+                world.onPlayerRemoved(onPopulationChange);
+            }
         });
-    }
-
-    process.on('uncaughtException', function (e) {
-        // Display the full error stack, to aid debugging
-        log.error('uncaughtException: ' + e.stack);
+    
+        server.onRequestStatus(function() {
+            return JSON.stringify(getWorldDistribution(worlds));
+        });
+    
+        if(config.metrics_enabled) {
+            metrics.ready(function() {
+                onPopulationChange(); // initialize all counters to 0 when the server starts
+            });
+        }
+    
+        process.on('uncaughtException', function (e) {
+            // Display the full error stack, to aid debugging
+            log.error('uncaughtException: ' + e.stack);
+        });
     });
 }
 

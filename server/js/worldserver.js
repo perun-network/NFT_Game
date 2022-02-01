@@ -18,6 +18,11 @@ var cls = require("./lib/class"),
     Utils = require("./utils"),
     Types = require("../../shared/js/gametypes");
 
+var erdstallServer = require("../../ts/erdstallserverinterface").erdstallServer;
+var nftMetaServer = require("../../ts/metadata").nftMetaServer;
+var NFT = require("../../ts/nft");
+
+
 // ======= GAME SERVER ========
 
 module.exports = World = cls.Class.extend({
@@ -505,7 +510,42 @@ module.exports = World = cls.Class.extend({
         if(kind === Types.Entities.CHEST) {
             item = new Chest(id, x, y);
         } else {
-           item = new Item(id, kind, x, y, nftKey=undefined);
+
+         item = new Item(id, kind, x, y, nftData=undefined);
+
+         if (Types.isWeapon(kind)) {
+          // Weapon item spawned. Go ahead and set nft status
+
+              let kind_str = Types.getKindAsString(kind); // retrieve name, beause sprites are stored with names
+
+              // Mint NFT for item
+              console.log("Minting NFT on item create " + kind_str);
+              erdstallServer.mintNFT().then(function(mintReceipt) {
+
+                  var nft = new NFT.default(
+                      mintReceipt.txReceipt.tx.token,
+                      mintReceipt.txReceipt.tx.id,
+                      mintReceipt.txReceipt.tx.sender
+                  );
+                  nft.metadata = nftMetaServer.getNewMetaData(kind_str);
+
+                  // save generated metadata to metaserver
+                  nftMetaServer.registerNFT(nft).then(function(success) {
+                      if(!success) {
+                          var error = "Error registering NFT for item " + kind_str;
+                          console.error(error);
+                          throw new Error(error);
+                      }
+
+                      console.log("Successfully put NFT metadata for item " + kind_str);
+
+                      // update nft tag on success. 
+                      nftKey = NFT.key(mintReceipt.txReceipt.tx.token, mintReceipt.txReceipt.tx.id);
+                      item.nftData = nftKey;
+
+                  })
+              });
+          }
         }
         return item;
     },
