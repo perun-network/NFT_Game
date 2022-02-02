@@ -655,6 +655,21 @@ module.exports = DatabaseHandler = cls.Class.extend({
       }
     },
 
+    getNFTCount: function(){
+      return new Promise(resolve => {
+        // Get count of all NFTs stored in database
+        client.scard('nft', function(err, reply){
+          var count = reply;
+          if(count === null || err) {
+            var error = "NFT Count could not be loaded from database: " + err;
+            log.error(error);
+            throw new Error(error);
+          }
+          resolve(count);
+        });
+      });
+    },
+
     getAllMetadata: function(){
       log.info("Getting all NFT Metadata");
       return new Promise(resolve => {

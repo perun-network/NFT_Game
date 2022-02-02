@@ -6,17 +6,26 @@ import erdstallClientInterface from "./erdstallclientinterface"
 import { TxReceipt } from "@polycrypt/erdstall/api/responses";
 import { ethers } from "ethers";
 import config from './config/serverConfig.json';
-import fs from 'fs';
-
-const ids = require('./config/nft_id.json');
 
 export default class erdstallServerInterface extends erdstallClientInterface {
 
+	protected nextNftID!: bigint;
+
 	// Initializes _session member and subscribes and onboards session to the erdstall system, returns wallet address as string
-	async init(
-		networkID: number = config.NetworkID,
-		erdOperatorUrl: URL = new URL("ws://" + config.erdOperatorUrl +"/ws")
-	): Promise<{ account: String }> {
+	async init(databaseHandler?: any): Promise<{ account: String }> {
+		if (databaseHandler == null) {
+			throw new Error("Invalid databaseHandler: null");
+		}
+
+		// Set ID of next NFT to be minted to the count of NFTs stored in database
+		this.nextNftID = BigInt(await databaseHandler.getNFTCount());
+
+		if (this.nextNftID === null || this.nextNftID === undefined) {
+			throw new Error("Invalid database NFT count: " + this.nextNftID);
+		}
+
+		const networkID: number = config.NetworkID;
+		const erdOperatorUrl: URL = new URL("ws://" + config.erdOperatorUrl +"/ws");
 
 		// parameters from json file config/clientConfig.json
 		const ethRpcUrl = "ws://"+ config.ethRpcUrl + "/";
@@ -46,28 +55,22 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 
 		this._session = session;
 		console.log("Initialized new server session: " + user.address);
+		console.log("Will start mints with NFT ID " + this.nextNftID);
 		return { account: user.address };
 	}
 
 	// Mints a new NFT and returns TxReceipt promise
 	async mintNFT(): Promise<{ txReceipt: TxReceipt }> {
-		
-		//reads ID for next NFT from nft_id.json
-		const id = BigInt(ids.nextID);
-		
-		//updates the value for next NFT
-
-		ids.nextID = ids.nextID + 1;
-
-		const fileName = "ts/config/nft_id.json";
-		fs.writeFileSync(fileName, JSON.stringify(ids));
+		// Sets NFT ID to nextID and increments it
+		const id: bigint = this.nextNftID;
+		this.nextNftID++;
 
 		if (!this._session) {
 			throw new Error("Server session uninitialized");
 		}
-		// TODO: Put NFT in database
+		// TODO: Change token to contract address!
+		// Mints NFT
 		var txReceipt = await this._session.mint(this._session.address, id);
-		//console.log("Minted NFT with ID: " + id);
 		return { txReceipt };
 	}
 
