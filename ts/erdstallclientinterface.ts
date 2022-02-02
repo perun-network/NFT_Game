@@ -1,13 +1,13 @@
 
-import { utils, ethers } from "ethers";
+import { ethers } from "ethers";
 
-import { Assets, Amount } from "@polycrypt/erdstall/ledger/assets";
+import { Assets, Tokens } from "@polycrypt/erdstall/ledger/assets";
 import { Address } from "@polycrypt/erdstall/ledger";
 import { ErdstallEvent, Session } from "@polycrypt/erdstall";
 import detectEthereumProvider from "@metamask/detect-provider";
 import config from './config/clientConfig.json';
 
-import NFT from "./nft";
+import NFT, { key } from "./nft";
 
 // import * as test from "@polycrypt/erdstall/test";
 
@@ -56,24 +56,20 @@ export default class erdstallClientInterface {
 		return { account };
 	}
 
-	// Returns list of NFTs associated with user
-	// async getNFTs(): Promise< //TODO: implement
-	// 	{ nfts: NFT[] } | undefined
-	// > {
-	// 	if (!this._session) return undefined;
-	// 	let nfts: NFT[] = new Array[10];
-	// 	for (let i = 0; i < 10; ++i) {
-	// 		const rng = test.newPrng();
-	// 		let nft: NFT = new NFT(
-	// 			test.newRandomAddress(rng), // Token
-	// 			test.newRandomUint64(rng), // ID
-	// 			test.newRandomAddress(rng), // Owner
-	// 			undefined, // Offer
-	// 			test.newRandomMetadata(rng)); // Metadata
-	// 		nfts[i] = nft;
-	// 	}
-	// 	return { nfts };
-	// }
+	// Returns nftKeys belonging to specified or own account
+	async getNFTs(address?: string): Promise< string[] > {
+		if (!this._session) return new Array();
+
+		// Return NFTs belonging to other account if address is specified
+		if (address) {
+			const account = await this._session.getAccount(Address.fromString(address));
+			return getNFTsFromAssets(account.values);
+		}
+		else {
+			const account = await this._session.getOwnAccount();
+			return getNFTsFromAssets(account.values);
+		}
+	}
 
 	// Registers listener function for Erdstall Events
 	registerCallback(
@@ -83,20 +79,6 @@ export default class erdstallClientInterface {
 		if (!this._session) throw new Error("Client session uninitialized");
 		this._session.on(event, callback);
 		console.log("Added new callback: " + event);
-	}
-
-	// Returns PRN Balance
-	async getPRNBalance(): Promise<
-		{ balance: number } | undefined
-	> {
-		if (!this._session) return undefined;
-		const account = await this._session.getOwnAccount();
-		const balance = getPrnAmount(account.values);
-		if (balance) {
-			return { balance };
-		} else {
-			return undefined;
-		}
 	}
 }
 
@@ -156,14 +138,16 @@ async function getAccountProvider(
 	return { account, web3Provider };
 }
 
-// Extracts PRN Balance from assets
-function getPrnAmount(assets: Assets): number | undefined {
-	// Workaround: return the first ERC20 token we can find.
-	// FIXME: add proper querying of PRN token.
-	for (const [addr, asset] of assets.values.entries())
-		if (!Address.fromString(addr).isZero() && asset instanceof Amount)
-			return Number(utils.formatEther((asset as Amount).value));
-	return undefined;
+function getNFTsFromAssets(assets: Assets): string[] {
+	var nfts = new Array();
+	for (const [addr, asset] of assets.values.entries()) {
+		if (!Address.fromString(addr).isZero() && asset instanceof Tokens) {
+			for(var i = 0; i < asset.value.length; i++) {
+				nfts.push(key(addr, asset.value[i]));
+			}
+		}
+	}
+	return nfts;
 }
 
 // Initializes MetaMask Web3Provider

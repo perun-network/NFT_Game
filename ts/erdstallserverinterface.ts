@@ -20,12 +20,11 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		// Set ID of next NFT to be minted to the count of NFTs stored in database
 		this.nextNftID = BigInt(await databaseHandler.getNFTCount());
 
-		if (this.nextNftID === null || this.nextNftID === undefined) {
+		if (this.nextNftID === null || this.nextNftID === undefined) {
 			throw new Error("Invalid database NFT count: " + this.nextNftID);
 		}
 
-		const networkID: number = config.NetworkID;
-		const erdOperatorUrl: URL = new URL("ws://" + config.erdOperatorUrl +"/ws");
+		const erdOperatorUrl: URL = new URL("ws://" + config.erdOperatorUrl + "/ws");
 
 		// parameters from json file config/clientConfig.json
 		const ethRpcUrl = "ws://"+ config.ethRpcUrl + "/";
@@ -73,8 +72,6 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		var txReceipt = await this._session.mint(this._session.address, id);
 		return { txReceipt };
 	}
-
-	// Creats and Saves Metadata
 
 	// Burns NFT and returns TxReceipt promise
 	async burnNFT(
