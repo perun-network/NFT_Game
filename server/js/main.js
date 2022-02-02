@@ -89,7 +89,7 @@ function main(config) {
 
 
     // Load and initialize Erdstall server interface
-    erdstallServer.init().then((serverAddr) => {
+    erdstallServer.init(databaseHandler).then((serverAddr) => {
         // await erdstall init, to be able to burn and mint items during world setup
 
         _.each(_.range(config.nb_worlds), function(i) {
