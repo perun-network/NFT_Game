@@ -21,7 +21,7 @@ var cls = require("./lib/class"),
 var erdstallServer = require("../../ts/erdstallserverinterface").erdstallServer;
 var nftMetaServer = require("../../ts/metadata").nftMetaServer;
 var NFT = require("../../ts/nft");
-
+var getTransferTxNFTs = require("../../ts/erdstallserverinterface").getTransferTxNFTs;
 
 // ======= GAME SERVER ========
 
@@ -56,6 +56,8 @@ module.exports = World = cls.Class.extend({
         this.playerCount = 0;
 
         this.zoneGroupsReady = false;
+
+        erdstallServer.registerTransferCallback(this.onTransferTx.bind(self));
 
         this.onPlayerConnect(function (player) {
             player.onRequestPosition(function () {
@@ -254,6 +256,60 @@ module.exports = World = cls.Class.extend({
 
     onRegenTick: function (callback) {
         this.regen_callback = callback;
+    },
+
+    onTransferTx: function (transfer) {
+        log.info("####################WorldServer: Noticed transfer TX from \"" + transfer.sender.toString() + "\" to \"" + transfer.recipient.toString() + "\":");
+        const nfts = getTransferTxNFTs(transfer);
+        log.info("####################WorldServer: ...with NFTs: [" + nfts + "]");
+        var transferredKind = undefined;
+        var transferredKey = undefined;
+        log.info("####################WorldServer: ...Iterating over " + this.getPlayerCount() + " players");
+        // Iterate over players to find sender
+        for (var playerID in this.players) {
+            var player = this.players[playerID];
+            log.info("####################WorldServer: ...checking player for sender: " + player.name + ": " + player.cryptoAddress);
+            if (player.cryptoAddress.toUpperCase() === transfer.sender.toString().toUpperCase()) { // Handle sender
+                log.info("####################WorldServer: ...determined sender: " + player.name);
+                // Check if sender currently holds NFTKey
+                for (var nftKey in nfts) {
+                    if(player.nftKey === nftKey) {
+                        // Store kind and key to give to recipient, unequip weapon and set nftKey to zero and broadcast changes
+                        log.info("####################WorldServer: ...replacing sender item: (" + player.getWeaponName() + ", " + player.nftKey + ") with (sword1, null)");
+                        transferredKind = player.getWeaponName();
+                        transferredKey = nftKey;
+                        player.equipItem("sword1");
+                        player.setNftKey(null);
+                        player.broadcast(player.equip(kind, nftKey=null), false);
+                    }
+                }
+            }
+        }
+        // Iterate over players to find recipient
+        for (var playerID in this.players) {
+            var player = this.players[playerID];
+            // log.info("####################WorldServer: ...checking player for recipient: " + player.name + ": \"" + player.cryptoAddress + "\"");
+            // log.info("Player address kind: " + (typeof player.cryptoAddress));
+            // log.info("Recipient address kind: " + (typeof transfer.recipient.toString()));
+            if (player.cryptoAddress.toUpperCase() === transfer.recipient.toString().toUpperCase()) { // Handle recipient
+                log.info("####################WorldServer: ...determined recipient: " + player.name);
+                if (transferredKind && transferredKey) { // If kind and key were found from sender, equip item and set key for recipient and broadcast changes
+                    if (player.nftKey !== transferredKey) {
+                        player.equipItem(transferredKind);
+                        player.setNftKey(transferredKey);
+                        player.broadcast(player.equip(transferredKind, transferredKey), false);
+                        log.info("WorldServer: Successfully transferred nft, item: " + transferredKey + ", " + transferredKind + " from " + transfer.sender + " to " + transfer.recipient);
+                    } else {
+                        log.info("WorldServer: Not transferring nft, item: " + transferredKey + ", " + transferredKind + " from " + transfer.sender + " to " + transfer.recipient + " because recipient already has it");
+                    }
+                }
+                else
+                {
+                    log.error("Error transfering nft, item: " + transferredKey + ", " + transferredKind + " from " + transfer.sender + " to " + transfer.recipient);
+                }
+                return;
+            }
+        }
     },
 
     pushRelevantEntityListTo: function (player) {

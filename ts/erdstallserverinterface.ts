@@ -1,11 +1,12 @@
 import { Address } from "@polycrypt/erdstall/ledger";
-import { Assets, Tokens } from "@polycrypt/erdstall/ledger/assets";
+import { Assets, mapNFTs, Tokens } from "@polycrypt/erdstall/ledger/assets";
 import { Session } from "@polycrypt/erdstall";
-import NFT from "./nft";
+import NFT, { key } from "./nft";
 import erdstallClientInterface from "./erdstallclientinterface"
 import { TxReceipt } from "@polycrypt/erdstall/api/responses";
 import { ethers } from "ethers";
 import config from './config/serverConfig.json';
+import { Transfer } from "@polycrypt/erdstall/api/transactions";
 
 export default class erdstallServerInterface extends erdstallClientInterface {
 
@@ -120,4 +121,12 @@ function getAssetsFromNFT(nft: NFT): Assets {
 		token: nft.token,
 		asset: new Tokens([nft.id])
 	});
+}
+
+export function getTransferTxNFTs(transfer: Transfer): string[] {
+	var nfts = new Array();
+	mapNFTs(transfer.values.values, (token, id) => {
+		nfts.push(key(token, id));
+	});
+	return nfts;
 }

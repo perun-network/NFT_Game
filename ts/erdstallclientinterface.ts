@@ -8,10 +8,12 @@ import detectEthereumProvider from "@metamask/detect-provider";
 import config from './config/clientConfig.json';
 
 import NFT, { key } from "./nft";
+import { TxReceipt } from "@polycrypt/erdstall/api/responses";
+import { Transfer } from "@polycrypt/erdstall/api/transactions";
 
 // import * as test from "@polycrypt/erdstall/test";
 
-export type eventCallback = (error: string | Error) => void;
+// export type eventCallback = (error: string | Error) => void;
 
 export default class erdstallClientInterface {
 	_session: Session | undefined;
@@ -71,14 +73,14 @@ export default class erdstallClientInterface {
 		}
 	}
 
-	// Registers listener function for Erdstall Events
-	registerCallback(
-		event: ErdstallEvent,
-		callback: eventCallback
-	) {
+	// Registers listener function for transfer transactions
+	registerTransferCallback(callback: (tx: Transfer) => void) {
 		if (!this._session) throw new Error("Client session uninitialized");
-		this._session.on(event, callback);
-		console.log("Added new callback: " + event);
+		this._session.on("receipt", (receipt: TxReceipt) => {
+			if(receipt.tx instanceof Transfer) {
+				callback(receipt.tx);
+			}
+		});
 	}
 }
 
