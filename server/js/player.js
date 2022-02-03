@@ -11,6 +11,10 @@ var cls = require("./lib/class"),
     Types = require("../../shared/js/gametypes")
     bcrypt = require('bcrypt');
 
+var erdstallServer = require("../../ts/erdstallserverinterface").erdstallServer;
+var nftMetaServer = require("../../ts/metadata").nftMetaServer;
+var NFT = require("../../ts/nft");
+
 module.exports = Player = Character.extend({
     init: function(connection, worldServer, databaseHandler) {
         var self = this;
@@ -265,10 +269,20 @@ module.exports = Player = Character.extend({
                                 self.server.pushToPlayer(self, self.health());
                             }
                         } else if(Types.isArmor(kind) || Types.isWeapon(kind)) {
-                            self.equipItem(item.kind);
                             if (Types.isWeapon(kind)) {
-                                self.setNftKey(item.nftKey); // update equiped nft key for player in db
+
+                                let keyParsed = NFT.parseKey(item.nftKey);
+
+                                // transfer NFT ownership
+                                erdstallServer.transferTo({token : keyParsed.token, id : keyParsed.id, owner : erdstallServer._session.address}, self.cryptoAddress).then(function(transferReceipt) {
+                                    console.log("Successfully transferred " + item.nftKey + " to player " + this.name);
+
+                                    // update equiped nft key for player in db
+                                    self.setNftKey(item.nftKey);
+                                });
+                                
                             }
+                            self.equipItem(item.kind);
                             self.broadcast(self.equip(kind, nftKey=item.nftKey));
                         }
                     }
