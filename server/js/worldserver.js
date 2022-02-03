@@ -513,43 +513,8 @@ module.exports = World = cls.Class.extend({
 
             item = new Item(id, kind, x, y, nftKey = undefined);
 
-            if (Types.isWeapon(kind)) {
-                // Weapon item spawned. Go ahead and set nft status
+            // assume nft context to be assigned in addStaticItem
 
-                let kind_str = Types.getKindAsString(kind); // retrieve name, beause sprites are stored with names
-
-                // Mint NFT for item
-                //console.log("Minting NFT on item create " + kind_str);
-                erdstallServer.mintNFT().then(function (mintReceipt) {
-
-                    var nft = new NFT.default(
-                        mintReceipt.txReceipt.tx.token,
-                        mintReceipt.txReceipt.tx.id,
-                        mintReceipt.txReceipt.tx.sender
-                    );
-
-                    try {
-                        nft.metadata = nftMetaServer.getNewMetaData(kind_str).meta;
-                    } catch (error) {
-                        console.log(error)
-                    }
-
-                    // save generated metadata to metaserver
-                    nftMetaServer.registerNFT(nft).then(function (success) {
-                        if (!success) {
-                            var error = "Error registering NFT for item " + kind_str;
-                            console.error(error);
-                            throw new Error(error);
-                        }
-
-                        console.log("Successfully put NFT metadata for item " + kind_str);
-
-                        // update nft tag on success. 
-                        nftKey = NFT.key(mintReceipt.txReceipt.tx.token, mintReceipt.txReceipt.tx.id);
-                        item.nftKey = nftKey;
-                    });
-                });
-            }
         }
 
         return item;
@@ -561,8 +526,57 @@ module.exports = World = cls.Class.extend({
         return chest;
     },
 
-    addStaticItem: function (item) {
+    /**
+     * mints a new NFT for the given Item and registers its metadata, as well assigns nftKey to item
+     * @param {*} item 
+     */
+    generateNftContext: async function (item) {
+
+        let kind_str = Types.getKindAsString(item.kind); // retrieve name, beause sprites are stored with names
+
+        // Mint NFT for item
+        //console.log("Minting NFT on item create " + kind_str);
+        await erdstallServer.mintNFT().then(async function (mintReceipt) {
+
+            var nft = new NFT.default(
+                mintReceipt.txReceipt.tx.token,
+                mintReceipt.txReceipt.tx.id,
+                mintReceipt.txReceipt.tx.sender
+            );
+
+            try {
+                nft.metadata = nftMetaServer.getNewMetaData(kind_str).meta;
+            } catch (error) {
+                console.log(error)
+            }
+
+            // save generated metadata to metaserver
+            await nftMetaServer.registerNFT(nft).then(async function (success) {
+                if (!success) {
+                    var error = "Error registering NFT for item " + kind_str;
+                    console.error(error);
+                    throw new Error(error);
+                }
+
+                console.log("Successfully put NFT metadata for item " + kind_str);
+
+                // update nft tag on success. 
+                nftKey = NFT.key(mintReceipt.txReceipt.tx.token, mintReceipt.txReceipt.tx.id);
+                item.nftKey = nftKey;
+            });
+        });
+    },
+
+    addStaticItem: async function (item) {
+
+        // this function is called when a static item is initialy created as well as when it is respawned 
+
         item.isStatic = true;
+
+        if (Types.isWeapon(item.kind)) {
+            await this.generateNftContext(item); // generate fresh nft on item respawn
+        }
+
         item.onRespawn(this.addStaticItem.bind(this, item));
 
         return this.addItem(item);
