@@ -266,6 +266,9 @@ module.exports = Player = Character.extend({
                             }
                         } else if(Types.isArmor(kind) || Types.isWeapon(kind)) {
                             self.equipItem(item.kind);
+                            if (Types.isWeapon(kind)) {
+                                self.setNftKey(item.nftKey); // update equiped nft key for player in db
+                            }
                             self.broadcast(self.equip(kind, nftKey=item.nftKey));
                         }
                     }
