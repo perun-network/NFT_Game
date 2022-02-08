@@ -298,18 +298,18 @@ footer, header, hgroup, menu, nav, section {
     .intro footer {opacity:1;}
     footer:hover {opacity:1;}
     footer div  {display:inline-block;}
-    #sharing a {display:block;float:right;background-size:844px;position:relative;top:-2px;}
+    /* #sharing a {display:block;float:right;background-size:844px;position:relative;top:-2px;}
     #sharing .facebook {height:22px;width:22px;background-position:-822px -224px;margin:0 12px 0 12px;}
     #sharing .facebook:hover {background-position:-822px -224px;}
     #sharing .twitter {height:22px;width:32px;background-position:-770px -224px;margin:0 12px 0 0;}
     #sharing .twitter:hover {background-position:-770px -224px;}
-    #sharing .gplus {height:22px;width:22px;background:url('../img/common/gplus.png');margin:0 12px 0 0px;}
+    #sharing .gplus {height:22px;width:22px;background:url('../img/common/gplus.png');margin:0 12px 0 0px;} */
     #toggle-credits {display:inline-block;margin-left:12px;}
     #legal-link a {text-decoration:none;color:inherit;}
     #credits-link span:hover, #privacy-link span:hover, #legal-link a:hover {color:#fcda5c;cursor:pointer;}
     
-    #sharing a:hover {-moz-transform:scale(1.2);-webkit-transform:scale(1.2);-o-transform:scale(1.2);transform:scale(1.2);}
-    #sharing a:active {-moz-transform:scale(1);-webkit-transform:scale(1);-o-transform:scale(1);transform:scale(1);}
+    /* #sharing a:hover {-moz-transform:scale(1.2);-webkit-transform:scale(1.2);-o-transform:scale(1.2);transform:scale(1.2);}
+    #sharing a:active {-moz-transform:scale(1);-webkit-transform:scale(1);-o-transform:scale(1);transform:scale(1);} */
 
     .close {position:absolute;z-index:20000;}
     .close:hover {cursor:pointer;}
@@ -661,7 +661,7 @@ footer, header, hgroup, menu, nav, section {
         #seb a:hover {color:#397cd8;}
         #note {float:left;background-position:-1203px -336px;height:33px;width:30px;}
         #close-credits {margin:45px auto 0 auto;text-align:center;clear:both;font-size:20px;color:#373737;}
-        #sharing {width:240px;}
+        /* #sharing {width:240px;} */
         
         /*About*/
         #about h1 span.title {max-width:400px;display:inline-block;line-height:39px;margin-top:-90px;position:relative;}
@@ -842,7 +842,7 @@ footer, header, hgroup, menu, nav, section {
         #seb a:hover {color:#397cd8;}
         #note {float:left;background-position:-802px -224px;height:22px;width:20px;}
         #close-credits {margin:20px auto 0 auto;text-align:center;clear:both;font-size:14px;}
-        #sharing {width:202px;}
+        /* #sharing {width:202px;} */
         
         /*About*/
         #about h1 span.title {max-width:400px;display:inline-block;line-height:24px;margin-top:-90px;position:relative;}
@@ -1025,7 +1025,7 @@ footer, header, hgroup, menu, nav, section {
         #seb a:hover {color:#397cd8;}
         #note {float:left;background-position:-401px -112px;height:11px;width:10px;}
         #close-credits {margin:12px auto 0 auto;text-align:center;clear:both;font-size:10px;}
-        #sharing {width:202px;}
+        /* #sharing {width:202px;} */
         
         /*About*/
         #about h1 span.title {max-width:400px;display:inline-block;line-height:24px;margin-top:-30px;position:relative;margin-bottom:-10px;}
