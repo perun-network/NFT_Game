@@ -670,6 +670,30 @@ module.exports = DatabaseHandler = cls.Class.extend({
       });
     },
 
+    // Returns the name of the player holding one of the nftKeys, the nftKey held by the player and its item kind, or null if no player holds any of the keys
+    getPlayerHoldingNFT: function(...nftKeys) {
+      return new Promise(resolve => {
+        // Iterate over all player names
+        client.smembers("usr", async function (err, replies) {
+          for (var index = 0; index < replies.length; index++) {
+            var userKey = "u:" + replies[index].toString();
+            // Get nftKey held by player
+            var itemId = await client.hget(userKey, "nftItemID");
+            // Compare key held by player with nftKeys in argument
+            for (var nftKey in nftKeys) {
+              if (itemId.toUpperCase() === nftKey.toUpperCase()) {
+                var itemKind = await client.hget(userKey, "weapon");
+                resolve({ name: replies[index].toString(), key: nftKey, kind: itemKind });
+                return;
+              }
+            }
+          }
+        });
+        // Return null in case no player holding item was found
+        resolve(null);
+      });
+    },
+
     getAllMetadata: function(){
       log.info("Getting all NFT Metadata");
       return new Promise(resolve => {

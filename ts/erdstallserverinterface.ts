@@ -11,6 +11,7 @@ import { Transfer } from "@polycrypt/erdstall/api/transactions";
 export default class erdstallServerInterface extends erdstallClientInterface {
 
 	protected nextNftID!: bigint;
+	public address!: String;
 
 	// Initializes _session member and subscribes and onboards session to the erdstall system, returns wallet address as string
 	async init(databaseHandler?: any): Promise<{ account: String }> {
@@ -54,6 +55,7 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		}
 
 		this._session = session;
+		this.address = user.address;
 		console.log("Initialized new server session: " + user.address);
 		console.log("Will start mints with NFT ID " + this.nextNftID);
 		return { account: user.address };
