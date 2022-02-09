@@ -139,6 +139,11 @@ define(['jquery', 'storage'], function($, Storage) {
                                 // Attempted to log in with the same user multiple times simultaneously
                                 self.addValidationError(self.$nameinput, 'A player with the specified username is already logged in.');
                                 break;
+                            case 'metamask':
+                                // Metamask could not be initialized properly
+                                self.clearValidationErrors();
+                                self.addValidationError(null, 'Unable to initialize Metamask. Please try reloading the page and/or opening the Metamask client.');
+                                break;
                             default:
                                 self.addValidationError(null, 'Failed to launch the game: ' + (result.reason ? result.reason : '(reason unknown)'));
                                 break;
