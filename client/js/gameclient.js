@@ -631,22 +631,19 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
 
         sendCreate: function(player) {
             erdstallInterface.init().then((acc) => {
-                console.log("got crypto address: " + acc.account);
+                console.log("Got MetaMask address: " + acc.account);
+                console.log("Got Name: " + player.name);
                 this.sendMessage([Types.Messages.CREATE,
                     player.name,
-                    player.pw,
-                    acc.account,
-                    player.email]);
+                    acc.account]);
                 });
         },
 
         sendLogin: function(player) {
-
             erdstallInterface.init().then((acc) => {
-                console.log("got crypto address: " + acc.account);
+                console.log("Got MetaMask address: " + acc.account);
                 this.sendMessage([Types.Messages.LOGIN,
-                    player.name,
-                    player.pw,
+                    "",
                     acc.account
                 ]);
             });

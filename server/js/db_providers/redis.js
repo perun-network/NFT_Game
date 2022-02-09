@@ -16,189 +16,195 @@ module.exports = DatabaseHandler = cls.Class.extend({
     },
     loadPlayer: function(player){
         var self = this;
-        var userKey = "u:" + player.name;
         var curTime = new Date().getTime();
-        client.smembers("usr", function(err, replies){
-            for(var index = 0; index < replies.length; index++){
-                if(replies[index].toString() === player.name){
-                    client.multi()
-                        .hget(userKey, "pw") // 0
-                        .hget(userKey, "armor") // 1
-                        .hget(userKey, "weapon") // 2
-                        .hget(userKey, "exp") // 3
-                        .hget("b:" + player.connection._connection.remoteAddress, "time") // 4
-                        .hget("b:" + player.connection._connection.remoteAddress, "banUseTime") // 5
-                        .hget("b:" + player.connection._connection.remoteAddress, "loginTime") // 6
-                        .hget(userKey, "avatar") // 7
-                        .zrange("adrank", "-1", "-1") // 8
-                        .get("nextNewArmor") // 9
-                        .hget(userKey, "inventory0") // 10
-                        .hget(userKey, "inventory0:number") // 11
-                        .hget(userKey, "inventory1") // 12
-                        .hget(userKey, "inventory1:number") // 13
-                        .hget(userKey, "achievement1:found") // 14
-                        .hget(userKey, "achievement1:progress") // 15
-                        .hget(userKey, "achievement2:found") // 16
-                        .hget(userKey, "achievement2:progress") // 17
-                        .hget(userKey, "achievement3:found") // 18
-                        .hget(userKey, "achievement3:progress") // 19
-                        .hget(userKey, "achievement4:found") // 20
-                        .hget(userKey, "achievement4:progress") // 21
-                        .hget(userKey, "achievement5:found") // 22
-                        .hget(userKey, "achievement5:progress") // 23
-                        .hget(userKey, "achievement6:found") // 24
-                        .hget(userKey, "achievement6:progress") // 25
-                        .smembers("adminname") // 26
-                        .zscore("adrank", player.name) // 27
-                        .hget(userKey, "weaponAvatar") // 28
-                        .hget(userKey, "x") // 29
-                        .hget(userKey, "y") // 30
-                        .hget(userKey, "achievement7:found") // 31
-                        .hget(userKey, "achievement7:progress") // 32
-                        .hget(userKey, "achievement8:found") // 33
-                        .hget(userKey, "achievement8:progress") // 34
-                        .hget("cb:" + player.connection._connection.remoteAddress, "etime") // 35
-                        .hget(userKey, "cryptoaddress") // 36
-                        .hget(userKey, "nftItemID") // 37
-                        .exec(function(err, replies){
-                            var pw = replies[0];
-                            var armor = replies[1];
-                            var weapon = replies[2];
-                            var exp = Utils.NaN2Zero(replies[3]);
-                            var bannedTime = Utils.NaN2Zero(replies[4]);
-                            var banUseTime = Utils.NaN2Zero(replies[5]);
-                            var lastLoginTime = Utils.NaN2Zero(replies[6]);
-                            var avatar = replies[7];
-                            var pubTopName = replies[8];
-                            var nextNewArmor = replies[9];
-                            var inventory = [replies[10], replies[12]];
-                            var inventoryNumber = [
-                              Utils.NaN2Zero(replies[11]),
-                              Utils.NaN2Zero(replies[13])];
-                            var achievementFound = [
-                              Utils.trueFalse(replies[14]),
-                              Utils.trueFalse(replies[16]),
-                              Utils.trueFalse(replies[18]),
-                              Utils.trueFalse(replies[20]),
-                              Utils.trueFalse(replies[22]),
-                              Utils.trueFalse(replies[24]),
-                              Utils.trueFalse(replies[31]),
-                              Utils.trueFalse(replies[33]),
-                            ];
-                            var achievementProgress = [
-                              Utils.NaN2Zero(replies[15]),
-                              Utils.NaN2Zero(replies[17]),
-                              Utils.NaN2Zero(replies[19]),
-                              Utils.NaN2Zero(replies[21]),
-                              Utils.NaN2Zero(replies[23]),
-                              Utils.NaN2Zero(replies[25]),
-                              Utils.NaN2Zero(replies[32]),
-                              Utils.NaN2Zero(replies[34]),
-                            ];
-                            var adminnames = replies[26];
-                            var pubPoint =  Utils.NaN2Zero(replies[27]);
-                            var weaponAvatar = replies[28] ? replies[28] : weapon;
-                            var x = Utils.NaN2Zero(replies[29]);
-                            var y = Utils.NaN2Zero(replies[30]);
-                            var chatBanEndTime = Utils.NaN2Zero(replies[35]);
-                            var cryptoAddress = replies[36];
-                            var nftItemId = replies[37];
 
-                            // Check Password
+        // Required to be able to await result and subsequently send invalidlogin if no associated account is found
+        var getCryptoAsync = function(userKey) {
+          return new Promise(resolve => {
+            client.hget(userKey, "cryptoaddress", function(err, reply) {
+              resolve(reply);
+            });
+          });
+        };
 
-                            bcrypt.compare(player.pw, pw, function(err, res) {
-                                if(!res) {
-                                    player.connection.sendUTF8("invalidlogin");
-                                    player.connection.close("Wrong Password: " + player.name);
-                                    return;
-                                }
+        client.smembers("usr", async (err, replies) => {
+            // Iterate over all users to find player associated with crypto address
+            for (var index = 0; index < replies.length; index++) {
+                var playerName = replies[index].toString();
+                var userKey = "u:" + playerName;
+                var storedCryptoAddress = await getCryptoAsync(userKey);
+                // Compare stored crypto address of current player with requested log in address
+                if (storedCryptoAddress.toUpperCase() === player.cryptoAddress.toUpperCase()) {
+                  // Set player name to name of player with crypto address
+                  player.name = playerName;
 
-                                // Check crypto address
-                                if(player.cryptoAddress != cryptoAddress) {
-                                    player.connection.sendUTF8("invalidcryptoaddress");
-                                    player.connection.close("Crypto address {" + player.cryptoAddress + "} does not match stored crypto address {" + cryptoAddress + "}");
-                                    return;
-                                }
+                  client.multi()
+                    .hget(userKey, "cryptoaddress") // 0
+                    .hget(userKey, "armor") // 1
+                    .hget(userKey, "weapon") // 2
+                    .hget(userKey, "exp") // 3
+                    .hget("b:" + player.connection._connection.remoteAddress, "time") // 4
+                    .hget("b:" + player.connection._connection.remoteAddress, "banUseTime") // 5
+                    .hget("b:" + player.connection._connection.remoteAddress, "loginTime") // 6
+                    .hget(userKey, "avatar") // 7
+                    .zrange("adrank", "-1", "-1") // 8
+                    .get("nextNewArmor") // 9
+                    .hget(userKey, "inventory0") // 10
+                    .hget(userKey, "inventory0:number") // 11
+                    .hget(userKey, "inventory1") // 12
+                    .hget(userKey, "inventory1:number") // 13
+                    .hget(userKey, "achievement1:found") // 14
+                    .hget(userKey, "achievement1:progress") // 15
+                    .hget(userKey, "achievement2:found") // 16
+                    .hget(userKey, "achievement2:progress") // 17
+                    .hget(userKey, "achievement3:found") // 18
+                    .hget(userKey, "achievement3:progress") // 19
+                    .hget(userKey, "achievement4:found") // 20
+                    .hget(userKey, "achievement4:progress") // 21
+                    .hget(userKey, "achievement5:found") // 22
+                    .hget(userKey, "achievement5:progress") // 23
+                    .hget(userKey, "achievement6:found") // 24
+                    .hget(userKey, "achievement6:progress") // 25
+                    .smembers("adminname") // 26
+                    .zscore("adrank", player.name) // 27
+                    .hget(userKey, "weaponAvatar") // 28
+                    .hget(userKey, "x") // 29
+                    .hget(userKey, "y") // 30
+                    .hget(userKey, "achievement7:found") // 31
+                    .hget(userKey, "achievement7:progress") // 32
+                    .hget(userKey, "achievement8:found") // 33
+                    .hget(userKey, "achievement8:progress") // 34
+                    .hget("cb:" + player.connection._connection.remoteAddress, "etime") // 35
+                    .hget(userKey, "nftItemID") // 36
+                    .exec(function (err, replies) {
+                      var cryptoAddress = replies[0];
+                      var armor = replies[1];
+                      var weapon = replies[2];
+                      var exp = Utils.NaN2Zero(replies[3]);
+                      var bannedTime = Utils.NaN2Zero(replies[4]);
+                      var banUseTime = Utils.NaN2Zero(replies[5]);
+                      var lastLoginTime = Utils.NaN2Zero(replies[6]);
+                      var avatar = replies[7];
+                      var pubTopName = replies[8];
+                      var nextNewArmor = replies[9];
+                      var inventory = [replies[10], replies[12]];
+                      var inventoryNumber = [
+                        Utils.NaN2Zero(replies[11]),
+                        Utils.NaN2Zero(replies[13])
+                      ];
+                      var achievementFound = [
+                        Utils.trueFalse(replies[14]),
+                        Utils.trueFalse(replies[16]),
+                        Utils.trueFalse(replies[18]),
+                        Utils.trueFalse(replies[20]),
+                        Utils.trueFalse(replies[22]),
+                        Utils.trueFalse(replies[24]),
+                        Utils.trueFalse(replies[31]),
+                        Utils.trueFalse(replies[33]),
+                      ];
+                      var achievementProgress = [
+                        Utils.NaN2Zero(replies[15]),
+                        Utils.NaN2Zero(replies[17]),
+                        Utils.NaN2Zero(replies[19]),
+                        Utils.NaN2Zero(replies[21]),
+                        Utils.NaN2Zero(replies[23]),
+                        Utils.NaN2Zero(replies[25]),
+                        Utils.NaN2Zero(replies[32]),
+                        Utils.NaN2Zero(replies[34]),
+                      ];
+                      var adminnames = replies[26];
+                      var pubPoint = Utils.NaN2Zero(replies[27]);
+                      var weaponAvatar = replies[28] ? replies[28] : weapon;
+                      var x = Utils.NaN2Zero(replies[29]);
+                      var y = Utils.NaN2Zero(replies[30]);
+                      var chatBanEndTime = Utils.NaN2Zero(replies[35]);
+                      var nftItemId = replies[36];
 
-                                var d = new Date();
-                                var lastLoginTimeDate = new Date(lastLoginTime);
-                                if(lastLoginTimeDate.getDate() !== d.getDate()
-                                && pubPoint > 0){
-                                  var targetInventoryNumber = -1;
-                                  if(inventory[0] === "burger"){
-                                    targetInventoryNumber = 0;
-                                  } else if(inventory[1] === "burger"){
-                                    targetInventoryNumber = 1;
-                                  } else if(inventory[0] === null){
-                                    targetInventoryNumber = 0;
-                                  } else if(inventory[1] === null){
-                                    targetInventoryNumber = 1;
-                                  }
+                      // Check crypto address
+                      if (player.cryptoAddress !== cryptoAddress) {
+                        player.connection.sendUTF8("invalidcryptoaddress");
+                        player.connection.close("Crypto address {" + player.cryptoAddress + "} does not match stored crypto address {" + cryptoAddress + "}");
+                        return;
+                      }
 
-                                  if(targetInventoryNumber >= 0){
-                                    if(pubPoint > 100){
-                                      pubPoint = 100;
-                                    }
-                                    inventory[targetInventoryNumber] = "burger";
-                                    inventoryNumber[targetInventoryNumber] += pubPoint*10;
-                                    self.setInventory(player.name,
-                                             Types.getKindFromString("burger"),
-                                             targetInventoryNumber,
-                                             inventoryNumber[targetInventoryNumber]);
-                                    client.zrem("adrank", player.name);
-                                  }
-                                }
+                      var d = new Date();
+                      var lastLoginTimeDate = new Date(lastLoginTime);
+                      if (lastLoginTimeDate.getDate() !== d.getDate()
+                        && pubPoint > 0) {
+                        var targetInventoryNumber = -1;
+                        if (inventory[0] === "burger") {
+                          targetInventoryNumber = 0;
+                        } else if (inventory[1] === "burger") {
+                          targetInventoryNumber = 1;
+                        } else if (inventory[0] === null) {
+                          targetInventoryNumber = 0;
+                        } else if (inventory[1] === null) {
+                          targetInventoryNumber = 1;
+                        }
 
-                                // Check Ban
-                                d.setDate(d.getDate() - d.getDay());
-                                d.setHours(0, 0, 0);
-                                if(lastLoginTime < d.getTime()){
-                                    log.info(player.name + "ban is initialized.");
-                                    bannedTime = 0;
-                                    client.hset("b:" + player.connection._connection.remoteAddress, "time", bannedTime);
-                                }
-                                client.hset("b:" + player.connection._connection.remoteAddress, "loginTime", curTime);
+                        if (targetInventoryNumber >= 0) {
+                          if (pubPoint > 100) {
+                            pubPoint = 100;
+                          }
+                          inventory[targetInventoryNumber] = "burger";
+                          inventoryNumber[targetInventoryNumber] += pubPoint * 10;
+                          self.setInventory(player.name,
+                            Types.getKindFromString("burger"),
+                            targetInventoryNumber,
+                            inventoryNumber[targetInventoryNumber]);
+                          client.zrem("adrank", player.name);
+                        }
+                      }
 
-                                if(player.name === pubTopName.toString()){
-                                    avatar = nextNewArmor;
-                                }
+                      // Check Ban
+                      d.setDate(d.getDate() - d.getDay());
+                      d.setHours(0, 0, 0);
+                      if (lastLoginTime < d.getTime()) {
+                        log.info(player.name + "ban is initialized.");
+                        bannedTime = 0;
+                        client.hset("b:" + player.connection._connection.remoteAddress, "time", bannedTime);
+                      }
+                      client.hset("b:" + player.connection._connection.remoteAddress, "loginTime", curTime);
 
-                                var admin = null;
-                                var i = 0;
-                                for(i = 0; i < adminnames.length; i++){
-                                    if(adminnames[i] === player.name){
-                                        admin = 1;
-                                        log.info("Admin " + player.name + "login");
-                                    }
-                                }
-                                log.info("Player name: " + player.name);
-                                log.info("Armor: " + armor);
-                                log.info("Weapon: " + weapon);
-                                log.info("Experience: " + exp);
-                                log.info("Banned Time: " + (new Date(bannedTime)).toString());
-                                log.info("Ban Use Time: " + (new Date(banUseTime)).toString());
-                                log.info("Last Login Time: " + lastLoginTimeDate.toString());
-                                log.info("Chatting Ban End Time: " + (new Date(chatBanEndTime)).toString());
+                      if (player.name === pubTopName.toString()) {
+                        avatar = nextNewArmor;
+                      }
 
-                                player.sendWelcome(armor, weapon,
-                                    avatar, weaponAvatar, exp, admin,
-                                    bannedTime, banUseTime,
-                                    inventory, inventoryNumber,
-                                    achievementFound, achievementProgress,
-                                    x, y,
-                                    chatBanEndTime,
-                                    nftItemId );
-                            });
+                      var admin = null;
+                      var i = 0;
+                      for (i = 0; i < adminnames.length; i++) {
+                        if (adminnames[i] === player.name) {
+                          admin = 1;
+                          log.info("Admin " + player.name + "login");
+                        }
+                      }
+                      log.info("Player name: " + player.name);
+                      log.info("Armor: " + armor);
+                      log.info("Weapon: " + weapon);
+                      log.info("Experience: " + exp);
+                      log.info("Banned Time: " + (new Date(bannedTime)).toString());
+                      log.info("Ban Use Time: " + (new Date(banUseTime)).toString());
+                      log.info("Last Login Time: " + lastLoginTimeDate.toString());
+                      log.info("Chatting Ban End Time: " + (new Date(chatBanEndTime)).toString());
+
+                      player.sendWelcome(armor, weapon,
+                        avatar, weaponAvatar, exp, admin,
+                        bannedTime, banUseTime,
+                        inventory, inventoryNumber,
+                        achievementFound, achievementProgress,
+                        x, y,
+                        chatBanEndTime,
+                        nftItemId);
                     });
-                    return;
+                  return;
                 }
-            }
+              }
 
             // Could not find the user
             player.connection.sendUTF8("invalidlogin");
-            player.connection.close("User does not exist: " + player.name);
+            player.connection.close("User does not exist: " + player.name + ":" + player.cryptoAddress);
             return;
-        });
+          });
     },
 
     createPlayer: function(player) {
@@ -217,14 +223,16 @@ module.exports = DatabaseHandler = cls.Class.extend({
                 client.multi()
                     .sadd("usr", player.name)
                     .hset(userKey, "cryptoaddress", player.cryptoAddress)
-                    .hset(userKey, "pw", player.pw)
-                    .hset(userKey, "email", player.email)
                     .hset(userKey, "armor", "clotharmor")
                     .hset(userKey, "avatar", "clotharmor")
                     .hset(userKey, "weapon", "sword1")
                     .hset(userKey, "exp", 0)
                     .hset("b:" + player.connection._connection.remoteAddress, "loginTime", curTime)
                     .exec(function(err, replies){
+                        if(err) {
+                          log.error("Error creating new user " + player.name + " {" + player.cryptoAddress + "}");
+                          return;
+                        }
                         log.info("New User: " + player.name + " {" + player.cryptoAddress + "}");
                         // Mint NFT for new user
                         console.log("Minting a fresh NFT for new player " + player.name + "...");

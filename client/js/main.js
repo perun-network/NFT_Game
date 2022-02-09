@@ -97,18 +97,7 @@ define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
             });
 
             $('#create-new span').click(function() {
-                app.animateParchment('loadcharacter', 'confirmation');
-            });
-
-            $('#continue span').click(function() {
-                app.storage.clear();
-                app.animateParchment('confirmation', 'createcharacter');
-                $('body').removeClass('returning');
-                app.clearValidationErrors();
-            });
-
-            $('#cancel span').click(function() {
-                app.animateParchment('confirmation', 'loadcharacter');
+                app.animateParchment('loadcharacter', 'createcharacter');
             });
 
             $('.ribbon').click(function() {
@@ -116,15 +105,6 @@ define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
             });
 
             $('#nameinput').bind("keyup", function() {
-                app.toggleButton();
-            });
-            $('#pwinput').bind("keyup", function() {
-                app.toggleButton();
-            });
-            $('#pwinput2').bind("keyup", function() {
-                app.toggleButton();
-            });
-            $('#emailinput').bind("keyup", function() {
                 app.toggleButton();
             });
 
@@ -156,20 +136,6 @@ define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
 
             $('.close').click(function() {
                 app.hideWindows();
-            });
-
-            $('.twitter').click(function() {
-                var url = $(this).attr('href');
-
-               app.openPopup('twitter', url);
-               return false;
-            });
-
-            $('.facebook').click(function() {
-                var url = $(this).attr('href');
-
-               app.openPopup('facebook', url);
-               return false;
             });
 
             var data = app.storage.data;
@@ -291,10 +257,7 @@ define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
             app.initTargetHud();
             app.initExpBar();
             $('#nameinput').attr('value', '');
-            $('#pwinput').attr('value', '');
-            $('#pwinput2').attr('value', '');
-            $('#emailinput').attr('value', '');
-           $('#chatbox').attr('value', '');
+            $('#chatbox').attr('value', '');
 
             if(game.renderer.mobile || game.renderer.tablet) {
                 $('#foreground').bind('touchstart', function(event) {

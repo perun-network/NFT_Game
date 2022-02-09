@@ -64,21 +64,20 @@ module.exports = Player = Character.extend({
 
             if(action === Types.Messages.CREATE || action === Types.Messages.LOGIN) {
                 var name = Utils.sanitize(message[1]);
-                var pw = Utils.sanitize(message[2]);
-                var crypto_addr = Utils.sanitize(message[3]);
+                var crypto_addr = Utils.sanitize(message[2]);
 
                 // Always ensure that the name is not longer than a maximum length.
                 // (also enforced by the maxlength attribute of the name input element).
                 self.name = name.substr(0, 12).trim()
 
-                // Validate the username
-                if(!self.checkName(self.name)){
+                // Validate the username if player is created
+                if(!self.checkName(self.name) && (action === Types.Messages.CREATE)){
                     self.connection.sendUTF8("invalidusername");
                     self.connection.close("Invalid name " + self.name);
                     return;
                 }
-                self.pw = pw.substr(0, 15);
-                if(crypto_addr == null){
+
+                if(crypto_addr === null || crypto_addr === undefined){
                     self.connection.sendUTF8("invalidcryptoaddress");
                     self.connection.close("Crypto Address not loaded");
                     return;
@@ -89,16 +88,14 @@ module.exports = Player = Character.extend({
                 if(action === Types.Messages.CREATE) {
                     bcrypt.genSalt(10, function(err, salt) {
                         bcrypt.hash(self.pw, salt, function(err, hash) {
-                            log.info("CREATE: " + self.name);
-                            self.email = Utils.sanitize(message[4]);
-                            self.pw = hash;
-                            log.info("Crypto Adress recieved: " + crypto_addr);
+                            log.info("CREATE: " + self.name + ":" + self.cryptoAddress);
+                            log.info("Crypto Adress recieved: " + self.cryptoAddress);
                             databaseHandler.createPlayer(self);
                         })
                     });
                 } else {
-                    log.info("LOGIN: " + self.name);
-                    if(self.server.loggedInPlayer(self.name)) {
+                    log.info("LOGIN: " + self.name + ":" + self.cryptoAddress);
+                    if(self.server.loggedInPlayer(self.cryptoAddress)) {
                         self.connection.sendUTF8("loggedin");
                         self.connection.close("Already logged in " + self.name);
                         return;

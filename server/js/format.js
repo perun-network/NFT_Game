@@ -6,8 +6,8 @@ var Types = require('../../shared/js/gametypes');
         // inbound to server checks only
         init: function () {
             this.formats = [];
-            this.formats[Types.Messages.CREATE] = ['s', 's', 's', 's'],
-            this.formats[Types.Messages.LOGIN] = ['s', 's', 's'],
+            this.formats[Types.Messages.CREATE] = ['s', 's'],
+            this.formats[Types.Messages.LOGIN] = ['s', 's'],
             this.formats[Types.Messages.MOVE] = ['n', 'n'],
             this.formats[Types.Messages.LOOTMOVE] = ['n', 'n', 'n'],
             this.formats[Types.Messages.AGGRO] = ['n'],
@@ -32,13 +32,16 @@ var Types = require('../../shared/js/gametypes');
 
             if (format) {
                 if (message.length !== format.length) {
+                    console.error('Invalid Message: Unexpected message length');
                     return false;
                 }
                 for (var i = 0, n = message.length; i < n; i += 1) {
                     if (format[i] === 'n' && !_.isNumber(message[i])) {
+                        console.error('Invalid Message: Expected Number at ' + i);
                         return false;
                     }
                     if (format[i] === 's' && !_.isString(message[i])) {
+                        console.error('Invalid Message: Expected String at ' + i);
                         return false;
                     }
                 }
@@ -50,7 +53,7 @@ var Types = require('../../shared/js/gametypes');
             }
             else if (type === Types.Messages.LOGIN) {
 				// LOGIN with or without guild
-				return _.isString(message[0]) && _.isNumber(message[1]) && _.isNumber(message[2]) && (message.length == 3 || (_.isNumber(message[3]) && _.isString(message[4]) && message.length == 5) );
+				return _.isString(message[0]) && _.isString(message[1]) && (message.length == 2);
 			}
             else if (type === Types.Messages.GUILD) {
 				if (message[0] === Types.Messages.GUILDACTION.CREATE){

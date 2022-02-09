@@ -694,12 +694,10 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             }
         },
 
-        setServerOptions: function(host, port, username, userpw, email) {
+        setServerOptions: function(host, port, username) {
             this.host = host;
             this.port = port;
             this.username = username;
-            this.userpw = userpw;
-            this.email = email;
         },
  
         loadAudio: function() {
@@ -836,8 +834,6 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                 log.info("Starting client/server handshake");
 
                 self.player.name = self.username;
-                self.player.pw = self.userpw;
-                self.player.email = self.email;
                 self.started = true;
 
                 if(action === 'create') {
@@ -2591,8 +2587,6 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             this.initRenderingGrid();
 
             this.player = new Warrior("player", this.username);
-            this.player.pw = this.userpw;
-            this.player.email = this.email;
             this.initPlayer();
             this.app.initTargetHud();
 
