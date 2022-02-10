@@ -292,7 +292,7 @@ module.exports = World = cls.Class.extend({
 
         // Find sender, if logged in
         senderPlayer = findPlayerByCrypto(transfer.sender.toString());
-        // Find receipient, if logged in
+        // Find recipient, if logged in
         recipientPlayer = findPlayerByCrypto(transfer.recipient.toString());
 
         // If sender not logged in, check if database contains a player holding one of the NFTs transferred
