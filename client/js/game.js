@@ -1158,7 +1158,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                 });
 
                 self.client.onSpawnItem(function(item, x, y) {
-                    log.info("Spawned " + Types.getKindAsString(item.kind) + " (" + item.id + ") at "+x+", "+y);
+                    log.info("Spawned " + Types.getKindAsString(item.kind) + " (" + item.id + ") at "+x+", "+y + " nftKey=" + item.nftKey);
                     self.addItem(item, x, y);
                 });
 
