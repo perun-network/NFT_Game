@@ -1,3 +1,4 @@
+// var erdstallClient = require("../../ts/erdstallclientinterface").erdstallClient;
 
 define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
     var app, game;
@@ -212,6 +213,20 @@ define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
             if(app.isDesktop && app.supportsWorkers) {
                 game.loadMap();
             }
+
+            /**
+             * Code for switching held weapon
+             */
+            $('#weapon').click(function() {
+                console.log("Weapon Switch Button pressed.");
+                erdstallInterface.getNFTs().then(function(owned_nfts) {
+                    console.log(owned_nfts);
+                    owned_nfts.forEach(nft => {
+                        console.log(nft);
+                    });
+                });
+                game.client.sendSwitchWeapon(ligma = 5);
+            });
 
             game.onGameStart(function() {
                 app.initEquipmentIcons();

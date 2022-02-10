@@ -301,6 +301,10 @@ module.exports = Player = Character.extend({
                     databaseHandler.setCheckpoint(self.name, self.x, self.y);
                 }
             }
+            // receives and handles weapon switch request
+            else if(action === Types.Messages.SWITCHWEAPON) {
+                log.info("SWITCHWEAPON: " + self.name + " " + message[1]);
+            }
             else if(action === Types.Messages.INVENTORY){
                 log.info("INVENTORY: " + self.name + " " + message[1] + " " + message[2] + " " + message[3]);
                 var inventoryNumber = message[2],

@@ -690,6 +690,12 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                               mob.id]);
         },
 
+        // sends a SWITCHWEAPON type message
+        sendSwitchWeapon: function(nftKey) {
+            this.sendMessage([Types.Messages.SWITCHWEAPON,
+                              nftKey]);
+        },
+
         sendAttack: function(mob) {
             this.sendMessage([Types.Messages.ATTACK,
                               mob.id]);
