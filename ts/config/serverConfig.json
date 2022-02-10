@@ -3,6 +3,7 @@
     "NetworkName": "local",
     "erdOperatorUrl": "127.0.0.1:8401",
     "ethRpcUrl": "127.0.0.1:8545",
-	"contract": "0x079557d7549d7d44f4b00b51d2c532674129ed51",
-    "mnemonic": "pistol kiwi shrug future ozone ostrich match remove crucial oblige cream critic"
+	"contract": "0x923439be515b6A928cB9650d70000a9044e49E85",
+    "mnemonic": "pistol kiwi shrug future ozone ostrich match remove crucial oblige cream critic",
+    "derivationPath": "m/44'/60'/0'/0/2"
 }

@@ -41,9 +41,7 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 			throw new Error("Unable to get Account Provider for Ethereum URL: " + ethRpcUrl);
 		}
 
-		const mnemonic = config.mnemonic;
-		const derivationPath = `m/44'/60'/0'/0/2`;
-		const user = ethers.Wallet.fromMnemonic(mnemonic, derivationPath);
+		const user = ethers.Wallet.fromMnemonic(config.mnemonic, config.derivationPath);
 
 		var session;
 		try {
@@ -63,7 +61,7 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		this._session = session;
 		this.address = user.address;
 		console.log("Initialized new server session: " + user.address);
-		console.log("Will start mints with NFT ID " + this.nextNftID);
+		console.log("Will start mints with NFT ID " + this.nextNftID + " on contract " + this.tokenAddress.toString());
 		return { account: user.address };
 	}
 
@@ -76,7 +74,7 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		if (!this._session) {
 			throw new Error("Server session uninitialized");
 		}
-		
+
 		// Mints NFT
 		var txReceipt = await this._session.mint(this.tokenAddress, id);
 		return { txReceipt };
