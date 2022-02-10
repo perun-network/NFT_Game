@@ -12,6 +12,7 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 
 	protected nextNftID!: bigint;
 	public address!: String;
+	public readonly tokenAddress: Address = Address.fromString(config.contract);
 
 	// Initializes _session member and subscribes and onboards session to the erdstall system, returns wallet address as string
 	async init(databaseHandler?: any): Promise<{ account: String }> {
@@ -22,8 +23,13 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		// Set ID of next NFT to be minted to the count of NFTs stored in database
 		this.nextNftID = BigInt(await databaseHandler.getNFTCount());
 
-		if (this.nextNftID === null || this.nextNftID === undefined) {
+		if (this.nextNftID == null) {
 			throw new Error("Invalid database NFT count: " + this.nextNftID);
+		}
+		
+		// Check if token address was initialized successfully
+		if(this.tokenAddress == null) {
+			throw new Error("Invalid token address: " + this.tokenAddress);
 		}
 
 		const erdOperatorUrl: URL = new URL("ws://" + config.erdOperatorUrl + "/ws");
@@ -70,9 +76,9 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		if (!this._session) {
 			throw new Error("Server session uninitialized");
 		}
-		// TODO: Change token to contract address!
+		
 		// Mints NFT
-		var txReceipt = await this._session.mint(this._session.address, id);
+		var txReceipt = await this._session.mint(this.tokenAddress, id);
 		return { txReceipt };
 	}
 
