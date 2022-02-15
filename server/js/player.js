@@ -638,7 +638,7 @@ module.exports = Player = Character.extend({
     setNftKey: function(nftID) {
         databaseHandler.setNftItemID(this.name, nftID);
         this.nftKey = nftID;
-        console.log("player.js: setNftItemID to " + nftID + " for player " + this.userName);
+        // console.log("player.js: setNftItemID to " + nftID + " for player " + this.name);
     },
 
     setGuildId: function(id) {

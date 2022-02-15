@@ -688,25 +688,55 @@ module.exports = DatabaseHandler = cls.Class.extend({
 
     // Returns the name of the player holding one of the nftKeys, the nftKey held by the player and its item kind, or null if no player holds any of the keys
     getPlayerHoldingNFT: function(...nftKeys) {
+      // Asynchronously returns the weapon held by player
+      var getWeapon = (userKey) => {
+        return new Promise(resolve => {
+          client.hget(userKey, "weapon", function(err, weaponReply){
+            if(weaponReply == null || err) {
+              var error = "Player-holding-NFT's weapon could not be loaded from database: " + err;
+              log.error(error);
+              throw new Error(error);
+            }
+            resolve(weaponReply.toString());
+          });
+        });
+      };
+      // Asynchronously returns the NFT held by player
+      var getUserNFT = (userKey) => {
+        return new Promise(resolve => {
+          client.hget(userKey, "nftItemID", function(err, itemReply){
+            if(itemReply == null || err) {
+              resolve(null);
+              return;
+            }
+            resolve(itemReply.toString());
+          });
+        });
+      };
+
       return new Promise(resolve => {
         // Iterate over all player names
-        client.smembers("usr", async function (err, replies) {
+        client.smembers("usr", async function(err, replies) {
           for (var index = 0; index < replies.length; index++) {
             var userKey = "u:" + replies[index].toString();
             // Get nftKey held by player
-            var itemId = await client.hget(userKey, "nftItemID");
+            var itemId = await getUserNFT(userKey);
+            if(itemId == null) {
+              continue;
+            }
             // Compare key held by player with nftKeys in argument
-            for (var nftKey in nftKeys) {
-              if (itemId.toString().toUpperCase() === nftKey.toUpperCase()) {
-                var itemKind = await client.hget(userKey, "weapon");
-                resolve({ name: replies[index].toString(), key: nftKey, kind: itemKind });
+            for (let nftKey of nftKeys) {
+              if (itemId.toUpperCase() === nftKey.toString().toUpperCase()) {
+                // Get itemKind of weapon held by player
+                var itemKind = await getWeapon(userKey);
+                resolve({ name: replies[index].toString(), key: nftKey.toString(), kind: itemKind });
                 return;
               }
             }
           }
+          // Return null in case no player holding item was found
+          resolve(null);
         });
-        // Return null in case no player holding item was found
-        resolve(null);
       });
     },
 
