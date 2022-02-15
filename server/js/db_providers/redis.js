@@ -393,7 +393,11 @@ module.exports = DatabaseHandler = cls.Class.extend({
     },
     setNftItemID: function(name, nftID){
         log.info("Set NFTItemID: " + name + " " + nftID);
-        client.hset("u:" + name, "nftItemID", nftID);
+        if(nftID) {
+          client.hset("u:" + name, "nftItemID", nftID);
+        } else { // In case nftID is null or undefined, e.g. when player traded away his NFT
+          client.hdel("u:" + name, "nftItemID");
+        }
     },
     setExp: function(name, exp){
         log.info("Set Exp: " + name + " " + exp);
@@ -693,7 +697,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
             var itemId = await client.hget(userKey, "nftItemID");
             // Compare key held by player with nftKeys in argument
             for (var nftKey in nftKeys) {
-              if (itemId.toUpperCase() === nftKey.toUpperCase()) {
+              if (itemId.toString().toUpperCase() === nftKey.toUpperCase()) {
                 var itemKind = await client.hget(userKey, "weapon");
                 resolve({ name: replies[index].toString(), key: nftKey, kind: itemKind });
                 return;

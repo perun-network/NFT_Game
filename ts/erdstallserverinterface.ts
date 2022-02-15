@@ -1,12 +1,12 @@
 import { Address } from "@polycrypt/erdstall/ledger";
-import { Assets, mapNFTs, Tokens } from "@polycrypt/erdstall/ledger/assets";
+import { Asset, Assets, mapNFTs, Tokens } from "@polycrypt/erdstall/ledger/assets";
 import { Session } from "@polycrypt/erdstall";
 import NFT, { key } from "./nft";
 import erdstallClientInterface from "./erdstallclientinterface"
 import { TxReceipt } from "@polycrypt/erdstall/api/responses";
 import { ethers } from "ethers";
 import config from './config/serverConfig.json';
-import { Transfer } from "@polycrypt/erdstall/api/transactions";
+import { Trade, Transfer } from "@polycrypt/erdstall/api/transactions";
 
 export default class erdstallServerInterface extends erdstallClientInterface {
 
@@ -47,7 +47,7 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		try {
 			session = new Session(Address.fromString(user.address), user.connect(provider), erdOperatorUrl);
 			await session.initialize();
-			await session.subscribeSelf();
+			await session.subscribe();
 			await session.onboard();
 		} catch (error) {
 			if (error) {
@@ -117,6 +117,18 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 			}
 		}
 	}
+
+	// Registers listener function for transfer transactions
+	registerNFTOwnerShipTransferCallback(callback: (sender: string, recipient: string, nfts: string[]) => void) {
+		if (!this._session) throw new Error("Session uninitialized");
+		this._session.on("receipt", (receipt: TxReceipt) => {
+			if(receipt.tx instanceof Transfer) { // Handle transfer transaction issued by transferTo
+				callback(receipt.tx.sender.toString(), receipt.tx.recipient.toString(), getAssetMapNFTs(receipt.tx.values.values));
+			} else if(receipt.tx instanceof Trade) { // Handle trade transaction
+				callback(receipt.tx.offer.owner.toString(), receipt.tx.sender.toString(), getAssetMapNFTs(receipt.tx.offer.offer.values));
+			}
+		});
+	}
 }
 
 export var erdstallServer = new erdstallServerInterface();
@@ -129,9 +141,9 @@ function getAssetsFromNFT(nft: NFT): Assets {
 	});
 }
 
-export function getTransferTxNFTs(transfer: Transfer): string[] {
+export function getAssetMapNFTs(assets: Map<string, Asset>): string[] {
 	var nfts = new Array();
-	mapNFTs(transfer.values.values, (token, id) => {
+	mapNFTs(assets, (token, id) => {
 		nfts.push(key(token, id));
 	});
 	return nfts;

@@ -44,6 +44,9 @@ export default class erdstallClientInterface {
 			await session.initialize();
 			await session.subscribeSelf();
 			await session.onboard();
+			session.on("error", (error: string | Error ) => {
+				console.error('Erdstall Error: ' + error);
+			});
 		} catch (error) {
 			if (error) {
 				throw new Error("Error initializing metamask session" + error);
@@ -71,16 +74,6 @@ export default class erdstallClientInterface {
 			const account = await this._session.getOwnAccount();
 			return getNFTsFromAssets(account.values);
 		}
-	}
-
-	// Registers listener function for transfer transactions
-	registerTransferCallback(callback: (tx: Transfer) => void) {
-		if (!this._session) throw new Error("Client session uninitialized");
-		this._session.on("receipt", (receipt: TxReceipt) => {
-			if(receipt.tx instanceof Transfer) {
-				callback(receipt.tx);
-			}
-		});
 	}
 }
 
