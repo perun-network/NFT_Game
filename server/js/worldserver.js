@@ -21,7 +21,6 @@ var cls = require("./lib/class"),
 var erdstallServer = require("../../ts/erdstallserverinterface").erdstallServer;
 var nftMetaServer = require("../../ts/metadata").nftMetaServer;
 var NFT = require("../../ts/nft");
-// var getTransferTxNFTs = require("../../ts/erdstallserverinterface").getTransferTxNFTs;
 
 // ======= GAME SERVER ========
 
@@ -57,6 +56,7 @@ module.exports = World = cls.Class.extend({
 
         this.zoneGroupsReady = false;
 
+        // Register handler for NFT transfers and trades
         erdstallServer.registerNFTOwnerShipTransferCallback(this.handleNFTOwnerShipTransfer.bind(self));
 
         this.onPlayerConnect(function (player) {
@@ -274,15 +274,15 @@ module.exports = World = cls.Class.extend({
     // Handles transfer transactions by unequipping NFT items, potentially changing database records and giving the NFT item to the recipient in case he is logged in
     handleNFTOwnerShipTransfer: async function (sender, recipient, nfts) {
         var self = this;
-        log.info("####################WorldServer: Noticed transfer TX from \"" + sender + "\" to \"" + recipient + "\":");
+        log.info("#################### Transfer Handling: Noticed transfer TX from \"" + sender + "\" to \"" + recipient + "\":");
         // Ignore transfer if server sent NFT to player
         if (sender.toUpperCase() === erdstallServer.address.toUpperCase()) {
-            log.info("####################WorldServer: Transfer initiated by server... ignoring");
+            log.info("#################### Transfer Handling: Transfer initiated by server... ignoring");
             return;
         }
         // Get List of NFTs transferred
         // const nfts = getTransferTxNFTs(transfer);
-        log.info("####################WorldServer: ...with NFTs: [" + nfts + "]");
+        log.info("#################### Transfer Handling: ...with NFTs: [" + nfts + "]");
 
         var transferredKey = undefined;
         var transferredKind = undefined;
@@ -290,16 +290,16 @@ module.exports = World = cls.Class.extend({
         var recipientPlayer = undefined;
 
         // Find sender, if logged in
-        log.info("####################WorldServer: ...Finding sender...");
+        log.info("#################### Transfer Handling: ...Finding sender...");
         senderPlayer = self.findPlayerByCrypto(sender);
         // Find recipient, if logged in
-        log.info("####################WorldServer: ...Finding recipient...");
+        log.info("#################### Transfer Handling: ...Finding recipient...");
         recipientPlayer = self.findPlayerByCrypto(recipient);
 
         // If sender not logged in, check if database contains a player holding one of the NFTs transferred
         if (undefined === senderPlayer) {
             var senderPlayerName = undefined;
-            log.info("####################WorldServer: Couldn't find logged in player for sender, checking database...");
+            log.info("#################### Transfer Handling: Couldn't find logged in player for sender, checking database...");
 
             // Get name of player holding one of the NFTs, key of NFT held by that player and kind of NFT
             var found = await self.databaseHandler.getPlayerHoldingNFT(nfts);
@@ -312,26 +312,26 @@ module.exports = World = cls.Class.extend({
 
             // Return if no player holding a transferred NFT is found in database
             if ((undefined === senderPlayerName) || (undefined === transferredKey) || (undefined === transferredKind)) {
-                log.info("####################WorldServer: Couldn't find sender player holding transferred NFT in database. Ignoring...");
+                log.info("#################### Transfer Handling: Couldn't find sender player holding transferred NFT in database. Ignoring...");
             } else {
-                log.info("####################WorldServer: ...determined sender: " + senderPlayerName + " [" + sender + "]");
-                log.info("####################WorldServer: ...replacing sender " + senderPlayerName + "'s item and nft: (" + transferredKind + ", " + transferredKey + ") with (sword1, null) in database");
+                log.info("#################### Transfer Handling: ...determined sender: " + senderPlayerName + " [" + sender + "]");
+                log.info("#################### Transfer Handling: ...replacing sender " + senderPlayerName + "'s item and nft: (" + transferredKind + ", " + transferredKey + ") with (sword1, null) in database");
                 // Unequip weapon of logged out sender, set nftKey to null
                 databaseHandler.equipWeapon(senderPlayerName, "sword1");
                 databaseHandler.setNftItemID(senderPlayerName, null);
             }
         } else {
             // Check if logged in sender currently holds NFTKey
-            log.info("####################WorldServer: ...determined sender: " + senderPlayer.name + " [" + senderPlayer.cryptoAddress + "]");
-            log.info("####################WorldServer: ...Checking transfer NFTs " + nfts);
+            log.info("#################### Transfer Handling: ...determined sender: " + senderPlayer.name + " [" + senderPlayer.cryptoAddress + "]");
+            log.info("#################### Transfer Handling: ...Checking transfer NFTs " + nfts);
             for (let nftKey of nfts) {
-                log.info("####################WorldServer: ...Checking transfer NFT " + nftKey);
-                log.info("####################WorldServer: ...Comparing " + senderPlayer.nftKey.toUpperCase() + " to " + nftKey.toUpperCase());
+                log.info("#################### Transfer Handling: ...Checking transfer NFT " + nftKey);
+                log.info("#################### Transfer Handling: ...Comparing " + senderPlayer.nftKey.toUpperCase() + " to " + nftKey.toUpperCase());
                 if (senderPlayer.nftKey.toUpperCase() === nftKey.toUpperCase()) {
                     // Unequip weapon of logged in sender, set nftKey to zero and broadcast changes
                     transferredKey = nftKey;
                     transferredKind = senderPlayer.weapon;
-                    log.info("####################WorldServer: ...replacing sender " + senderPlayer.name + "'s item and nft: (" + transferredKind + ", " + transferredKey + ") with (sword1, null)");
+                    log.info("#################### Transfer Handling: ...replacing sender " + senderPlayer.name + "'s item and nft: (" + transferredKind + ", " + transferredKey + ") with (sword1, null)");
                     senderPlayer.equipItem(Types.getKindFromString("sword1"));
                     senderPlayer.setNftKey(null);
                     senderPlayer.broadcast(senderPlayer.equip(senderPlayer.weapon, nftKey = null), false);
@@ -342,11 +342,11 @@ module.exports = World = cls.Class.extend({
 
         // Don't equip NFT item if recipient is not logged in
         if (undefined === recipientPlayer) {
-            log.info("####################WorldServer: Couldn't find logged in player for recipient: " + recipient + ". Ignoring...");
+            log.info("#################### Transfer Handling: Couldn't find logged in player for recipient: " + recipient + ". Ignoring...");
             return;
         }
 
-        log.info("####################WorldServer: ...determined recipient player: " + recipientPlayer.name + " [" + recipientPlayer.cryptoAddress + "]");
+        log.info("#################### Transfer Handling: ...determined recipient player: " + recipientPlayer.name + " [" + recipientPlayer.cryptoAddress + "]");
 
         // If kind and key were found from sender, equip item and set key for recipient and broadcast changes
         if ((undefined !== transferredKind) && (undefined !== transferredKey)) {
@@ -355,13 +355,13 @@ module.exports = World = cls.Class.extend({
                 recipientPlayer.equipItem(transferredKind);
                 recipientPlayer.setNftKey(transferredKey);
                 recipientPlayer.broadcast(recipientPlayer.equip(transferredKind, transferredKey), false);
-                log.info("####################WorldServer: Successfully transferred nft, item: " + transferredKey + ", " + transferredKind + " from " + senderPlayer.name + " to " + recipientPlayer.name);
+                log.info("#################### Transfer Handling: Successfully transferred nft, item: (" + transferredKey + ", " + transferredKind + ") from " + senderPlayer.name + " to " + recipientPlayer.name);
             } else {
-                log.warn("####################WorldServer: Not transferring nft, item: " + transferredKey + ", " + transferredKind + " from " + senderPlayer.name + " to " + recipientPlayer.name + " because recipient already has it");
+                log.warn("#################### Transfer Handling: Not transferring nft, item: (" + transferredKey + ", " + transferredKind + ") from " + senderPlayer.name + " to " + recipientPlayer.name + " because recipient already has it");
             }
         }
         else {
-            log.error("####################Error transfering nft, item: " + transferredKey + ", " + transferredKind + " from " + senderPlayer.name + " to " + recipientPlayer.name);
+            log.error("#################### Transfer Handling: Transfering nft, item: (" + transferredKey + ", " + transferredKind + ") from " + senderPlayer.name + " to " + recipientPlayer.name);
         }
     },
 
