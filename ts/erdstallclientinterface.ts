@@ -1,15 +1,13 @@
 
 import { ethers } from "ethers";
 
-import { Assets, Tokens } from "@polycrypt/erdstall/ledger/assets";
+import { Assets, mapNFTs } from "@polycrypt/erdstall/ledger/assets";
 import { Address } from "@polycrypt/erdstall/ledger";
-import { ErdstallEvent, Session } from "@polycrypt/erdstall";
+import { Session } from "@polycrypt/erdstall";
 import detectEthereumProvider from "@metamask/detect-provider";
 import config from './config/clientConfig.json';
 
-import NFT, { key } from "./nft";
-import { TxReceipt } from "@polycrypt/erdstall/api/responses";
-import { Transfer } from "@polycrypt/erdstall/api/transactions";
+import { key } from "./nft";
 
 // import * as test from "@polycrypt/erdstall/test";
 
@@ -132,16 +130,12 @@ async function getAccountProvider(
 
 	return { account, web3Provider };
 }
-
-function getNFTsFromAssets(assets: Assets): string[] {
+// Extracts string list of nftKeys from assets
+export function getNFTsFromAssets(assets: Assets): string[] {
 	var nfts = new Array();
-	for (const [addr, asset] of assets.values.entries()) {
-		if (!Address.fromString(addr).isZero() && asset instanceof Tokens) {
-			for(var i = 0; i < asset.value.length; i++) {
-				nfts.push(key(addr, asset.value[i]));
-			}
-		}
-	}
+	mapNFTs(assets.values, (token, id) => {
+		nfts.push(key(token, id));
+	});
 	return nfts;
 }
 

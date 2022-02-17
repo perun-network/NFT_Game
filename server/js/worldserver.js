@@ -21,6 +21,7 @@ var cls = require("./lib/class"),
 var erdstallServer = require("../../ts/erdstallserverinterface").erdstallServer;
 var nftMetaServer = require("../../ts/metadata").nftMetaServer;
 var NFT = require("../../ts/nft");
+var parseKey = require("../../ts/nft").parseKey;
 
 // ======= GAME SERVER ========
 
@@ -275,8 +276,12 @@ module.exports = World = cls.Class.extend({
     handleNFTOwnerShipTransfer: async function (sender, recipient, nfts) {
         var self = this;
         log.info("#################### Transfer Handling: Noticed transfer TX from \"" + sender + "\" to \"" + recipient + "\":");
+        if(!nfts) {
+            log.info("#################### Transfer Handling: No NFTs transferred... ignoring");
+            return;
+        }
         // Ignore transfer if server sent NFT to player
-        if (sender.toUpperCase() === erdstallServer.address.toUpperCase()) {
+        if (sender.toUpperCase() === erdstallServer._session.address.toString().toUpperCase()) {
             log.info("#################### Transfer Handling: Transfer initiated by server... ignoring");
             return;
         }
@@ -323,7 +328,6 @@ module.exports = World = cls.Class.extend({
             log.info("#################### Transfer Handling: ...Checking transfer NFTs " + nfts);
             for (let nftKey of nfts) {
                 log.info("#################### Transfer Handling: ...Checking transfer NFT " + nftKey);
-                log.info("#################### Transfer Handling: ...Comparing " + senderPlayer.nftKey.toUpperCase() + " to " + nftKey.toUpperCase());
                 if (senderPlayer.nftKey.toUpperCase() === nftKey.toUpperCase()) {
                     // Unequip weapon of logged in sender, set nftKey to zero and broadcast changes
                     transferredKey = nftKey;
@@ -335,30 +339,59 @@ module.exports = World = cls.Class.extend({
                     break;
                 }
             }
+            log.info("#################### Transfer Handling: " + senderPlayer.name + " does not seem to carry an NFT from the transaction...");
         }
 
-        // Find recipient, if logged in
-        log.info("#################### Transfer Handling: ...Finding recipient...");
-        recipientPlayer = self.findPlayerByCrypto(recipient);
-        
-        // Don't equip NFT item if recipient is not logged in
-        if (undefined === recipientPlayer) {
-            log.info("#################### Transfer Handling: Couldn't find logged in player for recipient: " + recipient + ". Ignoring...");
-            return;
+        // If sender could not be determined or is not holding the item, fetch kind from metadata server
+        if((undefined === transferredKey) || (undefined === transferredKind)) {
+            log.info("#################### Transfer Handling: Couldn't determine kind of transferred NFT. Checking Metadata...");
+            // Iterate over transferred nfts to find NFT with metadata
+            for (let nftKey of nfts) {
+                let parsedKey = parseKey(nftKey);
+                // Fetch metadata from metadataserver
+                let meta = await nftMetaServer.getMetadata(parsedKey.token, parsedKey.id);
+                if(meta) {
+                    log.info("#################### Transfer Handling: Got BrowserQuest meta for NFT " + nftKey + ": " + meta.toJSON());
+                    // Extract item kind from metadata
+                    // TODO: Fix Metadata attribute access
+                    let metaKind = meta.getAttribute("kind");
+                    if(metaKind) {
+                        log.info("#################### Transfer Handling: Found usable kind for NFT " + nftKey + " with kind \"" + metaKind + "\"!");
+                        transferredKey = nftKey;
+                        transferredKind = Types.getKindFromString(metaKind);
+                        break;
+                    }
+                }
+            }
+
+            if ((undefined === transferredKind) || (undefined === transferredKey)) {
+                log.info("#################### Transfer Handling: [" + nfts + "] does not seem to contain a BrowserQuest NFT. Ignoring...");
+                return;
+            }
         }
 
-        log.info("#################### Transfer Handling: ...determined recipient player: " + recipientPlayer.name + " [" + recipientPlayer.cryptoAddress + "]");
-
-        // If kind and key were found from sender, equip item and set key for recipient and broadcast changes
+        // If kind and key of transferred NFT were determined, find recipient, equip item, set key for recipient and broadcast changes
         if ((undefined !== transferredKind) && (undefined !== transferredKey)) {
+            // Find recipient, if logged in
+            log.info("#################### Transfer Handling: ...Finding recipient...");
+            recipientPlayer = self.findPlayerByCrypto(recipient);
+            
+            // Don't equip NFT item if recipient is not logged in
+            if (undefined === recipientPlayer) {
+                log.info("#################### Transfer Handling: Couldn't find logged in player for recipient: " + recipient + ". Ignoring...");
+                return;
+            }
+
+            log.info("#################### Transfer Handling: ...determined recipient player: " + recipientPlayer.name + " [" + recipientPlayer.cryptoAddress + "]");
+
             // Check whether logged in recipient already holds the NFT
-            if (recipientPlayer.nftKey !== transferredKey) {
+            if (recipientPlayer.nftKey === transferredKey) {
+                log.warn("#################### Transfer Handling: Not transferring nft, item: (" + transferredKey + ", " + Types.getKindAsString(transferredKind) + ") because recipient already has it");
+            } else {
                 recipientPlayer.equipItem(transferredKind);
                 recipientPlayer.setNftKey(transferredKey);
                 recipientPlayer.broadcast(recipientPlayer.equip(transferredKind, transferredKey), false);
                 log.info("#################### Transfer Handling: Successfully transferred nft, item: (" + transferredKey + ", " + Types.getKindAsString(transferredKind) + ")");
-            } else {
-                log.warn("#################### Transfer Handling: Not transferring nft, item: (" + transferredKey + ", " + Types.getKindAsString(transferredKind) + ") because recipient already has it");
             }
         }
         else {

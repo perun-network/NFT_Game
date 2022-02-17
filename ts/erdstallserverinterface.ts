@@ -1,8 +1,8 @@
 import { Address } from "@polycrypt/erdstall/ledger";
-import { Asset, Assets, mapNFTs, Tokens } from "@polycrypt/erdstall/ledger/assets";
+import { Assets, Tokens } from "@polycrypt/erdstall/ledger/assets";
 import { Session } from "@polycrypt/erdstall";
-import NFT, { key } from "./nft";
-import erdstallClientInterface from "./erdstallclientinterface"
+import NFT from "./nft";
+import erdstallClientInterface, { getNFTsFromAssets } from "./erdstallclientinterface"
 import { TxReceipt } from "@polycrypt/erdstall/api/responses";
 import { ethers } from "ethers";
 import config from './config/serverConfig.json';
@@ -11,7 +11,7 @@ import { Trade, Transfer } from "@polycrypt/erdstall/api/transactions";
 export default class erdstallServerInterface extends erdstallClientInterface {
 
 	protected nextNftID!: bigint;
-	public address!: String;
+	// Token to mint NFTs on
 	public readonly tokenAddress: Address = Address.fromString(config.contract);
 
 	// Initializes _session member and subscribes and onboards session to the erdstall system, returns wallet address as string
@@ -59,7 +59,6 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		}
 
 		this._session = session;
-		this.address = user.address;
 		console.log("Initialized new server session: " + user.address);
 		console.log("Will start mints with NFT ID " + this.nextNftID + " on contract " + this.tokenAddress.toString());
 		return { account: user.address };
@@ -123,9 +122,9 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		if (!this._session) throw new Error("Session uninitialized");
 		this._session.on("receipt", (receipt: TxReceipt) => {
 			if(receipt.tx instanceof Transfer) { // Handle transfer transaction issued by transferTo
-				callback(receipt.tx.sender.toString(), receipt.tx.recipient.toString(), getAssetMapNFTs(receipt.tx.values.values));
+				callback(receipt.tx.sender.toString(), receipt.tx.recipient.toString(), getNFTsFromAssets(receipt.tx.values));
 			} else if(receipt.tx instanceof Trade) { // Handle trade transaction
-				callback(receipt.tx.offer.owner.toString(), receipt.tx.sender.toString(), getAssetMapNFTs(receipt.tx.offer.offer.values));
+				callback(receipt.tx.offer.owner.toString(), receipt.tx.sender.toString(), getNFTsFromAssets(receipt.tx.offer.offer));
 			}
 		});
 	}
@@ -139,12 +138,4 @@ function getAssetsFromNFT(nft: NFT): Assets {
 		token: nft.token,
 		asset: new Tokens([nft.id])
 	});
-}
-
-export function getAssetMapNFTs(assets: Map<string, Asset>): string[] {
-	var nfts = new Array();
-	mapNFTs(assets, (token, id) => {
-		nfts.push(key(token, id));
-	});
-	return nfts;
 }

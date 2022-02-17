@@ -60,7 +60,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
                         .hget("cb:" + player.connection._connection.remoteAddress, "etime") // 35
                         .hget(userKey, "cryptoaddress") // 36
                         .hget(userKey, "nftItemID") // 37
-                        .exec(function(err, replies){
+                        .exec(async function(err, replies){
                             var pw = replies[0];
                             var armor = replies[1];
                             var weapon = replies[2];
@@ -103,6 +103,30 @@ module.exports = DatabaseHandler = cls.Class.extend({
                             var chatBanEndTime = Utils.NaN2Zero(replies[35]);
                             var cryptoAddress = replies[36];
                             var nftItemId = replies[37];
+
+                            // Check if NFT Item held by user is actually in his wallet
+                            if(nftItemId) {
+                                log.info(player.name + " holds " + nftItemId + ". Confirming it is in wallet...");
+                                // Get NFTs owned by player
+                                var playerNFTs = await erdstallServer.getNFTs(cryptoAddress);
+                                var hasNFT = false;
+                                // Compare player's NFTs with NFT they're holding
+                                for(let playerNFT of playerNFTs) {
+                                    if(playerNFT.toUpperCase() === nftItemId.toString().toUpperCase()) {
+                                        hasNFT = true;
+                                        break;
+                                    }
+                                }
+                                if(hasNFT) {
+                                  log.info(player.name + " does own item (" + weapon + ", " + nftItemId + ")! All good.");
+                                } else {  // Replace NFT Item with sword1, set his NFT item ID to null and update database records
+                                    log.info(player.name + " does not own item (" + weapon + ", " + nftItemId + ") anymore... replacing with (sword1, null)");
+                                    self.setNftItemID(player.name, null);
+                                    self.equipWeapon(player.name, "sword1")
+                                    weapon = "sword1";
+                                    nftItemId = null;
+                                }
+                            }
 
                             // Check Password
 
