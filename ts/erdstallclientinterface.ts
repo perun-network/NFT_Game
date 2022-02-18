@@ -9,10 +9,6 @@ import config from './config/clientConfig.json';
 
 import { key } from "./nft";
 
-// import * as test from "@polycrypt/erdstall/test";
-
-// export type eventCallback = (error: string | Error) => void;
-
 export default class erdstallClientInterface {
 	_session: Session | undefined;
 
