@@ -141,7 +141,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
          * @param {*} nftKey nft context associated with sprite to be loaded
          * @returns json of sprite description
          */
-         getNFTSpritesJSON: function(nftKey) {
+        getNFTSpritesJSON: function(nftKey) {
             return new Promise(resolve => {
                 const [token, id] = nftKey.split(":");
                 const url = "http://" + this.host + ":" + this.port + "/metadata/sprites/" + token + "/" + id;

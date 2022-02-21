@@ -222,11 +222,7 @@ define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
                 erdstallInterface.getNFTs().then(function(owned_nfts) {
 
                     // randomly choose one NFT of the owned NFTs of the player and save the nftKey in the variable 'chosenWeapon'
-                    var randomNumber = Math.floor(Math.random() * (owned_nfts.length));
-                    var chosenWeapon = owned_nfts[randomNumber];
-                    console.log(randomNumber);
-                    console.log(owned_nfts);
-                    console.log(chosenWeapon);
+                    var chosenWeapon = owned_nfts[Math.floor(Math.random() * (owned_nfts.length))];
 
                     // send a message to the server to update held item of the player on server side and broadcast the weapon switch to other players
                     game.client.sendWeaponSwitch(chosenWeapon);
