@@ -161,5 +161,3 @@ async function initWeb3(): Promise<ethers.providers.Web3Provider> {
 		return Promise.reject(Error("MetaMask not found"));
 	}
 }
-
-export var erdstallClient = new erdstallClientInterface()

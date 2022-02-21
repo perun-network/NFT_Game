@@ -1,5 +1,3 @@
-// var erdstallClient = require("../../ts/erdstallclientinterface").erdstallClient;
-
 define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
     var app, game;
 
@@ -215,17 +213,44 @@ define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
             }
 
             /**
-             * Code for switching held weapon
+             * Executed when Weapon Button is pressed.
+             * Switches the held weapon to a random NFT owned by the player (can be the same NFT). 
+             * As of now the player is expected to always have at least one NFT in his/her wallet. 
              */
             $('#weapon').click(function() {
                 console.log("Weapon Switch Button pressed.");
                 erdstallInterface.getNFTs().then(function(owned_nfts) {
+
+                    // randomly choose one NFT of the owned NFTs of the player and save the nftKey in the variable 'chosenWeapon'
+                    var randomNumber = Math.floor(Math.random() * (owned_nfts.length));
+                    var chosenWeapon = owned_nfts[randomNumber];
+                    console.log(randomNumber);
                     console.log(owned_nfts);
-                    owned_nfts.forEach(nft => {
-                        console.log(nft);
+                    console.log(chosenWeapon);
+
+                    // send a message to the server to update held item of the player on server side and broadcast the weapon switch to other players
+                    game.client.sendWeaponSwitch(chosenWeapon);
+
+                    // update the the held item of the player on client side
+                    // besides the nftKey the kind of the weapon has to be obtained 
+                    // therefore the metadataJSON associated with the nftKey is obtained and the (weapon) kind is looked up
+                    game.client.getNFTMetadataJSON(chosenWeapon).then(metadataJSON => {
+
+                        var metadata = JSON.parse(metadataJSON);
+                        var kind = undefined;
+
+                        for(let attr of metadata.attributes) {
+                            if(attr.trait_type =="kind") {
+                                kind = attr.value;
+                                break;
+                            }
+                        }
+
+                        game.client.nftrecieved_callback(chosenWeapon);
+                        game.player.switchWeapon(kind, nftKey=chosenWeapon); // set weapon and pass nft data to player entity
                     });
+                    console.log("Chosen weapon: " + chosenWeapon);
                 });
-                game.client.sendSwitchWeapon(ligma = 5);
             });
 
             game.onGameStart(function() {

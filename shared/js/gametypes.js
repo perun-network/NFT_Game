@@ -32,7 +32,7 @@ Types = {
         PVP: 28,
         GUILD: 29,
         GUILDERROR: 30,
-        SWITCHWEAPON: 31, // new message type for switching held weapon
+        WEAPONSWITCH: 31, // new message type for switching held weapon
         GUILDERRORTYPE: {
         	DOESNOTEXIST: 1,
         	BADNAME: 2,

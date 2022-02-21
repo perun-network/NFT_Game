@@ -13,6 +13,7 @@ var cls = require("./lib/class"),
 
 var erdstallServer = require("../../ts/erdstallserverinterface").erdstallServer;
 var nftMetaServer = require("../../ts/metadata").nftMetaServer;
+const { RawItemMeta } = require("../../ts/itemmeta");
 var NFT = require("../../ts/nft");
 
 module.exports = Player = Character.extend({
@@ -318,9 +319,24 @@ module.exports = Player = Character.extend({
                     databaseHandler.setCheckpoint(self.name, self.x, self.y);
                 }
             }
-            // receives and handles weapon switch request
-            else if(action === Types.Messages.SWITCHWEAPON) {
-                log.info("SWITCHWEAPON: " + self.name + " " + message[1]);
+            // receives and handles WEAPONSWITCH message
+            else if(action === Types.Messages.WEAPONSWITCH) {
+                log.info("WEAPONSWITCH: " + self.name + " " + message[1]);
+
+                let keyParsed = NFT.parseKey(message[1]);
+
+                // retrieve the metadata associated with the nftKey
+                nftMetaServer.getMetadata(keyParsed.token, keyParsed.id).then(function(metadata) {
+
+                    // create an dummy Item with the nftKey and the kind of the nftKey that is obtained from the metadata as parameters
+                    dummyItem = new Item(-1, Types.getKindFromString(metadata.getAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND)), 0, 0, message[1]);
+
+                    // update equiped nft key for player in db
+                    self.setNftKey(dummyItem.nftKey);
+
+                    self.equipItem(dummyItem.kind);
+                    self.broadcast(self.equip(dummyItem.kind, nftKey=dummyItem.nftKey));
+                })
             }
             else if(action === Types.Messages.INVENTORY){
                 log.info("INVENTORY: " + self.name + " " + message[1] + " " + message[2] + " " + message[3]);

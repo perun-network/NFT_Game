@@ -116,11 +116,32 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
         },
 
         /**
+         * loads metadata JSON from metaserver
+         * @param {*} nftKey nft context associated with metadata to be loaded
+         * @returns json of metadata
+         */
+        getNFTMetadataJSON: function(nftKey) {
+            return new Promise(resolve => {
+                const [token, id] = nftKey.split(":");
+                const url = "http://" + this.host + ":" + this.port + "/metadata/" + token + "/" + id;
+                console.log("Fetching Metadata for NFT " + nftKey + " from address: " + url);
+                var xmlHttp = new XMLHttpRequest();
+                xmlHttp.onreadystatechange = function() { 
+                    if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+                        resolve(xmlHttp.responseText);
+                    }
+                }
+                xmlHttp.open("GET", url, true);
+                xmlHttp.send();
+            });
+        },
+
+        /**
          * loads sprite descriptor JSON from metaserver
          * @param {*} nftKey nft context associated with sprite to be loaded
          * @returns json of sprite description
          */
-        getNFTSpritesJSON: function(nftKey) {
+         getNFTSpritesJSON: function(nftKey) {
             return new Promise(resolve => {
                 const [token, id] = nftKey.split(":");
                 const url = "http://" + this.host + ":" + this.port + "/metadata/sprites/" + token + "/" + id;
@@ -336,6 +357,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                 if (data.length >= 4) {
                     // expect nft data
                     nftKey = data[3];
+                    this.nftrecieved_callback(nftKey);
                 }
 
             if(this.equip_callback) {
@@ -690,9 +712,9 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                               mob.id]);
         },
 
-        // sends a SWITCHWEAPON type message
-        sendSwitchWeapon: function(nftKey) {
-            this.sendMessage([Types.Messages.SWITCHWEAPON,
+        // sends a WEAPONSWITCH type message
+        sendWeaponSwitch: function(nftKey) {
+            this.sendMessage([Types.Messages.WEAPONSWITCH,
                               nftKey]);
         },
 
