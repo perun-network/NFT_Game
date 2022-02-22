@@ -8,6 +8,7 @@ import NFT, { key } from "./nft";
 import { NFTMetadata } from "@polycrypt/erdstall/ledger/backend";
 import fs from 'fs';
 import jimp from "jimp";
+import config from './config/serverConfig.json';
 
 export const DB_PREFIX_METADATA = "md";
 export const DEFAULT_NFT_IMAGE_PATH_PREFIX = "nfts/"; // default folder for nft sprite cacheing, overwritten by config
@@ -138,12 +139,15 @@ export default class NFTMetaServer {
 
 		let pngName = metaData.meta.image?.split('/')[3];
 
+		//read file 
 		const img_item = await jimp.read(readImgsFrom + "3/item-" + kind + ".png");
 
+		//image manipulation
 		img_item.crop(0, 0, 48, 48);
 		img_item.scale(10, jimp.RESIZE_NEAREST_NEIGHBOR);
 		img_item.color([{ apply: 'red', params: [rgb?.r] }, { apply: 'green', params: [rgb?.g] }, { apply: 'blue', params: [rgb?.b] }]);
 
+		//save file
 		img_item.write(saveTo + "/showcase/" + pngName);
 
 	}
@@ -155,8 +159,8 @@ export default class NFTMetaServer {
 	 */
 	getNewMetaData(kind: string) {
 
-		let pathToShowcasePNG = "nfts/showcase";
-		let host = "localhost:8000"
+		let pathToShowcasePNG = this.cfg.nftPathPrefix + "/showcase";
+		let host = config.metaDataServer;
 		let rndPngID = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
 		let r = this.getRandomInt(255) - 128, g = this.getRandomInt(255) - 128, b = this.getRandomInt(255) - 128;
 
@@ -164,7 +168,8 @@ export default class NFTMetaServer {
 		metadata.meta.name = this.getFunnyName();
 		metadata.meta.description = "A nice weapon form the game browserquest.";
 		metadata.meta.image = `${host}/${pathToShowcasePNG}/${rndPngID}.png`;
-		metadata.meta.background_color = "#000000"; //Must be a six-character hexadecimal without a pre-pended #. mit Item Farbe.
+		//Must be a six-character hexadecimal without a pre-pended #. 
+		metadata.meta.background_color = "#FFFFFF"; //White
 		metadata.addAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND, kind);
 		metadata.setRgbOffset(r, g, b);
 		return metadata;
