@@ -7,12 +7,15 @@ import { TxReceipt } from "@polycrypt/erdstall/api/responses";
 import { ethers } from "ethers";
 import config from './config/serverConfig.json';
 import { Trade, Transfer } from "@polycrypt/erdstall/api/transactions";
+import { Mutex } from "async-mutex";
 
 export default class erdstallServerInterface extends erdstallClientInterface {
 
 	protected nextNftID!: bigint;
 	// Token to mint NFTs on
 	public readonly tokenAddress: Address = Address.fromString(config.contract);
+	// Required to make asynchronous minting atomic
+	mintMutex: Mutex = new Mutex();
 
 	// Initializes _session member and subscribes and onboards session to the erdstall system, returns wallet address as string
 	async init(databaseHandler?: any): Promise<{ account: String }> {
@@ -66,17 +69,46 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 
 	// Mints a new NFT and returns TxReceipt promise
 	async mintNFT(): Promise<{ txReceipt: TxReceipt }> {
-		// Sets NFT ID to nextID and increments it
-		const id: bigint = this.nextNftID;
-		this.nextNftID++;
 
 		if (!this._session) {
 			throw new Error("Server session uninitialized");
 		}
 
-		// Mints NFT
-		var txReceipt = await this._session.mint(this.tokenAddress, id);
-		return { txReceipt };
+		// Block until previous mint is completed 
+		const release = await this.mintMutex.acquire();
+
+		var id;
+		// Attempt to mint NFT until non-duplicate ID has been minted
+		while(true) {
+			try {
+				// Sets NFT ID to nextID and increments it
+				id = this.nextNftID;
+				this.nextNftID++;
+				// Mints NFT
+				console.log("Minting NFT " + id + "...");
+				var txReceipt = await this._session.mint(this.tokenAddress, id);
+				// Release Mutex
+				release();
+				return { txReceipt };
+			} catch (error) {
+				if (error) {
+					if(error instanceof Error) {
+						// Retry minting with next ID if error is due to duplicate ID
+						if (error.message.includes("duplicate")) {
+							console.log("Server unable to mint " + id + " due to duplicate NFT ID...Retrying with " + this.nextNftID + " ...");
+							continue;
+						}
+					}
+					// Release Mutex
+					release();
+					throw new Error("Server unable to mint NFT: " + error);
+				} else {
+					// Release Mutex
+					release();
+					throw new Error("Server unable to mint NFT");
+				}
+			}
+		}
 	}
 
 	// Burns NFT and returns TxReceipt promise
@@ -91,7 +123,7 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 			return { txReceipt: await this._session.burn(getAssetsFromNFT(nft)) };
 		} catch (error) {
 			if (error) {
-				throw new Error("Server unable to burn NFT" + error);
+				throw new Error("Server unable to burn NFT: " + error);
 			} else {
 				throw new Error("Server unable to burn NFT");
 			}
