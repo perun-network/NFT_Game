@@ -2,15 +2,15 @@
 define(['text!../config/config_build.json'],
 function(build) {
 
-    console.log(JSON.parse(build));
-
-
     let buildCfg = JSON.parse(build);
     buildCfg.port = 443; // ja cursed aber nur vorübergehend™
 
+    console.log(buildCfg);
+
+
     var config = {
         dev: { host: "localhost", port: 8000, dispatcher: false },
-        build: JSON.parse(build)
+        build: buildCfg
     };
 
     //>>excludeStart("prodHost", pragmas.prodHost);
