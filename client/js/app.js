@@ -113,7 +113,7 @@ define(['jquery', 'storage'], function($, Storage) {
                     log.debug("Starting game with default dev config.");
                     this.game.setServerOptions(config.dev.host, config.dev.port, username, userpw, email);
                 }
-                optionsSet = true;
+                // optionsSet = true;  // enable build config
                 //>>includeEnd("devHost");
 
                 //>>includeStart("prodHost", pragmas.prodHost);
