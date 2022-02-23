@@ -9,7 +9,7 @@ function(build) {
 
     var config = {
         dev: { host: "localhost", port: 8000, dispatcher: false },
-        build: buildCfg
+        build: JSON.parse(build)
     };
 
     //>>excludeStart("prodHost", pragmas.prodHost);
