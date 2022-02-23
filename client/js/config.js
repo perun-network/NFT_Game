@@ -4,6 +4,10 @@ function(build) {
 
     console.log(JSON.parse(build));
 
+
+    let buildCfg = JSON.parse(build);
+    buildCfg.port = 443; // ja cursed aber nur vorübergehend™
+
     var config = {
         dev: { host: "localhost", port: 8000, dispatcher: false },
         build: JSON.parse(build)
