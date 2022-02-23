@@ -230,7 +230,7 @@ define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
                     // update the the held item of the player on client side
                     // besides the nftKey the kind of the weapon has to be obtained 
                     // therefore the metadataJSON associated with the nftKey is obtained and the (weapon) kind is looked up
-                    game.client.getNFTMetadataJSON(chosenWeapon).then(metadataJSON => {
+                    game.client.getNFTMetadata(chosenWeapon, false).then(metadataJSON => {
 
                         var metadata = JSON.parse(metadataJSON);
                         var kind = undefined;

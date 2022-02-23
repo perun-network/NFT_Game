@@ -116,35 +116,15 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
         },
 
         /**
-         * loads metadata JSON from metaserver
-         * @param {*} nftKey nft context associated with metadata to be loaded
-         * @returns json of metadata
-         */
-        getNFTMetadataJSON: function(nftKey) {
-            return new Promise(resolve => {
-                const [token, id] = nftKey.split(":");
-                const url = "http://" + this.host + ":" + this.port + "/metadata/" + token + "/" + id;
-                console.log("Fetching Metadata for NFT " + nftKey + " from address: " + url);
-                var xmlHttp = new XMLHttpRequest();
-                xmlHttp.onreadystatechange = function() { 
-                    if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
-                        resolve(xmlHttp.responseText);
-                    }
-                }
-                xmlHttp.open("GET", url, true);
-                xmlHttp.send();
-            });
-        },
-
-        /**
-         * loads sprite descriptor JSON from metaserver
+         * loads NFT JSON Info from metaserver
          * @param {*} nftKey nft context associated with sprite to be loaded
+         * @param {*} fetchSprite path to insert for /metadata/MDSUBPATH/token.../id...
          * @returns json of sprite description
          */
-        getNFTSpritesJSON: function(nftKey) {
+        getNFTMetadata: function(nftKey, fetchSprite) {
             return new Promise(resolve => {
                 const [token, id] = nftKey.split(":");
-                const url = "http://" + this.host + ":" + this.port + "/metadata/sprites/" + token + "/" + id;
+                const url = "http://" + this.host + ":" + this.port + "/metadata/" + (fetchSprite ? "sprites" : "") + "/" + token + "/" + id;
                 console.log("Fetching Sprite for NFT " + nftKey + " from address: " + url);
                 var xmlHttp = new XMLHttpRequest();
                 xmlHttp.onreadystatechange = function() { 

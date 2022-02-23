@@ -3,7 +3,7 @@
 import express, { Request, Router, Response } from "express";
 import asyncHandler from "express-async-handler";
 import { Address } from "@polycrypt/erdstall/ledger";
-import { RawItemMeta } from "./itemmeta";
+import RawItemMeta from "./itemmeta";
 import NFT, { key } from "./nft";
 import { NFTMetadata } from "@polycrypt/erdstall/ledger/backend";
 import fs from 'fs';

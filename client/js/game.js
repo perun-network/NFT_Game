@@ -367,7 +367,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
 
 
             // load json files for sprites
-            this.client.getNFTSpritesJSON(nftKey).then(spriteJSON => {
+            this.client.getNFTMetadata(nftKey, true).then(spriteJSON => {
 
                 console.log(spriteJSON);
 
