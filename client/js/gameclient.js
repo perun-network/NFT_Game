@@ -693,9 +693,8 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
         },
 
         // sends a WEAPONSWITCH type message
-        sendWeaponSwitch: function(nftKey) {
-            this.sendMessage([Types.Messages.WEAPONSWITCH,
-                              nftKey]);
+        sendWeaponSwitch: function() {
+            this.sendMessage([Types.Messages.WEAPONSWITCH]);
         },
 
         sendAttack: function(mob) {
