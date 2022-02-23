@@ -220,33 +220,6 @@ define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
             $('#weapon').click(function() {
                 console.log("Weapon Switch Button pressed.");
                 game.client.sendWeaponSwitch();
-                // erdstallInterface.getNFTs().then(function(owned_nfts) {
-
-                    // randomly choose one NFT of the owned NFTs of the player and save the nftKey in the variable 'chosenWeapon'
-                    // var chosenWeapon = owned_nfts[Math.floor(Math.random() * (owned_nfts.length))];
-
-                    // send a message to the server to update held item of the player on server side and broadcast the weapon switch to other players
-
-                    // update the the held item of the player on client side
-                    // besides the nftKey the kind of the weapon has to be obtained 
-                    // therefore the metadataJSON associated with the nftKey is obtained and the (weapon) kind is looked up
-                    // game.client.getNFTMetadata(chosenWeapon, false).then(metadataJSON => {
-
-                    //     var metadata = JSON.parse(metadataJSON);
-                    //     var kind = undefined;
-
-                    //     for(let attr of metadata.attributes) {
-                    //         if(attr.trait_type =="kind") {
-                    //             kind = attr.value;
-                    //             break;
-                    //         }
-                    //     }
-
-                    //     game.client.nftrecieved_callback(chosenWeapon);
-                    //     game.player.switchWeapon(kind, nftKey=chosenWeapon); // set weapon and pass nft data to player entity
-                    // });
-                    // console.log("Chosen weapon: " + chosenWeapon);
-                // });
             });
 
             game.onGameStart(function() {
