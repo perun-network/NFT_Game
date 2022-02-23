@@ -2,14 +2,13 @@
 define(['text!../config/config_build.json'],
 function(build) {
 
-/*
     let buildCfg = JSON.parse(build);
-    buildCfg.port = 443; // ja cursed aber nur vorübergehend™
-*/
-
+    buildCfg.port = 443; // Hardcoded port, ignoring the config value, but hear me out:
+    // the game ignores the config either way and defaults to 80 always. So we neeeeds this
+    
     var config = {
         dev: { host: "localhost", port: 8000, dispatcher: false },
-        build: JSON.parse(build)
+        build: buildCfg
     };
 
     //>>excludeStart("prodHost", pragmas.prodHost);
