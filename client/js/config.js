@@ -1,6 +1,9 @@
 
 define(['text!../config/config_build.json'],
 function(build) {
+
+    console.log(JSON.parse(build));
+
     var config = {
         dev: { host: "localhost", port: 8000, dispatcher: false },
         build: JSON.parse(build)
