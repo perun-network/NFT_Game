@@ -19,7 +19,7 @@ export default class erdstallClientInterface {
 	// Initializes _session member and subscribes and onboards session to the erdstall system, returns wallet address as string
 	async init(): Promise<{ account: String }> {
 		const networkID: number = config.NetworkID;
-		const erdOperatorUrl: URL = new URL("ws://" + config.erdOperatorUrl + "/ws");
+		const erdOperatorUrl: URL = new URL("wss://" + config.erdOperatorUrl + "/ws");
 	
 		// parameters from json file config/serverConfig.json
 		const res = await getAccountProvider(networkID);
