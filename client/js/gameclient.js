@@ -123,7 +123,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
         getNFTSpritesJSON: function(nftKey) {
             return new Promise(resolve => {
                 const [token, id] = nftKey.split(":");
-                const url = "http://" + this.host + ":" + this.port + "/metadata/sprites/" + token + "/" + id;
+                const url = "https://" + this.host + ":" + this.port + "/metadata/sprites/" + token + "/" + id;
                 console.log("Fetching Sprite for NFT " + nftKey + " from address: " + url);
                 var xmlHttp = new XMLHttpRequest();
                 xmlHttp.onreadystatechange = function() { 
