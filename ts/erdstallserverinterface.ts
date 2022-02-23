@@ -35,10 +35,10 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 			throw new Error("Invalid token address: " + this.tokenAddress);
 		}
 
-		const erdOperatorUrl: URL = new URL("ws://" + config.erdOperatorUrl + "/ws");
+		const erdOperatorUrl: URL = new URL("wss://" + config.erdOperatorUrl + "/ws");
 
 		// parameters from json file config/clientConfig.json
-		const ethRpcUrl = "ws://"+ config.ethRpcUrl + "/";
+		const ethRpcUrl = "wss://"+ config.ethRpcUrl + "/";
 		const provider = new ethers.providers.JsonRpcProvider(ethRpcUrl);
 		if (provider == null) {
 			throw new Error("Unable to get Account Provider for Ethereum URL: " + ethRpcUrl);
