@@ -6,7 +6,7 @@ import erdstallClientInterface, { getNFTsFromAssets } from "./erdstallclientinte
 import { TxReceipt } from "@polycrypt/erdstall/api/responses";
 import { ethers } from "ethers";
 import config from './config/serverConfig.json';
-import { Trade, Transfer } from "@polycrypt/erdstall/api/transactions";
+import { Burn, Trade, Transfer } from "@polycrypt/erdstall/api/transactions";
 
 export default class erdstallServerInterface extends erdstallClientInterface {
 
@@ -117,14 +117,16 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		}
 	}
 
-	// Registers listener function for transfer transactions
-	registerNFTOwnerShipTransferCallback(callback: (sender: string, recipient: string, nfts: string[]) => void) {
+	// Registers listener function for transfer and burn events
+	registerCallbacks(transferCallback: (sender: string, recipient: string, nfts: string[]) => void, burnCallback: (nfts: string[]) => void) {
 		if (!this._session) throw new Error("Session uninitialized");
 		this._session.on("receipt", (receipt: TxReceipt) => {
 			if(receipt.tx instanceof Transfer) { // Handle transfer transaction issued by transferTo
-				callback(receipt.tx.sender.toString(), receipt.tx.recipient.toString(), getNFTsFromAssets(receipt.tx.values));
+				transferCallback(receipt.tx.sender.toString(), receipt.tx.recipient.toString(), getNFTsFromAssets(receipt.tx.values));
 			} else if(receipt.tx instanceof Trade) { // Handle trade transaction
-				callback(receipt.tx.offer.owner.toString(), receipt.tx.sender.toString(), getNFTsFromAssets(receipt.tx.offer.offer));
+				transferCallback(receipt.tx.offer.owner.toString(), receipt.tx.sender.toString(), getNFTsFromAssets(receipt.tx.offer.offer));
+			} else if(receipt.tx instanceof Burn) { // Handle burn event
+				burnCallback(getNFTsFromAssets(receipt.tx.values));
 			}
 		});
 	}

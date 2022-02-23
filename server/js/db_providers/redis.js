@@ -792,6 +792,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
     },
 
     getNFTMetadata: function(nftKey){
+      nftKey = nftKey.toUpperCase();
       log.info("Getting NFT Metadata: " + nftKey);
       return new Promise(resolve => {
         client.multi()
@@ -809,6 +810,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
     },
 
     putNFTMetadata: function(nftKey, metadata){
+      nftKey = nftKey.toUpperCase();
       //log.info("Putting NFT Metadata: " + nftKey);
       return new Promise(resolve => {
         // Check if NFT is already stored
@@ -832,6 +834,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
     },
 
     deleteNFTMetadata: function(nftKey){
+      nftKey = nftKey.toUpperCase();
       log.info("Deleting NFT Metadata: " + nftKey);
       return new Promise(resolve => {
         // Check if NFT is stored

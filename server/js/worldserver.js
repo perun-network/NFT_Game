@@ -58,7 +58,7 @@ module.exports = World = cls.Class.extend({
         this.zoneGroupsReady = false;
 
         // Register handler for NFT transfers and trades
-        erdstallServer.registerNFTOwnerShipTransferCallback(this.handleNFTOwnerShipTransfer.bind(self));
+        erdstallServer.registerCallbacks(this.handleNFTOwnerShipTransfer.bind(self), this.handleBurn.bind(self));
 
         this.onPlayerConnect(function (player) {
             player.onRequestPosition(function () {
@@ -272,6 +272,31 @@ module.exports = World = cls.Class.extend({
         return undefined;
     },
 
+    // Handles NFT burns
+    handleBurn: async function (nfts) {
+        var self = this;
+        log.info("#################### Burn Handling: Noticed burn for NFTs: [" + nfts + "]");
+        // Iterate over all burned NFT keys to check if player is currently holding one
+        for (let burnedKey of nfts) {
+            for (var playerID in self.players) {
+                var player = self.players[playerID];
+                // Unequip NFT item in case player is holding burned NFT
+                if (player.nftKey.toUpperCase() === burnedKey.toUpperCase()) {
+                    log.info("#################### Burn Handling: Replacing " + player.name + "'s nft: (" + burnedKey + ") with (sword1, null)");
+                    // TODO: Rotate to next NFT in wallet if possible
+                    player.equipItem(Types.getKindFromString("sword1"));
+                    player.setNftKey(null);
+                    player.broadcast(player.equip(player.weapon, nftKey = null), false);
+                    break;
+                }
+            }
+            // Delete NFT from database
+            await self.databaseHandler.deleteNFTMetadata(burnedKey);
+            // Delete sprite files from file system
+            await nftMetaServer.deleteNFTFile(parseKey(burnedKey).id);
+        }
+    },
+
     // Handles transfer transactions by unequipping NFT items, potentially changing database records and giving the NFT item to the recipient in case he is logged in
     handleNFTOwnerShipTransfer: async function (sender, recipient, nfts) {
         var self = this;
@@ -333,6 +358,7 @@ module.exports = World = cls.Class.extend({
                     transferredKey = nftKey;
                     transferredKind = senderPlayer.weapon;
                     log.info("#################### Transfer Handling: ...replacing sender " + senderPlayer.name + "'s item and nft: (" + Types.getKindAsString(transferredKind) + ", " + transferredKey + ") with (sword1, null)");
+                    // TODO: Rotate to next NFT in wallet if possible
                     senderPlayer.equipItem(Types.getKindFromString("sword1"));
                     senderPlayer.setNftKey(null);
                     senderPlayer.broadcast(senderPlayer.equip(senderPlayer.weapon, nftKey = null), false);

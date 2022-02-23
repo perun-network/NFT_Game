@@ -135,7 +135,20 @@ export default class NFTMetaServer {
 			img_base.write(saveTo + `/${index}/` + fileName + ".png");
 			img_item.write(saveTo + `/${index}/item-` + fileName + ".png");
 		}
+	}
 
+	/**
+	 * Deletes NFT sprites from file system
+	 * @param tokenId ID of NFT to be deleted
+	 */
+	async deleteNFTFile(tokenId: bigint) {
+		// name of saved file
+		const fileName = Number(tokenId);
+		for (let index = 1; index <= 3; index++) {
+			fs.unlinkSync(this.cfg.nftPathPrefix + `/${index}/` + fileName + ".png");
+			fs.unlinkSync(this.cfg.nftPathPrefix + `/${index}/item-` + fileName + ".png");
+		}
+		this.log("Successfully deleted files for NFT " + tokenId);
 	}
 
 	/**
@@ -308,6 +321,7 @@ export default class NFTMetaServer {
 
 		try {
 			await this.databaseHandler.deleteNFTMetadata(key(contractAddr, tokenId));
+			await this.deleteNFTFile(tokenId);
 			res.sendStatus(StatusNoContent); // (assuming) success, send nothing
 		} catch (error) {
 			if (error == ("NFT Metadata not in database for NFT: " + tokenId)) {
