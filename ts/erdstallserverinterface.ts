@@ -78,6 +78,7 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		const release = await this.mintMutex.acquire();
 
 		var id;
+		// Attempt to mint NFT until non-duplicate ID has been minted
 		while(true) {
 			try {
 				// Sets NFT ID to nextID and increments it
