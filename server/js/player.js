@@ -12,7 +12,6 @@ var cls = require("./lib/class"),
     bcrypt = require('bcrypt');
 
 var erdstallServer = require("../../ts/erdstallserverinterface").erdstallServer;
-var nftMetaServer = require("../../ts/metadata").nftMetaServer;
 var NFT = require("../../ts/nft");
 
 module.exports = Player = Character.extend({
@@ -87,8 +86,12 @@ module.exports = Player = Character.extend({
                     self.connection.close("Crypto Address not loaded");
                     return;
                 }
-                log.info("Crypto Adress recieved: " + crypto_addr);
+                log.info(self.name + "Crypto Adress recieved: " + crypto_addr);
                 self.cryptoAddress = crypto_addr;
+
+                erdstallServer.getNFTs(crypto_addr).then(playerNFTs => {
+                    log.info(self.name + " owns: [" + playerNFTs + "]");
+                });
 
                 if(action === Types.Messages.CREATE) {
                     bcrypt.genSalt(10, function(err, salt) {
@@ -96,7 +99,6 @@ module.exports = Player = Character.extend({
                             log.info("CREATE: " + self.name);
                             self.email = Utils.sanitize(message[4]);
                             self.pw = hash;
-                            log.info("Crypto Adress recieved: " + crypto_addr);
                             databaseHandler.createPlayer(self);
                         })
                     });
@@ -638,7 +640,7 @@ module.exports = Player = Character.extend({
     setNftKey: function(nftID) {
         databaseHandler.setNftItemID(this.name, nftID);
         this.nftKey = nftID;
-        console.log("player.js: setNftItemID to " + nftID + " for player " + this.userName);
+        // console.log("player.js: setNftItemID to " + nftID + " for player " + this.name);
     },
 
     setGuildId: function(id) {

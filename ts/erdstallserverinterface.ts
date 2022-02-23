@@ -2,14 +2,17 @@ import { Address } from "@polycrypt/erdstall/ledger";
 import { Assets, Tokens } from "@polycrypt/erdstall/ledger/assets";
 import { Session } from "@polycrypt/erdstall";
 import NFT from "./nft";
-import erdstallClientInterface from "./erdstallclientinterface"
+import erdstallClientInterface, { getNFTsFromAssets } from "./erdstallclientinterface"
 import { TxReceipt } from "@polycrypt/erdstall/api/responses";
 import { ethers } from "ethers";
 import config from './config/serverConfig.json';
+import { Trade, Transfer } from "@polycrypt/erdstall/api/transactions";
 
 export default class erdstallServerInterface extends erdstallClientInterface {
 
 	protected nextNftID!: bigint;
+	// Token to mint NFTs on
+	public readonly tokenAddress: Address = Address.fromString(config.contract);
 
 	// Initializes _session member and subscribes and onboards session to the erdstall system, returns wallet address as string
 	async init(databaseHandler?: any): Promise<{ account: String }> {
@@ -20,8 +23,13 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		// Set ID of next NFT to be minted to the count of NFTs stored in database
 		this.nextNftID = BigInt(await databaseHandler.getNFTCount());
 
-		if (this.nextNftID === null || this.nextNftID === undefined) {
+		if (this.nextNftID == null) {
 			throw new Error("Invalid database NFT count: " + this.nextNftID);
+		}
+		
+		// Check if token address was initialized successfully
+		if(this.tokenAddress == null) {
+			throw new Error("Invalid token address: " + this.tokenAddress);
 		}
 
 		const erdOperatorUrl: URL = new URL("ws://" + config.erdOperatorUrl + "/ws");
@@ -33,15 +41,13 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 			throw new Error("Unable to get Account Provider for Ethereum URL: " + ethRpcUrl);
 		}
 
-		const mnemonic = config.mnemonic;
-		const derivationPath = `m/44'/60'/0'/0/2`;
-		const user = ethers.Wallet.fromMnemonic(mnemonic, derivationPath);
+		const user = ethers.Wallet.fromMnemonic(config.mnemonic, config.derivationPath);
 
 		var session;
 		try {
 			session = new Session(Address.fromString(user.address), user.connect(provider), erdOperatorUrl);
 			await session.initialize();
-			await session.subscribeSelf();
+			await session.subscribe();
 			await session.onboard();
 		} catch (error) {
 			if (error) {
@@ -54,7 +60,7 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 
 		this._session = session;
 		console.log("Initialized new server session: " + user.address);
-		console.log("Will start mints with NFT ID " + this.nextNftID);
+		console.log("Will start mints with NFT ID " + this.nextNftID + " on contract " + this.tokenAddress.toString());
 		return { account: user.address };
 	}
 
@@ -67,9 +73,9 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		if (!this._session) {
 			throw new Error("Server session uninitialized");
 		}
-		// TODO: Change token to contract address!
+
 		// Mints NFT
-		var txReceipt = await this._session.mint(this._session.address, id);
+		var txReceipt = await this._session.mint(this.tokenAddress, id);
 		return { txReceipt };
 	}
 
@@ -109,6 +115,18 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 				throw new Error("Server unable to transfer NFT");
 			}
 		}
+	}
+
+	// Registers listener function for transfer transactions
+	registerNFTOwnerShipTransferCallback(callback: (sender: string, recipient: string, nfts: string[]) => void) {
+		if (!this._session) throw new Error("Session uninitialized");
+		this._session.on("receipt", (receipt: TxReceipt) => {
+			if(receipt.tx instanceof Transfer) { // Handle transfer transaction issued by transferTo
+				callback(receipt.tx.sender.toString(), receipt.tx.recipient.toString(), getNFTsFromAssets(receipt.tx.values));
+			} else if(receipt.tx instanceof Trade) { // Handle trade transaction
+				callback(receipt.tx.offer.owner.toString(), receipt.tx.sender.toString(), getNFTsFromAssets(receipt.tx.offer.offer));
+			}
+		});
 	}
 }
 

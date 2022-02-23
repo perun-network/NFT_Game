@@ -86,7 +86,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                         self.isTimeout = true;
                         return;
                     }
-                    if(e === 'invalidlogin' || e === 'userexists' || e === 'loggedin' || e === 'invalidusername' || e === 'invalidcryptoaddress'){
+                    if(e === 'invalidlogin' || e === 'userexists' || e === 'loggedin' || e === 'invalidusername' || e === 'invalidcryptoaddress' || e === 'cryptoexists'){
                         if(self.fail_callback){
                             self.fail_callback(e);
                         }
