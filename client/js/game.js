@@ -1618,6 +1618,9 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                             player.setWeaponName(itemName);
                         }
                         player.setNftKey(nftKey);
+                        if(nftKey) {
+                            self.nftSpriteCheck(nftKey);
+                        }
                     }
                 });
 

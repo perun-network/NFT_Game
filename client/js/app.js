@@ -147,6 +147,10 @@ define(['jquery', 'storage'], function($, Storage) {
                                 // Attempted to create a new user, but the username was taken
                                 self.addValidationError(self.getUsernameField(), 'The username you entered is not available.');
                                 break;
+                            case 'cryptoexists':
+                                // Attempted to create a new user, but the crypto wallet address was already registered
+                                self.addValidationError(self.getUsernameField(), 'Your wallet is already associated with another player.');
+                                break;
                             case 'invalidusername':
                                 // The username contains characters that are not allowed (rejected by the sanitizer)
                                 self.addValidationError(self.getUsernameField(), 'The username you entered contains invalid characters.');
