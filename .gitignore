@@ -15,4 +15,4 @@ ts/*.js
 nfts/sprites/1/*
 nfts/sprites/2/*
 nfts/sprites/3/*
-ts/config/nft_id.json
+ts/config/*
