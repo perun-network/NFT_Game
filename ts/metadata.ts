@@ -12,7 +12,7 @@ import config from './config/serverConfig.json';
 import fetch from 'node-fetch';
 
 export const DB_PREFIX_METADATA = "md";
-export const DEFAULT_NFT_IMAGE_PATH_PREFIX = "nfts/"; // default folder for nft sprite cacheing, overwritten by config
+export const DEFAULT_NFT_IMAGE_PATH_PREFIX = "nfts/sprites/"; // default folder for nft sprite cacheing, overwritten by config
 
 
 export const StatusNoContent = 204;
@@ -128,7 +128,7 @@ export default class NFTMetaServer {
 		// Where to find png
 		const readImgsFrom = "client/img/";
 		// Where to save
-		const saveTo = this.cfg.nftPathPrefix;
+		const saveTo = "nfts/";
 		// name of saved file
 		const fileName = Number(tokenId);
 
