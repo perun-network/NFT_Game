@@ -5,7 +5,7 @@ import { Attribute, NFTMetadata } from "@polycrypt/erdstall/ledger/backend";
  * RawItemMeta aims to provide an compatible standard for item NFT Metadata.
  * Non standard (NFT Metadata) values are saved in attributes and can be accessed via Attribute ID mapping.
  */
-export class RawItemMeta {
+export default class RawItemMeta {
 
     public static ATTRIBUTE_COLOR_OFFSET_RGB : string = "color_offset_RGB"; // color offset passed to renderer
     public static ATTRIBUTE_ITEM_KIND : string = "kind"; // item base kind (f.e. 'sword2')
@@ -53,14 +53,7 @@ export class RawItemMeta {
      * @returns true if contained, false if not
      */
     public hasAttribute(id: string) : boolean {
-
-        if (this.meta.attributes == undefined)
-            return false;
-
-        for (let attr of (<Attribute[]> this.meta.attributes))
-         if (attr.trait_type == id)
-            return true;
-        return false;
+        return undefined !== this.getAttribute(id);
     }
 
 
@@ -76,8 +69,8 @@ export class RawItemMeta {
            return undefined;
         
 
-        for (let attr of (<Attribute[]> this.meta.attributes)) {
-            if (attr.trait_type == id) 
+        for (let attr of this.meta.attributes) {
+            if (attr.trait_type === id) 
                 return attr.value;
         }
         return undefined;

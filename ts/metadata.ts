@@ -3,15 +3,16 @@
 import express, { Request, Router, Response } from "express";
 import asyncHandler from "express-async-handler";
 import { Address } from "@polycrypt/erdstall/ledger";
-import { RawItemMeta } from "./itemmeta";
+import RawItemMeta from "./itemmeta";
 import NFT, { key } from "./nft";
 import { NFTMetadata } from "@polycrypt/erdstall/ledger/backend";
 import fs from 'fs';
 import jimp from "jimp";
 import config from './config/serverConfig.json';
+import fetch from 'node-fetch';
 
 export const DB_PREFIX_METADATA = "md";
-export const DEFAULT_NFT_IMAGE_PATH_PREFIX = "nfts/"; // default folder for nft sprite cacheing, overwritten by config
+export const DEFAULT_NFT_IMAGE_PATH_PREFIX = "nfts/sprites/"; // default folder for nft sprite cacheing, overwritten by config
 
 
 export const StatusNoContent = 204;
@@ -22,6 +23,15 @@ export const addrRE = "0x[0-9a-fA-F]{40}";
 export const tokenIdPath = "/:token(" + addrRE + ")/:id(\\d+)";
 export const spritePath = "/sprites" + tokenIdPath;
 
+// Pathes to save and accesss Metadata
+const NFTPutEndpointPath = "/metadata";
+const pathToShowcasePNG = "nfts/" + "showcase";
+
+// links for Metadata and Nerd 
+const NFTServerEndpoint = config.NerdUrl;
+const NFTPutEndpoint = `${NFTServerEndpoint}${NFTPutEndpointPath}`;
+const picServerHost = config.PictureHost;
+
 /**
  * Main class for meta data handling. Includes storage to Redis and request handling
  */
@@ -29,6 +39,8 @@ export default class NFTMetaServer {
 
 	cfg: MetadataConfig;
 	protected databaseHandler: any;
+
+
 
 	/**
 	 * Creates a new Metadata server instance
@@ -116,7 +128,7 @@ export default class NFTMetaServer {
 		// Where to find png
 		const readImgsFrom = "client/img/";
 		// Where to save
-		const saveTo = this.cfg.nftPathPrefix;
+		const saveTo = "nfts/";
 		// name of saved file
 		const fileName = Number(tokenId);
 
@@ -137,7 +149,7 @@ export default class NFTMetaServer {
 
 		// Creat and Save PNG for Marketplaces
 
-		let pngName = metaData.meta.image?.split('/')[3];
+		let pngName = metaData.meta.image?.split('/')[metaData.meta.image?.split('/').length - 1];
 
 		//read file 
 		const img_item = await jimp.read(readImgsFrom + "3/item-" + kind + ".png");
@@ -159,19 +171,18 @@ export default class NFTMetaServer {
 	 */
 	getNewMetaData(kind: string) {
 
-		let pathToShowcasePNG = this.cfg.nftPathPrefix + "/showcase";
-		let host = config.metaDataServer;
 		let rndPngID = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
 		let r = this.getRandomInt(255) - 128, g = this.getRandomInt(255) - 128, b = this.getRandomInt(255) - 128;
 
 		let metadata: RawItemMeta = new RawItemMeta([]);
 		metadata.meta.name = this.getFunnyName();
-		metadata.meta.description = "A nice weapon form the game browserquest.";
-		metadata.meta.image = `${host}/${pathToShowcasePNG}/${rndPngID}.png`;
+		metadata.meta.description = "A nice weapon from the game BrowserQuest.";
+		metadata.meta.image = `${picServerHost}/${pathToShowcasePNG}/${rndPngID}.png`;
 		//Must be a six-character hexadecimal without a pre-pended #. 
 		metadata.meta.background_color = "#FFFFFF"; //White
 		metadata.addAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND, kind);
 		metadata.setRgbOffset(r, g, b);
+
 		return metadata;
 	}
 
@@ -226,6 +237,8 @@ export default class NFTMetaServer {
 		res.send(meta.toJSON());
 	}
 
+
+
 	/**
 	 * looks up sprites for token in request and sends it to the response
 	 * @param req 
@@ -276,8 +289,10 @@ export default class NFTMetaServer {
 			//await this.afterMetadataSet(contractAddr, tokenId); // run Observers  commented out bc so far there are none
 
 			//create corresponding pngs
-
 			await this.createAndSavePng(tokenId, metadata);
+
+			//saves a copy of metadata on Nerd
+			await this.putNFTtoNerd(nft);
 
 			return true; // return success
 		} catch (error) { // Handle NFT already being present in database
@@ -311,6 +326,33 @@ export default class NFTMetaServer {
 		} catch (error) { // Handle NFT already being present in database
 			res.status(StatusConflict).send(error);
 		}
+	}
+
+	/**
+	 * Puts metadata to Nerd metadata DB
+	 * @param nft NFT with token, id and metadata
+	 * @returns connection respones
+	 */
+	public async putNFTtoNerd(nft: NFT): Promise<Response> {
+
+		let response: Response | undefined;
+
+		// try to put data to Nerd
+		try {
+			//link like https://nerd-market.de/0xabc123/42
+			response = await fetch(`${NFTPutEndpoint}/${nft.token}/${nft.id}`, {
+				method: "PUT",
+				body: JSON.stringify(nft.metadata),
+				headers: {
+					"Content-Type": "application/json",
+				},
+			});
+
+			// catch possible errors and log them
+		} catch (error) {
+			console.log("Can't put Metadata to Nerd: " + `${NFTPutEndpoint}/${nft.token}/${nft.id}` + " : " + error)
+		}
+		return response;
 	}
 
 	// can be overridden in derived classes
