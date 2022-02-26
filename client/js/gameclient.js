@@ -2,11 +2,12 @@
 define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory, BISON) {
 
     var GameClient = Class.extend({
-        init: function(host, port) {
+        init: function(host, port, secure_transport) {
             this.connection = null;
             this.host = host;
             this.port = port;
-            
+            this.secure_transport = secure_transport;
+
             this.connected_callback = null;
             this.spawn_callback = null;
             this.movement_callback = null;
@@ -51,8 +52,10 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
         },
 
         connect: function(dispatcherMode) {
-            var url = "wss://"+ this.host +":"+ this.port +"/",
+
+            var url = (this.secure_transport ? "wss" : "ws") + "://"+ this.host +":"+ this.port +"/",
                 self = this;
+
 
             log.info("Trying to connect to server : "+url);
 
@@ -121,9 +124,10 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
          * @returns json of sprite description
          */
         getNFTSpritesJSON: function(nftKey) {
+
             return new Promise(resolve => {
                 const [token, id] = nftKey.split(":");
-                const url = "https://" + this.host + ":" + this.port + "/metadata/sprites/" + token + "/" + id;
+                const url = (this.secure_transport ? "https" : "http") + "://" + this.host + ":" + this.port + "/metadata/sprites/" + token + "/" + id;
                 console.log("Fetching Sprite for NFT " + nftKey + " from address: " + url);
                 var xmlHttp = new XMLHttpRequest();
                 xmlHttp.onreadystatechange = function() { 

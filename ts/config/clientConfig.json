@@ -1,5 +1,5 @@
 {
     "NetworkID": 1337,
     "NetworkName": "Erdstall BQ",
-    "erdOperatorUrl":"http://operator.bq.erdstall.dev:8401"
+    "erdOperatorUrl":"localhost:8401"
 }
