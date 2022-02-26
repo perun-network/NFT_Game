@@ -195,7 +195,7 @@ export default class NFTMetaServer {
 		metadata.meta.description = "placeholder item";
 		metadata.meta.image = "https://static.wikia.nocookie.net/minecraft_gamepedia/images/d/d5/Wooden_Sword_JE2_BE2.png/revision/latest/scale-to-width-down/160?cb=20200217235747"; // minecraft wooden sword
 		metadata.addAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND, "sword1");
-		metadata.setRgbOffset(this.getRandomInt(255), this.getRandomInt(255), this.getRandomInt(255));
+		metadata.setRgbOffset(this.getRandomInt(255) - 128, this.getRandomInt(255) - 128, this.getRandomInt(255) - 128);
 		return metadata;
 	}
 
