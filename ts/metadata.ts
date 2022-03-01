@@ -147,7 +147,7 @@ export default class NFTMetaServer {
 			img_item.write(saveTo + `/sprites/${index}/item-` + fileName + ".png");
 		}
 
-		// Creat and Save PNG for Marketplaces
+		// Create and Save PNG for Marketplaces
 
 		let pngName = metaData.meta.image?.split('/')[metaData.meta.image?.split('/').length - 1];
 
