@@ -1,5 +1,6 @@
 {
     "NetworkID": 1337,
     "NetworkName": "Erdstall BQ",
-    "erdOperatorUrl":"localhost:8401"
+    "erdOperatorUrl":"localhost:8401",
+    "useSSL": false
 }
