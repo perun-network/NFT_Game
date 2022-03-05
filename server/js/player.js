@@ -12,7 +12,10 @@ var cls = require("./lib/class"),
     bcrypt = require('bcrypt');
 
 var erdstallServer = require("../../ts/erdstallserverinterface").erdstallServer;
+var nftMetaServer = require("../../ts/metadata").nftMetaServer;
+const { RawItemMeta } = require("../../ts/itemmeta");
 var NFT = require("../../ts/nft");
+var parseKey = require("../../ts/nft").parseKey;
 
 module.exports = Player = Character.extend({
     init: function(connection, worldServer, databaseHandler) {
@@ -320,6 +323,12 @@ module.exports = Player = Character.extend({
                     databaseHandler.setCheckpoint(self.name, self.x, self.y);
                 }
             }
+            // receives and handles WEAPONSWITCH message
+            else if(action === Types.Messages.WEAPONSWITCH) {
+                log.info("WEAPONSWITCH: " + self.name);
+
+                self.equipNextNFT();
+            }
             else if(action === Types.Messages.INVENTORY){
                 log.info("INVENTORY: " + self.name + " " + message[1] + " " + message[2] + " " + message[3]);
                 var inventoryNumber = message[2],
@@ -537,6 +546,47 @@ module.exports = Player = Character.extend({
 
     equip: function(item, nftKey=undefined) {
         return new Messages.EquipItem(this, item, nftKey=nftKey);
+    },
+
+    /**
+     * Attemps to equip the next NFT from wallet
+     */
+    equipNextNFT: async function () {
+        var self = this;
+
+        var nfts = await erdstallServer.getNFTs(self.cryptoAddress);
+
+        // Check if nfts were retrieved properly
+        if(!(Array.isArray(nfts) && nfts.length)) {
+            log.info(self.name + " does not have any NFTs to switch to in their wallet");
+            return;
+        }
+
+        let currentIdx = nfts.indexOf(self.nftKey);
+        // Iterate over own NFTs until a BrowserQuest NFT with corresponding metadata has been found
+        for (let i = 0; i < nfts.length; ++i) {
+            // Set the key of the next NFT to the one after the currently equipped, offset by i
+            let nextNft = nfts[(currentIdx + i + 1) % nfts.length];
+            log.info("Trying to equip NFT " + nextNft);
+            // Get metadata from server
+            let parsedKey = parseKey(nextNft);
+            let meta = await nftMetaServer.getMetadata(parsedKey.token, parsedKey.id);
+            // Extract item kind from metadata
+            if (meta) {
+                // TODO: Fix Metadata attribute access
+                let metaKind = Types.getKindFromString(meta.getAttribute("kind"));
+                // Equip and broadcast next item if kind could be determined
+                if (metaKind) {
+                    self.equipItem(metaKind);
+                    self.setNftKey(nextNft);
+                    self.broadcast(self.equip(self.weapon, nftKey = nextNft), false);
+                    log.info(self.name + " successfully equipped their next NFT " + nextNft);
+                    return;
+                }
+            }
+            log.info("Item kind for NFT " + nextNft + " could not be derived...");
+        }
+        log.info("List " + nfts + " does not contain any NFTs from which BrowserQuest items could be derived.");
     },
 
     addHater: function(mob) {

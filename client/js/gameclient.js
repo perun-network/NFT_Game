@@ -119,15 +119,16 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
         },
 
         /**
-         * loads sprite descriptor JSON from metaserver
+         * loads NFT JSON Info from metaserver
          * @param {*} nftKey nft context associated with sprite to be loaded
+         * @param {*} fetchSprite path to insert for /metadata/MDSUBPATH/token.../id...
          * @returns json of sprite description
          */
-        getNFTSpritesJSON: function(nftKey) {
+        getNFTMetadata: function(nftKey, fetchSprite) {
 
             return new Promise(resolve => {
                 const [token, id] = nftKey.split(":");
-                const url = (this.secure_transport ? "https" : "http") + "://" + this.host + ":" + this.port + "/metadata/sprites/" + token + "/" + id;
+                const url = (this.secure_transport ? "https" : "http") + "://" + this.host + ":" + this.port + "/metadata/" + (fetchSprite ? "sprites" : "") + "/" + token + "/" + id;
                 console.log("Fetching Sprite for NFT " + nftKey + " from address: " + url);
                 var xmlHttp = new XMLHttpRequest();
                 xmlHttp.onreadystatechange = function() { 
@@ -340,6 +341,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                 if (data.length >= 4) {
                     // expect nft data
                     nftKey = data[3];
+                    this.nftrecieved_callback(nftKey);
                 }
 
             if(this.equip_callback) {
@@ -692,6 +694,11 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
         sendAggro: function(mob) {
             this.sendMessage([Types.Messages.AGGRO,
                               mob.id]);
+        },
+
+        // sends a WEAPONSWITCH type message
+        sendWeaponSwitch: function() {
+            this.sendMessage([Types.Messages.WEAPONSWITCH]);
         },
 
         sendAttack: function(mob) {
