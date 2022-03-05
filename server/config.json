@@ -1,5 +1,5 @@
 {
-    "port": 8000,
+    "port": 8002,
     "debug_level": "info",
     "nb_players_per_world": 200,
     "nb_worlds": 1,
@@ -10,8 +10,8 @@
     "redis_host": "127.0.0.1",
     "memcached_host": "127.0.0.1",
     "memcached_port": 11211,
-    "game_servers": [{"server": "localhost", "name": "localhost"}],
-    "server_name" : "localhost",
-    "production": "heroku",
+    "game_servers": [{"server": "bq.erdstall.dev", "name": "bq.erdstall.dev"}],
+    "server_name" : "bq.erdstall.dev",
+    "production": "bq.erdstall.dev",
     "database": "redis"
 }
