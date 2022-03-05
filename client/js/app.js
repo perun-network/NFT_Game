@@ -98,6 +98,10 @@ define(['jquery', 'storage'], function($, Storage) {
         },
 
         startGame: function(action, username, userpw, email) {
+
+            // set to true for production, false for local development
+            const enable_secure_transport = false;
+
             var self = this;
             self.firstTimePlaying = !self.storage.hasAlreadyPlayed();
 
@@ -106,20 +110,31 @@ define(['jquery', 'storage'], function($, Storage) {
                     config = this.config;
 
                 //>>includeStart("devHost", pragmas.devHost);
+                // local and dev configuration does not feature TLS
                 if(config.local) {
                     log.debug("Starting game with local dev config.");
-                    this.game.setServerOptions(config.local.host, config.local.port, username, userpw, email);
+                    this.game.setServerOptions(config.local.host, config.local.port, false, username, userpw, email);
                 } else {
                     log.debug("Starting game with default dev config.");
-                    this.game.setServerOptions(config.dev.host, config.dev.port, username, userpw, email);
+                    this.game.setServerOptions(config.dev.host, config.dev.port, false, username, userpw, email);
                 }
-                optionsSet = true;
+                // optionsSet = true;  // enable build config
                 //>>includeEnd("devHost");
 
                 //>>includeStart("prodHost", pragmas.prodHost);
                 if(!optionsSet) {
                     log.debug("Starting game with build config.");
-                    this.game.setServerOptions(config.build.host, config.build.port, username, userpw, email);
+
+                    // update TLS settings from config
+                    // commented out because doesnt work. config is read from somewhere unpredictable... decided to hardcode instead
+                    /*
+                    let enable_secure_transport = false;
+                    if (config.build.secure_transport != undefined) {
+                        enable_secure_transport = config.build.secure_transport;
+                    }
+                    */ 
+
+                    this.game.setServerOptions(config.build.host, config.build.port, enable_secure_transport, username, userpw, email);
                 }
                 //>>includeEnd("prodHost");
 
