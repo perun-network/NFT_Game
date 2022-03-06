@@ -8,6 +8,8 @@ import NFT, { key } from "./nft";
 import { NFTMetadata } from "@polycrypt/erdstall/ledger/backend";
 import fs from 'fs';
 import jimp from "jimp";
+import config from './config/serverConfig.json';
+import fetch from 'node-fetch';
 
 export const DB_PREFIX_METADATA = "md";
 export const DEFAULT_NFT_IMAGE_PATH_PREFIX = "nfts/sprites/"; // default folder for nft sprite cacheing, overwritten by config
@@ -21,6 +23,15 @@ export const addrRE = "0x[0-9a-fA-F]{40}";
 export const tokenIdPath = "/:token(" + addrRE + ")/:id(\\d+)";
 export const spritePath = "/sprites" + tokenIdPath;
 
+// Pathes to save and accesss Metadata
+const NFTPutEndpointPath = "/metadata";
+const pathToShowcasePNG = "nfts/" + "showcase";
+
+// links for Metadata and Nerd 
+const NFTServerEndpoint = config.NerdUrl;
+const NFTPutEndpoint = `${NFTServerEndpoint}${NFTPutEndpointPath}`;
+const picServerHost = config.PictureHost;
+
 /**
  * Main class for meta data handling. Includes storage to Redis and request handling
  */
@@ -28,6 +39,8 @@ export default class NFTMetaServer {
 
 	cfg: MetadataConfig;
 	protected databaseHandler: any;
+
+
 
 	/**
 	 * Creates a new Metadata server instance
@@ -109,32 +122,45 @@ export default class NFTMetaServer {
 	private async createAndSavePng(tokenId: bigint, metaData: RawItemMeta) {
 
 		const kind = metaData.getAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND);
-		
+
 		const rgb = metaData.getRgbOffset();
 
 		// Where to find png
 		const readImgsFrom = "client/img/";
 		// Where to save
-		const saveTo = this.cfg.nftPathPrefix;
+		const saveTo = "nfts/";
 		// name of saved file
 		const fileName = Number(tokenId);
+
+		// Creat and Save PNG for Ingame Items
 
 		// reads, manipulates and saves Png in all three scales
 		for (let index = 1; index <= 3; index++) {
 			const img_base = await jimp.read(readImgsFrom + `${index}/` + kind + ".png");
 			const img_item = await jimp.read(readImgsFrom + `${index}/item-` + kind + ".png");
 
-			// example manipulates
-			//img_base.invert();
-			//img_item.invert();
-
 			img_base.color([{ apply: 'red', params: [rgb?.r] }, { apply: 'green', params: [rgb?.g] }, { apply: 'blue', params: [rgb?.b] }]);
 			img_item.color([{ apply: 'red', params: [rgb?.r] }, { apply: 'green', params: [rgb?.g] }, { apply: 'blue', params: [rgb?.b] }]);
 
 
-			img_base.write(saveTo + `/${index}/` + fileName + ".png");
-			img_item.write(saveTo + `/${index}/item-` + fileName + ".png");
+			img_base.write(saveTo + `/sprites/${index}/` + fileName + ".png");
+			img_item.write(saveTo + `/sprites/${index}/item-` + fileName + ".png");
 		}
+
+		// Create and Save PNG for Marketplaces
+
+		let pngName = metaData.meta.image?.split('/')[metaData.meta.image?.split('/').length - 1];
+
+		//read file 
+		const img_item = await jimp.read(readImgsFrom + "3/item-" + kind + ".png");
+
+		//image manipulation
+		img_item.crop(0, 0, 48, 48);
+		img_item.scale(10, jimp.RESIZE_NEAREST_NEIGHBOR);
+		img_item.color([{ apply: 'red', params: [rgb?.r] }, { apply: 'green', params: [rgb?.g] }, { apply: 'blue', params: [rgb?.b] }]);
+
+		//save file
+		img_item.write(saveTo + "/showcase/" + pngName);		
 	}
 
 	/**
@@ -156,12 +182,20 @@ export default class NFTMetaServer {
 	 * @param kind Kind of Item
 	 * @returns new "unique" Metadata
 	 */
-	getNewMetaData(kind: string){
+	getNewMetaData(kind: string) {
+
+		let rndPngID = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+		let r = this.getRandomInt(255) - 128, g = this.getRandomInt(255) - 128, b = this.getRandomInt(255) - 128;
+
 		let metadata: RawItemMeta = new RawItemMeta([]);
 		metadata.meta.name = this.getFunnyName();
-		metadata.meta.description = "A nice weapon form the game browserquest.";
+		metadata.meta.description = "A nice weapon from the game BrowserQuest.";
+		metadata.meta.image = `${picServerHost}/${pathToShowcasePNG}/${rndPngID}.png`;
+		//Must be a six-character hexadecimal without a pre-pended #. 
+		metadata.meta.background_color = "#FFFFFF"; //White
 		metadata.addAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND, kind);
-		metadata.setRgbOffset(this.getRandomInt(255) - 128, this.getRandomInt(255) - 128, this.getRandomInt(255) - 128);
+		metadata.setRgbOffset(r, g, b);
+
 		return metadata;
 	}
 
@@ -169,9 +203,9 @@ export default class NFTMetaServer {
 	 * Will be updated
 	 * @returns a funny name for a sword
 	 */
-	getFunnyName(){
+	getFunnyName() {
 		//TODO: More names.
-		let names: string[] =  ["Lifebinder","Snowflake","Covergence","Starlight","Vanquisher Idol","Wrathful CruxRuby Infused Bead","Nightfall, Pledge of the Prince","Shadowfall, Ferocity of Titans","Penance, Last Hope of Dragonsouls", "DEEZ NUTZ"]
+		let names: string[] = ["Lifebinder", "Snowflake", "Covergence", "Starlight", "Vanquisher Idol", "Wrathful CruxRuby Infused Bead", "Nightfall, Pledge of the Prince", "Shadowfall, Ferocity of Titans", "Penance, Last Hope of Dragonsouls", "DEEZ NUTZ"]
 		return names[this.getRandomInt(9)];
 	}
 
@@ -191,28 +225,32 @@ export default class NFTMetaServer {
 
 	/**
 	 * looks up meta data for token in request and sends it to the response
-	 * 
-	 * 
-	 * ### UNTESTED!!!
-	 * 
-	 * @param req 
-	 * @param res 
-	 * @returns 
+	 * @param req Reques with owner address as token and token ID as id
+	 * @param res Respond with metadata as JSon or 404 Status if not found
 	 */
 	private async getNft(req: Request, res: Response) {
-		// params is part of the request f.e. http://yadayada.de/yomama?token=0x69696969696969420...
+
+		// for dev:
+		// params is part of the request f.e. http://localhost:{game port (8000)}/metadata/{ownerAddr}/{tokenID}
+
 		const ownerAddr: Address = Address.fromString(req.params.token); // parse Address params field in http request
 		const tokenId: bigint = BigInt(req.params.id); // parse Token identifier (assumed globaly unique) in http request
 		// assume token id's to be unique systemwide and treat them as primary key
-		const meta: RawItemMeta | undefined = await this.getMetadata(ownerAddr, tokenId); // lookup meta data
+
+		// lookup meta data
+		const meta: RawItemMeta | undefined = await this.getMetadata(ownerAddr, tokenId);
+
+		// if no data not found send 404
 		if (!meta) {
-			// send 404
 			res.status(StatusNotFound).send("No Metadata present.");
 			return;
 		}
 
-		res.send(meta.toJSON()); // originaly sending without conversion
+		// originaly sending without conversion
+		res.send(meta.toJSON());
 	}
+
+
 
 	/**
 	 * looks up sprites for token in request and sends it to the response
@@ -255,7 +293,7 @@ export default class NFTMetaServer {
 		// gather values
 		const contractAddr: Address = nft.token;
 		const tokenId: bigint = nft.id;
-		const metadata: RawItemMeta = nft.metadata == undefined ? this.dummyMetadata() :  RawItemMeta.getMetaFromNFTMetadata(<NFTMetadata> nft.metadata); // init if empty
+		const metadata: RawItemMeta = nft.metadata == undefined ? this.dummyMetadata() : RawItemMeta.getMetaFromNFTMetadata(<NFTMetadata>nft.metadata); // init if empty
 
 
 		// save values to db
@@ -264,8 +302,10 @@ export default class NFTMetaServer {
 			//await this.afterMetadataSet(contractAddr, tokenId); // run Observers  commented out bc so far there are none
 
 			//create corresponding pngs
-
 			await this.createAndSavePng(tokenId, metadata);
+
+			//saves a copy of metadata on Nerd
+			await this.putNFTtoNerd(nft);
 
 			return true; // return success
 		} catch (error) { // Handle NFT already being present in database
@@ -287,7 +327,8 @@ export default class NFTMetaServer {
 	 */
 	private async putNft(req: Request, res: Response) {
 
-		// params is part of the request f.e. http://yadayada.de/yomama?token=0x69696969696969420...
+		// for dev:
+		// params is part of the request f.e. http://localhost:8000/metadata/{ownerAddr}/{tokenID}
 		const contractAddr: Address = Address.fromString(req.params.token); // parse Address params field in http request
 		const tokenId: bigint = BigInt(req.params.id); // parse Token identifier (assumed globaly unique) in http request
 
@@ -298,6 +339,33 @@ export default class NFTMetaServer {
 		} catch (error) { // Handle NFT already being present in database
 			res.status(StatusConflict).send(error);
 		}
+	}
+
+	/**
+	 * Puts metadata to Nerd metadata DB
+	 * @param nft NFT with token, id and metadata
+	 * @returns connection respones
+	 */
+	public async putNFTtoNerd(nft: NFT): Promise<Response> {
+
+		let response: Response | undefined;
+
+		// try to put data to Nerd
+		try {
+			//link like https://nerd-market.de/0xabc123/42
+			response = await fetch(`${NFTPutEndpoint}/${nft.token}/${nft.id}`, {
+				method: "PUT",
+				body: JSON.stringify(nft.metadata),
+				headers: {
+					"Content-Type": "application/json",
+				},
+			});
+
+			// catch possible errors and log them
+		} catch (error) {
+			console.log("Can't put Metadata to Nerd: " + `${NFTPutEndpoint}/${nft.token}/${nft.id}` + " : " + error)
+		}
+		return response;
 	}
 
 	// can be overridden in derived classes
@@ -339,7 +407,7 @@ export default class NFTMetaServer {
 	 * If no kind attribute is contained, undefined is returned.
 	 * @returns NFT sprite description JSONs if item kind present, undefined otherwise
 	 */
-	public generateNFTSpriteJSON(meta: RawItemMeta, tokenId: bigint): {entity: string, item: string} | undefined {
+	public generateNFTSpriteJSON(meta: RawItemMeta, tokenId: bigint): { entity: string, item: string } | undefined {
 
 		if (!meta.hasAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND)) {
 			// ERROR, nft item sprite json requested but no base item known 
@@ -356,7 +424,7 @@ export default class NFTMetaServer {
 			spriteEntityJSON.id = "" + tokenId;
 			spriteItemJSON.image_path_prefix = this.cfg.nftPathPrefix;
 			spriteItemJSON.id = "item-" + tokenId;
-			return {item: spriteItemJSON, entity: spriteEntityJSON};
+			return { item: spriteItemJSON, entity: spriteEntityJSON };
 		}
 	}
 

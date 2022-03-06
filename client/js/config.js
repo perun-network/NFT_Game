@@ -1,9 +1,16 @@
 
 define(['text!../config/config_build.json'],
 function(build) {
+
+    let buildCfg = JSON.parse(build);
+    if (buildCfg.secure_transport != undefined && buildCfg.secure_transport) {
+        buildCfg.port = 443; // Hardcoded port, ignoring the config value.
+        // However the game ignores the config either way and defaults to 80 always, therefore a hardcoded override is justified.
+    }
+
     var config = {
-        dev: { host: "localhost", port: 8000, dispatcher: false },
-        build: JSON.parse(build)
+        dev: { host: "localhost", port: 8002, dispatcher: false },
+        build: buildCfg
     };
 
     //>>excludeStart("prodHost", pragmas.prodHost);
