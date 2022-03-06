@@ -182,6 +182,11 @@ export default class NFTMetaServer {
 				this.log("Unable to delete file " + this.cfg.nftPathPrefix + `/${index}/item-` + fileName + ".png");
 			}
 		}
+		try {
+			fs.unlinkSync(pathToShowcasePNG + "/" + fileName + ".png");
+		} catch (error) {
+			this.log("Unable to delete file " + pathToShowcasePNG + "/" + fileName + ".png");
+		}
 		this.log("Successfully deleted files for NFT " + tokenId);
 	}
 
@@ -190,7 +195,7 @@ export default class NFTMetaServer {
 	 * @param kind Kind of Item
 	 * @returns new "unique" Metadata
 	 */
-	getNewMetaData(kind: string) {
+	getNewMetaData(kind: string, tokenId: bigint) {
 
 		let rndPngID = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
 		let r = this.getRandomInt(255) - 128, g = this.getRandomInt(255) - 128, b = this.getRandomInt(255) - 128;
@@ -198,7 +203,7 @@ export default class NFTMetaServer {
 		let metadata: RawItemMeta = new RawItemMeta([]);
 		metadata.meta.name = this.getFunnyName();
 		metadata.meta.description = "A nice weapon from the game BrowserQuest.";
-		metadata.meta.image = `${picServerHost}/${pathToShowcasePNG}/${rndPngID}.png`;
+		metadata.meta.image = `${picServerHost}/${pathToShowcasePNG}/${Number(tokenId)}.png`;
 		//Must be a six-character hexadecimal without a pre-pended #. 
 		metadata.meta.background_color = "#FFFFFF"; //White
 		metadata.addAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND, kind);

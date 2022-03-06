@@ -272,7 +272,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
 
                                   // create metadata for default sword
                                   var nftKind = "sword1";
-                                  nft.metadata = nftMetaServer.getNewMetaData(nftKind).getNFTMetadata();
+                                  nft.metadata = nftMetaServer.getNewMetaData(nftKind, mintReceipt.txReceipt.tx.id).getNFTMetadata();
 
                                   // push metadata to db
                                   nftMetaServer.registerNFT(nft).then(function(success) {

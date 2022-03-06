@@ -732,7 +732,7 @@ module.exports = World = cls.Class.extend({
             );
 
             try {
-                nft.metadata = nftMetaServer.getNewMetaData(kind_str).meta;
+                nft.metadata = nftMetaServer.getNewMetaData(kind_str, mintReceipt.txReceipt.tx.id).meta;
             } catch (error) {
                 console.log(error)
             }
