@@ -94,6 +94,7 @@ function main(config) {
         };
 
 
+        // Burn all the NFTs in the wallet of the server prior to loading the maps
         erdstallServer.getNFTs().then(async function(nfts) {
             log.info("Burning " + nfts.length + " NFTs before world initialization...");
             var nftObjects = new Array();
