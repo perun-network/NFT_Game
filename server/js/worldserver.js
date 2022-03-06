@@ -290,10 +290,28 @@ module.exports = World = cls.Class.extend({
                     break;
                 }
             }
-            // Delete NFT from database
-            await self.databaseHandler.deleteNFTMetadata(burnedKey);
-            // Delete sprite files from file system
-            await nftMetaServer.deleteNFTFile(parseKey(burnedKey).id);
+            try
+            {
+                // Delete NFT from database
+                await self.databaseHandler.deleteNFTMetadata(burnedKey);
+            }
+            catch(e)
+            {
+                if(e){
+                    log.error("#################### Burn Handling: Unable to delete metadata from database for " + burnedKey + ": " + e);
+                }
+            }
+            try
+            {
+                // Delete sprite files from file system
+                await nftMetaServer.deleteNFTFile(parseKey(burnedKey).id);
+            }
+            catch(e)
+            {
+                if(e){
+                    log.error("#################### Burn Handling: Unable to delete sprite file for " + burnedKey + ": " + e);
+                }
+            }
         }
     },
 

@@ -95,7 +95,7 @@ function main(config) {
 
 
         erdstallServer.getNFTs().then(async function(nfts) {
-            log.info("Burning " + nfts.count + " NFTs before world initialization...");
+            log.info("Burning " + nfts.length + " NFTs before world initialization...");
             var nftObjects = new Array();
             for(nft of nfts) {
                 log.info("...burning " + nft);

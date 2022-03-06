@@ -842,7 +842,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
           if(!(reply === 1)) {
             var error = "NFT Metadata not in database for NFT: " + nftKey;
             log.error(error);
-            throw new Error(error);
+            resolve();
           }
           client.multi()
             .hdel(nftKey, 'metadata')

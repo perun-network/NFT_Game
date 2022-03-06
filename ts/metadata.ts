@@ -171,8 +171,16 @@ export default class NFTMetaServer {
 		// name of saved file
 		const fileName = Number(tokenId);
 		for (let index = 1; index <= 3; index++) {
-			fs.unlinkSync(this.cfg.nftPathPrefix + `/${index}/` + fileName + ".png");
-			fs.unlinkSync(this.cfg.nftPathPrefix + `/${index}/item-` + fileName + ".png");
+			try {
+				fs.unlinkSync(this.cfg.nftPathPrefix + `/${index}/` + fileName + ".png");
+			} catch (error) {
+				this.log("Unable to delete file " + this.cfg.nftPathPrefix + `/${index}/` + fileName + ".png");
+			}
+			try {
+				fs.unlinkSync(this.cfg.nftPathPrefix + `/${index}/item-` + fileName + ".png");
+			} catch (error) {
+				this.log("Unable to delete file " + this.cfg.nftPathPrefix + `/${index}/item-` + fileName + ".png");
+			}
 		}
 		this.log("Successfully deleted files for NFT " + tokenId);
 	}
