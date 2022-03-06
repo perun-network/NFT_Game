@@ -848,7 +848,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
             .hdel(nftKey, 'metadata')
             .srem('nft', nftKey)
             .exec(function(err, replies){
-              if((replies[0] == 1) && (replies[1] == 1) || err) {
+              if(err) {
                 var error = "Could not delete all keys for NFT: " + nftKey + ": " + err;
                 log.error(error);
                 throw new Error(error);

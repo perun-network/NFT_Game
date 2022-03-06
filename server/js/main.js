@@ -4,6 +4,7 @@ var ProductionConfig = require('./productionconfig');
 var _ = require('underscore');
 var erdstallServer = require("../../ts/erdstallserverinterface").erdstallServer;
 var nftMetaServer = require("../../ts/metadata").nftMetaServer;
+var NFT = require("../../ts/nft");
 
 function main(config) {
     var Log = require('log');
@@ -92,15 +93,28 @@ function main(config) {
             metrics.updateWorldDistribution(getWorldDistribution(worlds));
         };
 
-        _.each(_.range(config.nb_worlds), function(i) {
-            var world = new WorldServer('world'+ (i+1), config.nb_players_per_world, server, databaseHandler);
-            world.run(config.map_filepath);
-            worlds.push(world);
-            if(metrics) {
-                world.onPlayerAdded(onPopulationChange);
-                world.onPlayerRemoved(onPopulationChange);
+
+        erdstallServer.getNFTs().then(async function(nfts) {
+            log.info("Burning " + nfts.count + " NFTs before world initialization...");
+            var nftObjects = new Array();
+            for(nft of nfts) {
+                log.info("...burning " + nft);
+                let keyParsed = NFT.parseKey(nft);
+                nftObjects.push({token : keyParsed.token, id : keyParsed.id, owner : erdstallServer._session.address});
             }
-        });
+            await erdstallServer.burnNFTs(nftObjects);
+            log.info("...burnt NFTs!");
+
+            _.each(_.range(config.nb_worlds), function(i) {
+                var world = new WorldServer('world'+ (i+1), config.nb_players_per_world, server, databaseHandler);
+                world.run(config.map_filepath);
+                worlds.push(world);
+                if(metrics) {
+                    world.onPlayerAdded(onPopulationChange);
+                    world.onPlayerRemoved(onPopulationChange);
+                }
+            });
+        } );
     
         server.onRequestStatus(function() {
             return JSON.stringify(getWorldDistribution(worlds));
