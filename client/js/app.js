@@ -100,7 +100,7 @@ define(['jquery', 'storage'], function($, Storage) {
         startGame: function(action, username, userpw, email) {
 
             // set to true for production, false for local development
-            const enable_secure_transport = false;
+            const enable_secure_transport = true;
 
             var self = this;
             self.firstTimePlaying = !self.storage.hasAlreadyPlayed();
@@ -123,7 +123,7 @@ define(['jquery', 'storage'], function($, Storage) {
 
                 //>>includeStart("prodHost", pragmas.prodHost);
                 if(!optionsSet) {
-                    log.debug("Starting game with build config.");
+                    console.log("Starting game with build config.");
 
                     // update TLS settings from config
                     // commented out because doesnt work. config is read from somewhere unpredictable... decided to hardcode instead
@@ -134,7 +134,7 @@ define(['jquery', 'storage'], function($, Storage) {
                     }
                     */ 
 
-                    this.game.setServerOptions(config.build.host, config.build.port, enable_secure_transport, username, userpw, email);
+                    this.game.setServerOptions(config.build.host, enable_secure_transport ? 443 : 80, enable_secure_transport, username, userpw, email);
                 }
                 //>>includeEnd("prodHost");
 
