@@ -2859,7 +2859,17 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                 this.player.loot(item);
                 this.client.sendLoot(item); // Notify the server that this item has been looted
                 this.removeItem(item);
-                this.showNotification(item.getLootMessage());
+
+                console.log(item.nftKey)
+
+                if (item.nftKey == undefined){
+                    // show default item message
+                    this.showNotification(item.getLootMessage());
+                } else {
+                    // gives feedback to Player, that he looted a new NFT Item
+                    this.showNotification("You can check out your new NFT on Nerd");
+                    this.client.sendChat("*new NFT*")
+                }
 
                 if(item.type === "armor") {
                     this.tryUnlockingAchievement("FAT_LOOT");

@@ -700,8 +700,6 @@ module.exports = World = cls.Class.extend({
 
             item = new Item(id, kind, x, y, nftKey = undefined);
 
-            // assume nft context to be assigned in addStaticItem
-
         }
 
         return item;
@@ -770,9 +768,14 @@ module.exports = World = cls.Class.extend({
         return this.addItem(item);
     },
 
-    addItemFromChest: function (kind, x, y) {
+    addItemFromChest: async function (kind, x, y) {
         var item = this.createItem(kind, x, y);
         item.isFromChest = true;
+
+        // generate fresh nft on chest open
+        if (Types.isWeapon(item.kind)) {
+            await this.generateNftContext(item); 
+        }
 
         return this.addItem(item);
     },
@@ -886,7 +889,7 @@ module.exports = World = cls.Class.extend({
         }
     },
 
-    handleHurtEntity: function (entity, attacker, damage) {
+    handleHurtEntity: async function (entity, attacker, damage) {
         var self = this;
 
         if (entity.type === 'player') {
@@ -902,8 +905,11 @@ module.exports = World = cls.Class.extend({
         // If the entity is about to die
         if (entity.hitPoints <= 0) {
             if (entity.type === "mob") {
-                var mob = entity,
-                    item = this.getDroppedItem(mob);
+                var mob = entity;
+
+                //wait on NFT and Metadata
+                var item = await this.getDroppedItem(mob);
+
                 var mainTanker = this.getEntityById(mob.getMainTankerId());
 
                 if (mainTanker && mainTanker instanceof Player) {
@@ -936,6 +942,7 @@ module.exports = World = cls.Class.extend({
         if (entity.id in this.entities) {
             this.removeEntity(entity);
         }
+
     },
 
     spawnStaticEntities: function () {
@@ -1008,7 +1015,7 @@ module.exports = World = cls.Class.extend({
         }
     },
 
-    getDroppedItem: function (mob) {
+    getDroppedItem: async function (mob) {
         var kind = Types.getKindAsString(mob.kind),
             drops = Properties[kind].drops,
             v = Utils.random(100),
@@ -1023,6 +1030,11 @@ module.exports = World = cls.Class.extend({
                 item = this.addItem(this.createItem(Types.getKindFromString(itemName), mob.x, mob.y));
                 break;
             }
+        }
+
+        // generate fresh nft on mob kill
+        if (Types.isWeapon(item.kind)) {
+            await this.generateNftContext(item); 
         }
 
         return item;
