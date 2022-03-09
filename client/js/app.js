@@ -123,7 +123,7 @@ define(['jquery', 'storage'], function($, Storage) {
 
                 //>>includeStart("prodHost", pragmas.prodHost);
                 if(!optionsSet) {
-                    console.log("Starting game with build config.");
+                    log.debug("Starting game with build config.");
 
                     // update TLS settings from config
                     // commented out because doesnt work. config is read from somewhere unpredictable... decided to hardcode instead
@@ -135,6 +135,7 @@ define(['jquery', 'storage'], function($, Storage) {
                     */ 
 
                     this.game.setServerOptions(config.build.host, enable_secure_transport ? 443 : 80, enable_secure_transport, username, userpw, email);
+
                 }
                 //>>includeEnd("prodHost");
 
