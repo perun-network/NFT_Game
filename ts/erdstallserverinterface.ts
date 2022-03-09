@@ -1,12 +1,12 @@
 import { Address } from "@polycrypt/erdstall/ledger";
-import { Assets, Tokens } from "@polycrypt/erdstall/ledger/assets";
+import { Asset, Assets, mapNFTs, Tokens } from "@polycrypt/erdstall/ledger/assets";
 import { Session } from "@polycrypt/erdstall";
 import NFT from "./nft";
 import erdstallClientInterface, { getNFTsFromAssets } from "./erdstallclientinterface"
 import { TxReceipt } from "@polycrypt/erdstall/api/responses";
 import { ethers } from "ethers";
 import config from './config/serverConfig.json';
-import { Trade, Transfer } from "@polycrypt/erdstall/api/transactions";
+import { Burn, Trade, Transfer } from "@polycrypt/erdstall/api/transactions";
 import { Mutex } from "async-mutex";
 
 export default class erdstallServerInterface extends erdstallClientInterface {
@@ -112,18 +112,17 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 	}
 
 	// Burns NFT and returns TxReceipt promise
-	async burnNFT(
-		nft: NFT
+	async burnNFTs(
+		nfts: NFT[]
 	): Promise<{ txReceipt: TxReceipt }> {
-		// TODO: Remove NFT from database
 		if (!this._session) {
 			throw new Error("Server session uninitialized");
 		}
 		try {
-			return { txReceipt: await this._session.burn(getAssetsFromNFT(nft)) };
+			return { txReceipt: await this._session.burn(getAssetsFromNFT(nfts)) };
 		} catch (error) {
 			if (error) {
-				throw new Error("Server unable to burn NFT: " + error);
+				throw new Error("Server unable to burn NFT " + error);
 			} else {
 				throw new Error("Server unable to burn NFT");
 			}
@@ -139,24 +138,26 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 			throw new Error("Server session uninitialized");
 		}
 		try {
-			return { txReceipt: await this._session.transferTo(getAssetsFromNFT(nft), Address.fromString(to)) };
+			return { txReceipt: await this._session.transferTo(getAssetsFromNFT(new Array(nft)), Address.fromString(to)) };
 		} catch (error) {
 			if (error) {
-				throw new Error("Server unable to transfer NFT" + error);
+				throw new Error("Server unable to transfer NFT " + error);
 			} else {
 				throw new Error("Server unable to transfer NFT");
 			}
 		}
 	}
 
-	// Registers listener function for transfer transactions
-	registerNFTOwnerShipTransferCallback(callback: (sender: string, recipient: string, nfts: string[]) => void) {
+	// Registers listener function for transfer and burn events
+	registerCallbacks(transferCallback: (sender: string, recipient: string, nfts: string[]) => void, burnCallback: (nfts: string[]) => void) {
 		if (!this._session) throw new Error("Session uninitialized");
 		this._session.on("receipt", (receipt: TxReceipt) => {
 			if(receipt.tx instanceof Transfer) { // Handle transfer transaction issued by transferTo
-				callback(receipt.tx.sender.toString(), receipt.tx.recipient.toString(), getNFTsFromAssets(receipt.tx.values));
+				transferCallback(receipt.tx.sender.toString(), receipt.tx.recipient.toString(), getNFTsFromAssets(receipt.tx.values));
 			} else if(receipt.tx instanceof Trade) { // Handle trade transaction
-				callback(receipt.tx.offer.owner.toString(), receipt.tx.sender.toString(), getNFTsFromAssets(receipt.tx.offer.offer));
+				transferCallback(receipt.tx.offer.owner.toString(), receipt.tx.sender.toString(), getNFTsFromAssets(receipt.tx.offer.offer));
+			} else if(receipt.tx instanceof Burn) { // Handle burn event
+				burnCallback(getNFTsFromAssets(receipt.tx.values));
 			}
 		});
 	}
@@ -164,10 +165,14 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 
 export var erdstallServer = new erdstallServerInterface();
 
-// Converts NFT object to Assets object
-function getAssetsFromNFT(nft: NFT): Assets {
-	return new Assets({
-		token: nft.token,
-		asset: new Tokens([nft.id])
-	});
+// Converts NFT objects to Assets object
+function getAssetsFromNFT(nfts: NFT[]): Assets {
+	var assets: {token: string | Address; asset: Asset}[] = [];
+	for(let nft of nfts) {
+		assets.push({
+			token: nft.token,
+			asset: new Tokens([nft.id])
+		})
+	}
+	return new Assets(...assets);
 }

@@ -272,7 +272,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
 
                                   // create metadata for default sword
                                   var nftKind = "sword1";
-                                  nft.metadata = nftMetaServer.getNewMetaData(nftKind).getNFTMetadata();
+                                  nft.metadata = nftMetaServer.getNewMetaData(nftKind, mintReceipt.txReceipt.tx.id).getNFTMetadata();
 
                                   // push metadata to db
                                   nftMetaServer.registerNFT(nft).then(function(success) {
@@ -792,6 +792,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
     },
 
     getNFTMetadata: function(nftKey){
+      nftKey = nftKey.toUpperCase();
       log.info("Getting NFT Metadata: " + nftKey);
       return new Promise(resolve => {
         client.multi()
@@ -809,6 +810,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
     },
 
     putNFTMetadata: function(nftKey, metadata){
+      nftKey = nftKey.toUpperCase();
       //log.info("Putting NFT Metadata: " + nftKey);
       return new Promise(resolve => {
         // Check if NFT is already stored
@@ -832,6 +834,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
     },
 
     deleteNFTMetadata: function(nftKey){
+      nftKey = nftKey.toUpperCase();
       log.info("Deleting NFT Metadata: " + nftKey);
       return new Promise(resolve => {
         // Check if NFT is stored
@@ -839,13 +842,13 @@ module.exports = DatabaseHandler = cls.Class.extend({
           if(!(reply === 1)) {
             var error = "NFT Metadata not in database for NFT: " + nftKey;
             log.error(error);
-            throw new Error(error);
+            resolve();
           }
           client.multi()
             .hdel(nftKey, 'metadata')
             .srem('nft', nftKey)
             .exec(function(err, replies){
-              if((replies[0] == 1) && (replies[1] == 1) || err) {
+              if(err) {
                 var error = "Could not delete all keys for NFT: " + nftKey + ": " + err;
                 log.error(error);
                 throw new Error(error);
