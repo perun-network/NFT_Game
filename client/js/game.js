@@ -189,8 +189,8 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             this.achievements = {
                 A_TRUE_WARRIOR: {
                     id: 1,
-                    name: "A True Warrior",
-                    desc: "Find a new weapon"
+                    name: "A NFT Warrior",
+                    desc: "Find a NFT weapon"
                 },
                 INTO_THE_WILD: {
                     id: 2,
@@ -2875,7 +2875,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                     this.tryUnlockingAchievement("FAT_LOOT");
                 }
 
-                if(item.type === "weapon") {
+                if(item.type === "weapon" && item.nftKey) {
                     this.tryUnlockingAchievement("A_TRUE_WARRIOR");
                 }
 
