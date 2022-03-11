@@ -34,7 +34,7 @@ How to get it going on Ubuntu
 Prerequisites:
 * Node >= 16.13.1
 * npm >= 8.3.0
-* git >= 2.35.1
+* git
 * Redis up and running
 * blockchain (e.g. Ganache) up and running
 * Erdstall funding operator up and running
@@ -125,120 +125,47 @@ To connect the NERD marketplace ts/config/serverConfig.json needs to feature the
 * PictureHost points to the base URL where all NFT weapon showcase images are stored. This is the game server, so "http://localhost:8000" for local testing
 
 
-TBC
+After changing the config values you should run
 
-
-Deploying BrowserQuest
-----------------------
-
-Currently, BrowserQuest can run on the following PAAS (Platform as a Service) providers:
-* [OpenShift](https://www.openshift.com)
-* [Heroku](https://www.heroku.com)
-
-### Instructions for OpenShift ###
-1. Follow the instructions to get started with the OpenShift client tools [here](https://www.openshift.com/get-started).
-
-2. Create a new application by running this command:
-
-        $ rhc app create <app-name> nodejs-0.6
-        $ cd <app-name>
-
-   where \<app-name\> is the name of your app, e.g. browserquest.
-
-3. Add the Redis cartridge (necessary for BrowserQuest to be able to store data) with the following command:
-
-        $ rhc add-cartridge \
-          http://cartreflect-claytondev.rhcloud.com/reflect?github=smarterclayton/openshift-redis-cart \
-          --app <app-name>
-
-4. Add the BrowserQuest repository, and pull its contents with the following commands:
-
-        $ git remote add github https://github.com/browserquest/BrowserQuest.git
-        $ git fetch github
-        $ git reset --hard github/master
-        
-5. Copy the BrowserQuest config file with the following command:
-
-        $ cp server/config.json server/config_local.json
+    $ npm run postinstall
     
-6. Open `server/config_local.json` in a text editor such as Gedit (Linux), TextEdit (OS X), or Vim.
-On the line that reads `"production": "heroku",`, change `"heroku"` to `"openshift"`.
+to verify all parameters are set for Erdstall.
 
-7. Add this file to your repository by running the following commands:
-
-        $ git add server/config_local.json
-        $ git commit -m "Added config_local.json"
-
-8. Now, deploy to OpenShift with one final command (this will take several minutes):
-
-        $ git push -f
-
-Congratulations! You have now deployed BrowserQuest to Openshift! You can see the url of your instance by running
+After operator and blockchain are running, you can start the game. Make sure to wait a few seconds before you connect the frontend because the server needs some time to mint all static items (swords lying around). These need to be prepared before you login. Five seconds should suffice.
 
 
-    $ rhc app show <app-name>
+Configuring for deployment
+---------------------------
 
-Visit the url shown by the above command to see BrowserQuest running. You will need to add ":8000" to the end. Use the url below as a guide:
+Assumed is the use of an SSL certificate for deploying the game.
+To enable TLS protected connections you need to set 
 
-    http://your_openshift_browserquest_url.rhcloud.com:8000/
-    
-### Instructions for Heroku ###
+	"useSSL": true
+	
+in ts/config/clientConfig.json
+Also there is a hardcoded constant that controlls the game internal SSL settings. You can find
 
-1. Install the Heroku toolbelt from [here](https://toolbelt.herokuapp.com/).
+	const enable_secure_transport = false;
 
-2. Create a new application by running the following command:
+in client/js/app.js. To enable https and wss you need to change it to true. The game ignores most changes in the client/config/config_build.json-dist therefore changing this variable is required. When enable_secure_transport is set to true the client will ignore the port set in the config and connect to the default https (443) port. Make sure that a forwarding from 443 points to your game instance.
 
-        $ heroku create [NAME]
-    
-Where [NAME] is an optional name for your application (Heroku will automatically create one otherwise).
+The port the game is to run on can be adjusted by 
+	
+	"port"
+	
+in server/config.json. 
 
-3. Sign up for a Redis provider, such as [Redis To Go](https://redistogo.com), or host a Redis instance yourself.
+Make sure to set the operator url accordingly in clientConfig.json and serverConfig.json. For a remote operator for example:
 
-4. Run the following commands to allow BrowserQuest to run on Heroku:
+	"erdOperatorUrl": "operator.bq.erdstall.dev:8401"
+	
+Your Nerd Marketplace setup might look something like this if you run NERD together with BrowserQuest on a remote server:
 
-        $ heroku config:add HEROKU=true
-        $ heroku config:add HEROKU_REDIS_HOST=[REDIS_HOST]
-        $ heroku config:add HEROKU_REDIS_PORT=[REDIS_PORT]
-        $ heroku config:add HEROKU_REDIS_PASSWORD=[REDIS_PASSWORD]
-    
-Where [REDIS_HOST], [REDIS_PORT], and [REDIS_PASSOWRD] are your Redis hostname, port, and password, respectively.
-If you Redis instance is configued without a password, omit the last command.
-
-Note: If you use RedisToGo, you will be provided with a URL that looks something like this:
-
-    redis://redistogo:12345678901234567890@something.redistogo.com:9023/
-    
-In this case, your REDIS_HOST is `something.redistogo.com`, your REDIS_PORT is `9023`, and your REDIS_PASSWORD is `12345678901234567890`.
-
-5. Deploy to Heroku by running the following command:
-
-        $ git push heroku master
-    
-6. Enable the Heroku WebSockets lab (needed for communication between the browser and the BrowserQuest server) with the following command:
-
-        $ heroku labs:enable websockets
-    
-
-Congratulations! You have now deployed BrowserQuest to Heroku! To open BrowserQuest in your browser, run `heroku open`.
-
-
-Documentation
--------------
-
-Lots of useful info on the [wiki](https://github.com/browserquest/BrowserQuest/wiki).
-
-Mailing List
-------------
-
-The new mailing list for development is [here](https://mail.mozilla.org/listinfo/browserquest). ([archives](https://mail.mozilla.org/pipermail/browserquest/))
-
-The old mailing list on librelist.com is no longer used.  Its archives are online [here](http://librelist.com/browser/browserquest/).
-
-IRC Channel
------------
-
-\#browserquest on irc.mozilla.org
-
+	"metaDataServer": "https://bq.erdstall.dev:8000",
+    	"NerdUrl": "http://127.0.0.1:8440",
+    	"PictureHost": "https://bq.erdstall.dev"
+	
+	
 License
 -------
 
@@ -283,3 +210,8 @@ Many other people are contributing through GitHub:
 * Aaron Hill [@Aaron1011](https://github.com/Aaron1011)
 * Fredrik Svantes [@speedis](https://github.com/speedis)
 * Sergey Krilov [@sergkr](https://github.com/sergkr)
+* Silas Jäger [@JaSilasJa](https://github.com/JaSilasJa)
+* Niklas Jüttner [@NiDoJu](https://github.com/NiDoJu)
+* Johannes Scharna [@johannesscha](https://github.com/johannesscha)
+* Erik Porada
+* Martin Bach [@DeltaTecs](https://github.com/DeltaTecs)
