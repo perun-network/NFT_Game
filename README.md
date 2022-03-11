@@ -155,6 +155,10 @@ The port the game is to run on can be adjusted by
 	
 in server/config.json. 
 
+Make sure to set the game host in client/config/config_build.json-dist, e.g.:
+
+	"host": "bq.erdstall.dev"
+
 Make sure to set the operator url accordingly in clientConfig.json and serverConfig.json. For a remote operator for example:
 
 	"erdOperatorUrl": "operator.bq.erdstall.dev:8401"
