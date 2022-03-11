@@ -367,7 +367,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
 
 
             // load json files for sprites
-            this.client.getNFTSpritesJSON(nftKey).then(spriteJSON => {
+            this.client.getNFTMetadata(nftKey, true).then(spriteJSON => {
 
                 console.log(spriteJSON);
 
@@ -694,9 +694,10 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             }
         },
 
-        setServerOptions: function(host, port, username) {
+        setServerOptions: function(host, port, secure_transport, username) {
             this.host = host;
             this.port = port;
+            this.secure_transport = secure_transport;
             this.username = username;
         },
  
@@ -799,7 +800,8 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             var self = this,
                 connecting = false; // always in dispatcher mode in the build version
 
-            this.client = new GameClient(this.host, this.port, this.crypto_address);
+            // TODO: investigate: gameclient constructor does not feature a crypto_address parameter but gets one passed...
+            this.client = new GameClient(this.host, this.port, this.secure_transport, this.crypto_address); 
             this.client.fail_callback = function(reason){
                 started_callback({
                     success: false,
@@ -809,7 +811,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             };
 
             //>>excludeStart("prodHost", pragmas.prodHost);
-            var config = this.app.config.local || this.app.config.dev;
+            var config = this.app.config.build;
             if(config) {
                 this.client.connect(config.dispatcher); // false if the client connects directly to a game server
                 connecting = true;
@@ -1154,7 +1156,7 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                 });
 
                 self.client.onSpawnItem(function(item, x, y) {
-                    log.info("Spawned " + Types.getKindAsString(item.kind) + " (" + item.id + ") at "+x+", "+y);
+                    log.info("Spawned " + Types.getKindAsString(item.kind) + " (" + item.id + ") at "+x+", "+y + " nftKey=" + item.nftKey);
                     self.addItem(item, x, y);
                 });
 
@@ -1614,6 +1616,9 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                             player.setWeaponName(itemName);
                         }
                         player.setNftKey(nftKey);
+                        if(nftKey) {
+                            self.nftSpriteCheck(nftKey);
+                        }
                     }
                 });
 

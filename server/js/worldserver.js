@@ -21,7 +21,7 @@ var cls = require("./lib/class"),
 var erdstallServer = require("../../ts/erdstallserverinterface").erdstallServer;
 var nftMetaServer = require("../../ts/metadata").nftMetaServer;
 var NFT = require("../../ts/nft");
-
+var parseKey = require("../../ts/nft").parseKey;
 
 // ======= GAME SERVER ========
 
@@ -56,6 +56,9 @@ module.exports = World = cls.Class.extend({
         this.playerCount = 0;
 
         this.zoneGroupsReady = false;
+
+        // Register handler for NFT transfers and trades
+        erdstallServer.registerCallbacks(this.handleNFTOwnerShipTransfer.bind(self), this.handleBurn.bind(self));
 
         this.onPlayerConnect(function (player) {
             player.onRequestPosition(function () {
@@ -254,6 +257,190 @@ module.exports = World = cls.Class.extend({
 
     onRegenTick: function (callback) {
         this.regen_callback = callback;
+    },
+
+    // Function which returns player object associated with crypto address, undefined if no player with specified crypto address is logged in
+    findPlayerByCrypto: function (cryptoAddress) {
+        var self = this;
+        // Iterate over players to find player with crypto address
+        for (var playerID in self.players) {
+            var player = self.players[playerID];
+            if (player.cryptoAddress.toUpperCase() === cryptoAddress.toUpperCase()) {
+                return player;
+            }
+        }
+        return undefined;
+    },
+
+    // Handles NFT burns
+    handleBurn: async function (nfts) {
+        var self = this;
+        log.info("#################### Burn Handling: Noticed burn for NFTs: [" + nfts + "]");
+        // Iterate over all burned NFT keys to check if player is currently holding one
+        for (let burnedKey of nfts) {
+            for (var playerID in self.players) {
+                var player = self.players[playerID];
+                // Unequip NFT item in case player is holding burned NFT
+                if (player.nftKey.toUpperCase() === burnedKey.toUpperCase()) {
+                    log.info("#################### Burn Handling: Replacing " + player.name + "'s nft: (" + burnedKey + ") with (sword1, null)");
+                    // TODO: Rotate to next NFT in wallet if possible
+                    player.equipItem(Types.getKindFromString("sword1"));
+                    player.setNftKey(null);
+                    player.broadcast(player.equip(player.weapon, nftKey = null), false);
+                    break;
+                }
+            }
+            try
+            {
+                // Delete NFT from database
+                await self.databaseHandler.deleteNFTMetadata(burnedKey);
+            }
+            catch(e)
+            {
+                if(e){
+                    log.error("#################### Burn Handling: Unable to delete metadata from database for " + burnedKey + ": " + e);
+                }
+            }
+            try
+            {
+                // Delete sprite files from file system
+                await nftMetaServer.deleteNFTFile(parseKey(burnedKey).id);
+            }
+            catch(e)
+            {
+                if(e){
+                    log.error("#################### Burn Handling: Unable to delete sprite file for " + burnedKey + ": " + e);
+                }
+            }
+        }
+    },
+
+    // Handles transfer transactions by unequipping NFT items, potentially changing database records and giving the NFT item to the recipient in case he is logged in
+    handleNFTOwnerShipTransfer: async function (sender, recipient, nfts) {
+        var self = this;
+        log.info("#################### Transfer Handling: Noticed transfer TX from \"" + sender + "\" to \"" + recipient + "\":");
+        if(!nfts) {
+            log.info("#################### Transfer Handling: No NFTs transferred... ignoring");
+            return;
+        }
+        // Ignore transfer if server sent NFT to player
+        if (sender.toUpperCase() === erdstallServer._session.address.toString().toUpperCase()) {
+            log.info("#################### Transfer Handling: Transfer initiated by server... ignoring");
+            return;
+        }
+        // Get List of NFTs transferred
+        // const nfts = getTransferTxNFTs(transfer);
+        log.info("#################### Transfer Handling: ...with NFTs: [" + nfts + "]");
+
+        var transferredKey = undefined;
+        var transferredKind = undefined;
+        var senderPlayer = undefined;
+        var recipientPlayer = undefined;
+
+        // Find sender, if logged in
+        log.info("#################### Transfer Handling: ...Finding sender...");
+        senderPlayer = self.findPlayerByCrypto(sender);
+
+        // If sender not logged in, check if database contains a player holding one of the NFTs transferred
+        if (undefined === senderPlayer) {
+            var senderPlayerName = undefined;
+            log.info("#################### Transfer Handling: Couldn't find logged in player for sender, checking database...");
+
+            // Get name of player holding one of the NFTs, key of NFT held by that player and kind of NFT
+            var found = await self.databaseHandler.getPlayerHoldingNFT(nfts);
+
+            if (null !== found) {
+                senderPlayerName = found.name;
+                transferredKey = found.key;
+                transferredKind = Types.getKindFromString(found.kind);
+            }
+
+            // Return if no player holding a transferred NFT is found in database
+            if ((undefined === senderPlayerName) || (undefined === transferredKey) || (undefined === transferredKind)) {
+                log.info("#################### Transfer Handling: Couldn't find sender player holding transferred NFT in database. Ignoring...");
+            } else {
+                log.info("#################### Transfer Handling: ...determined sender: " + senderPlayerName + " [" + sender + "]");
+                log.info("#################### Transfer Handling: ...replacing sender " + senderPlayerName + "'s item and nft: (" + Types.getKindAsString(transferredKind) + ", " + transferredKey + ") with (sword1, null) in database");
+                // Unequip weapon of logged out sender, set nftKey to null
+                databaseHandler.equipWeapon(senderPlayerName, "sword1");
+                databaseHandler.setNftItemID(senderPlayerName, null);
+            }
+        } else {
+            // Check if logged in sender currently holds NFTKey
+            log.info("#################### Transfer Handling: ...determined sender: " + senderPlayer.name + " [" + senderPlayer.cryptoAddress + "]");
+            log.info("#################### Transfer Handling: ...Checking transfer NFTs " + nfts);
+            for (let nftKey of nfts) {
+                log.info("#################### Transfer Handling: ...Checking transfer NFT " + nftKey);
+                if (senderPlayer.nftKey.toUpperCase() === nftKey.toUpperCase()) {
+                    // Unequip weapon of logged in sender, set nftKey to zero and broadcast changes
+                    transferredKey = nftKey;
+                    transferredKind = senderPlayer.weapon;
+                    log.info("#################### Transfer Handling: ...replacing sender " + senderPlayer.name + "'s item and nft: (" + Types.getKindAsString(transferredKind) + ", " + transferredKey + ") with (sword1, null)");
+                    // TODO: Rotate to next NFT in wallet if possible
+                    senderPlayer.equipItem(Types.getKindFromString("sword1"));
+                    senderPlayer.setNftKey(null);
+                    senderPlayer.broadcast(senderPlayer.equip(senderPlayer.weapon, nftKey = null), false);
+                    break;
+                }
+            }
+            log.info("#################### Transfer Handling: " + senderPlayer.name + " does not seem to carry an NFT from the transaction...");
+        }
+
+        // If sender could not be determined or is not holding the item, fetch kind from metadata server
+        if((undefined === transferredKey) || (undefined === transferredKind)) {
+            log.info("#################### Transfer Handling: Couldn't determine kind of transferred NFT. Checking Metadata...");
+            // Iterate over transferred nfts to find NFT with metadata
+            for (let nftKey of nfts) {
+                let parsedKey = parseKey(nftKey);
+                // Fetch metadata from metadataserver
+                let meta = await nftMetaServer.getMetadata(parsedKey.token, parsedKey.id);
+                if(meta) {
+                    log.info("#################### Transfer Handling: Got BrowserQuest meta for NFT " + nftKey + ": " + meta.toJSON());
+                    // Extract item kind from metadata
+                    // TODO: Fix Metadata attribute access
+                    let metaKind = meta.getAttribute("kind");
+                    if(metaKind) {
+                        log.info("#################### Transfer Handling: Found usable kind for NFT " + nftKey + " with kind \"" + metaKind + "\"!");
+                        transferredKey = nftKey;
+                        transferredKind = Types.getKindFromString(metaKind);
+                        break;
+                    }
+                }
+            }
+
+            if ((undefined === transferredKind) || (undefined === transferredKey)) {
+                log.info("#################### Transfer Handling: [" + nfts + "] does not seem to contain a BrowserQuest NFT. Ignoring...");
+                return;
+            }
+        }
+
+        // If kind and key of transferred NFT were determined, find recipient, equip item, set key for recipient and broadcast changes
+        if ((undefined !== transferredKind) && (undefined !== transferredKey)) {
+            // Find recipient, if logged in
+            log.info("#################### Transfer Handling: ...Finding recipient...");
+            recipientPlayer = self.findPlayerByCrypto(recipient);
+            
+            // Don't equip NFT item if recipient is not logged in
+            if (undefined === recipientPlayer) {
+                log.info("#################### Transfer Handling: Couldn't find logged in player for recipient: " + recipient + ". Ignoring...");
+                return;
+            }
+
+            log.info("#################### Transfer Handling: ...determined recipient player: " + recipientPlayer.name + " [" + recipientPlayer.cryptoAddress + "]");
+
+            // Check whether logged in recipient already holds the NFT
+            if (recipientPlayer.nftKey === transferredKey) {
+                log.warn("#################### Transfer Handling: Not transferring nft, item: (" + transferredKey + ", " + Types.getKindAsString(transferredKind) + ") because recipient already has it");
+            } else {
+                recipientPlayer.equipItem(transferredKind);
+                recipientPlayer.setNftKey(transferredKey);
+                recipientPlayer.broadcast(recipientPlayer.equip(transferredKind, transferredKey), false);
+                log.info("#################### Transfer Handling: Successfully transferred nft, item: (" + transferredKey + ", " + Types.getKindAsString(transferredKind) + ")");
+            }
+        }
+        else {
+            log.error("#################### Transfer Handling: Transfering nft, item: (" + transferredKey + ", " + Types.getKindAsString(transferredKind) + ")");
+        }
     },
 
     pushRelevantEntityListTo: function (player) {
@@ -513,43 +700,8 @@ module.exports = World = cls.Class.extend({
 
             item = new Item(id, kind, x, y, nftKey = undefined);
 
-            if (Types.isWeapon(kind)) {
-                // Weapon item spawned. Go ahead and set nft status
+            // assume nft context to be assigned in addStaticItem
 
-                let kind_str = Types.getKindAsString(kind); // retrieve name, beause sprites are stored with names
-
-                // Mint NFT for item
-                //console.log("Minting NFT on item create " + kind_str);
-                erdstallServer.mintNFT().then(function (mintReceipt) {
-
-                    var nft = new NFT.default(
-                        mintReceipt.txReceipt.tx.token,
-                        mintReceipt.txReceipt.tx.id,
-                        mintReceipt.txReceipt.tx.sender
-                    );
-
-                    try {
-                        nft.metadata = nftMetaServer.getNewMetaData(kind_str).meta;
-                    } catch (error) {
-                        console.log(error)
-                    }
-
-                    // save generated metadata to metaserver
-                    nftMetaServer.registerNFT(nft).then(function (success) {
-                        if (!success) {
-                            var error = "Error registering NFT for item " + kind_str;
-                            console.error(error);
-                            throw new Error(error);
-                        }
-
-                        console.log("Successfully put NFT metadata for item " + kind_str);
-
-                        // update nft tag on success. 
-                        nftKey = NFT.key(mintReceipt.txReceipt.tx.token, mintReceipt.txReceipt.tx.id);
-                        item.nftKey = nftKey;
-                    });
-                });
-            }
         }
 
         return item;
@@ -561,8 +713,58 @@ module.exports = World = cls.Class.extend({
         return chest;
     },
 
-    addStaticItem: function (item) {
+    /**
+     * mints a new NFT for the given Item and registers its metadata, as well assigns nftKey to item
+     * @param {*} item 
+     */
+    generateNftContext: async function (item) {
+
+        let kind_str = Types.getKindAsString(item.kind); // retrieve name, beause sprites are stored with names
+
+        // Mint NFT for item
+        //console.log("Minting NFT on item create " + kind_str);
+        await erdstallServer.mintNFT().then(async function (mintReceipt) {
+
+            var nft = new NFT.default(
+                mintReceipt.txReceipt.tx.token,
+                mintReceipt.txReceipt.tx.id,
+                mintReceipt.txReceipt.tx.sender
+            );
+
+            try {
+                nft.metadata = nftMetaServer.getNewMetaData(kind_str, mintReceipt.txReceipt.tx.id).meta;
+            } catch (error) {
+                console.log(error)
+            }
+
+            // save generated metadata to metaserver
+            await nftMetaServer.registerNFT(nft).then(async function (success) {
+                if (!success) {
+                    var error = "Error registering NFT for item " + kind_str;
+                    console.error(error);
+                    throw new Error(error);
+                }
+
+                console.log("Successfully put NFT metadata for item " + kind_str);
+
+                // update nft tag on success. 
+                nftKey = NFT.key(mintReceipt.txReceipt.tx.token, mintReceipt.txReceipt.tx.id);
+                item.nftKey = nftKey;
+            });
+
+        });
+    },
+
+    addStaticItem: async function (item) {
+
+        // this function is called when a static item is initialy created as well as when it is respawned 
+
         item.isStatic = true;
+
+        if (Types.isWeapon(item.kind)) {
+            await this.generateNftContext(item); // generate fresh nft on item respawn
+        }
+
         item.onRespawn(this.addStaticItem.bind(this, item));
 
         return this.addItem(item);

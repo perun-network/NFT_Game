@@ -11,6 +11,12 @@ var cls = require("./lib/class"),
     Types = require("../../shared/js/gametypes")
     bcrypt = require('bcrypt');
 
+var erdstallServer = require("../../ts/erdstallserverinterface").erdstallServer;
+var nftMetaServer = require("../../ts/metadata").nftMetaServer;
+const { RawItemMeta } = require("../../ts/itemmeta");
+var NFT = require("../../ts/nft");
+var parseKey = require("../../ts/nft").parseKey;
+
 module.exports = Player = Character.extend({
     init: function(connection, worldServer, databaseHandler) {
         var self = this;
@@ -82,17 +88,17 @@ module.exports = Player = Character.extend({
                     self.connection.close("Crypto Address not loaded");
                     return;
                 }
-                log.info("Crypto Adress recieved: " + crypto_addr);
+                log.info(self.name + "Crypto Adress recieved: " + crypto_addr);
                 self.cryptoAddress = crypto_addr;
 
+                erdstallServer.getNFTs(crypto_addr).then(playerNFTs => {
+                    log.info(self.name + " owns: [" + playerNFTs + "]");
+                });
+
                 if(action === Types.Messages.CREATE) {
-                    bcrypt.genSalt(10, function(err, salt) {
-                        bcrypt.hash(self.pw, salt, function(err, hash) {
-                            log.info("CREATE: " + self.name + ":" + self.cryptoAddress);
-                            log.info("Crypto Adress recieved: " + self.cryptoAddress);
-                            databaseHandler.createPlayer(self);
-                        })
-                    });
+                    log.info("CREATE: " + self.name + ":" + self.cryptoAddress);
+                    log.info("Crypto Adress recieved: " + self.cryptoAddress);
+                    databaseHandler.createPlayer(self);
                 } else {
                     log.info("LOGIN: " + self.name + ":" + self.cryptoAddress);
                     if(self.server.loggedInPlayer(self.cryptoAddress)) {
@@ -262,6 +268,19 @@ module.exports = Player = Character.extend({
                                 self.server.pushToPlayer(self, self.health());
                             }
                         } else if(Types.isArmor(kind) || Types.isWeapon(kind)) {
+                            if (Types.isWeapon(kind)) {
+
+                                let keyParsed = NFT.parseKey(item.nftKey);
+
+                                // transfer NFT ownership
+                                erdstallServer.transferTo({token : keyParsed.token, id : keyParsed.id, owner : erdstallServer._session.address}, self.cryptoAddress).then(function(transferReceipt) {
+                                    console.log("Successfully transferred " + item.nftKey + " to player " + this.name);
+
+                                    // update equiped nft key for player in db
+                                    self.setNftKey(item.nftKey);
+                                });
+                                
+                            }
                             self.equipItem(item.kind);
                             self.broadcast(self.equip(kind, nftKey=item.nftKey));
                         }
@@ -297,6 +316,12 @@ module.exports = Player = Character.extend({
                     self.lastCheckpoint = checkpoint;
                     databaseHandler.setCheckpoint(self.name, self.x, self.y);
                 }
+            }
+            // receives and handles WEAPONSWITCH message
+            else if(action === Types.Messages.WEAPONSWITCH) {
+                log.info("WEAPONSWITCH: " + self.name);
+
+                self.equipNextNFT();
             }
             else if(action === Types.Messages.INVENTORY){
                 log.info("INVENTORY: " + self.name + " " + message[1] + " " + message[2] + " " + message[3]);
@@ -517,6 +542,47 @@ module.exports = Player = Character.extend({
         return new Messages.EquipItem(this, item, nftKey=nftKey);
     },
 
+    /**
+     * Attemps to equip the next NFT from wallet
+     */
+    equipNextNFT: async function () {
+        var self = this;
+
+        var nfts = await erdstallServer.getNFTs(self.cryptoAddress);
+
+        // Check if nfts were retrieved properly
+        if(!(Array.isArray(nfts) && nfts.length)) {
+            log.info(self.name + " does not have any NFTs to switch to in their wallet");
+            return;
+        }
+
+        let currentIdx = nfts.indexOf(self.nftKey);
+        // Iterate over own NFTs until a BrowserQuest NFT with corresponding metadata has been found
+        for (let i = 0; i < nfts.length; ++i) {
+            // Set the key of the next NFT to the one after the currently equipped, offset by i
+            let nextNft = nfts[(currentIdx + i + 1) % nfts.length];
+            log.info("Trying to equip NFT " + nextNft);
+            // Get metadata from server
+            let parsedKey = parseKey(nextNft);
+            let meta = await nftMetaServer.getMetadata(parsedKey.token, parsedKey.id);
+            // Extract item kind from metadata
+            if (meta) {
+                // TODO: Fix Metadata attribute access
+                let metaKind = Types.getKindFromString(meta.getAttribute("kind"));
+                // Equip and broadcast next item if kind could be determined
+                if (metaKind) {
+                    self.equipItem(metaKind);
+                    self.setNftKey(nextNft);
+                    self.broadcast(self.equip(self.weapon, nftKey = nextNft), false);
+                    log.info(self.name + " successfully equipped their next NFT " + nextNft);
+                    return;
+                }
+            }
+            log.info("Item kind for NFT " + nextNft + " could not be derived...");
+        }
+        log.info("List " + nfts + " does not contain any NFTs from which BrowserQuest items could be derived.");
+    },
+
     addHater: function(mob) {
         if(mob) {
             if(!(mob.id in this.haters)) {
@@ -618,7 +684,7 @@ module.exports = Player = Character.extend({
     setNftKey: function(nftID) {
         databaseHandler.setNftItemID(this.name, nftID);
         this.nftKey = nftID;
-        console.log("player.js: setNftItemID to " + nftID + " for player " + this.userName);
+        // console.log("player.js: setNftItemID to " + nftID + " for player " + this.name);
     },
 
     setGuildId: function(id) {

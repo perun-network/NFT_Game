@@ -1,17 +1,13 @@
 
 import { ethers } from "ethers";
 
-import { Assets, Tokens } from "@polycrypt/erdstall/ledger/assets";
+import { Assets, mapNFTs } from "@polycrypt/erdstall/ledger/assets";
 import { Address } from "@polycrypt/erdstall/ledger";
-import { ErdstallEvent, Session } from "@polycrypt/erdstall";
+import { Session } from "@polycrypt/erdstall";
 import detectEthereumProvider from "@metamask/detect-provider";
 import config from './config/clientConfig.json';
 
-import NFT, { key } from "./nft";
-
-// import * as test from "@polycrypt/erdstall/test";
-
-export type eventCallback = (error: string | Error) => void;
+import { key } from "./nft";
 
 export default class erdstallClientInterface {
 	_session: Session | undefined;
@@ -23,7 +19,9 @@ export default class erdstallClientInterface {
 	// Initializes _session member and subscribes and onboards session to the erdstall system, returns wallet address as string
 	async init(): Promise<{ account: String }> {
 		const networkID: number = config.NetworkID;
-		const erdOperatorUrl: URL = new URL("ws://" + config.erdOperatorUrl + "/ws");
+		const ssl: boolean = config.useSSL;
+		
+		const erdOperatorUrl: URL = new URL((ssl ? "wss://" : "ws://") + config.erdOperatorUrl + "/ws");
 	
 		try {
 			// parameters from json file config/serverConfig.json
@@ -45,7 +43,13 @@ export default class erdstallClientInterface {
 			await session.onboard();
 
 			this._session = session;
+			
 			console.log("Initialized new session: " + account);
+
+			session.on("error", (error: string | Error ) => {
+				console.error('Erdstall Error: ' + error);
+			});
+
 			return { account };
 		} catch (error) {
 			if (error) {
@@ -70,16 +74,6 @@ export default class erdstallClientInterface {
 			const account = await this._session.getOwnAccount();
 			return getNFTsFromAssets(account.values);
 		}
-	}
-
-	// Registers listener function for Erdstall Events
-	registerCallback(
-		event: ErdstallEvent,
-		callback: eventCallback
-	) {
-		if (!this._session) throw new Error("Client session uninitialized");
-		this._session.on(event, callback);
-		console.log("Added new callback: " + event);
 	}
 }
 
@@ -137,16 +131,12 @@ async function getAccountProvider(
 
 	return { account, web3Provider };
 }
-
-function getNFTsFromAssets(assets: Assets): string[] {
+// Extracts string list of nftKeys from assets
+export function getNFTsFromAssets(assets: Assets): string[] {
 	var nfts = new Array();
-	for (const [addr, asset] of assets.values.entries()) {
-		if (!Address.fromString(addr).isZero() && asset instanceof Tokens) {
-			for(var i = 0; i < asset.value.length; i++) {
-				nfts.push(key(addr, asset.value[i]));
-			}
-		}
-	}
+	mapNFTs(assets.values, (token, id) => {
+		nfts.push(key(token, id));
+	});
 	return nfts;
 }
 

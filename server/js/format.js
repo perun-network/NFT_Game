@@ -20,7 +20,8 @@ var Types = require('../../shared/js/gametypes');
             this.formats[Types.Messages.ZONE] = [],
             this.formats[Types.Messages.OPEN] = ['n'],
             this.formats[Types.Messages.CHECK] = ['n'],
-            this.formats[Types.Messages.ACHIEVEMENT] = ['n', 's']
+            this.formats[Types.Messages.ACHIEVEMENT] = ['n', 's'],
+            this.formats[Types.Messages.WEAPONSWITCH] = []; // new message format for switching held weapon through a button
         },
 
         check: function (msg) {

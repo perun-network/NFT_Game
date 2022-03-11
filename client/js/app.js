@@ -79,6 +79,10 @@ define(['jquery', 'storage'], function($, Storage) {
         },
 
         startGame: function(action, username) {
+
+            // set to true for production, false for local development
+            const enable_secure_transport = false;
+
             var self = this;
             self.firstTimePlaying = !self.storage.hasAlreadyPlayed();
 
@@ -87,20 +91,32 @@ define(['jquery', 'storage'], function($, Storage) {
                     config = this.config;
 
                 //>>includeStart("devHost", pragmas.devHost);
+                // local and dev configuration does not feature TLS
                 if(config.local) {
                     log.debug("Starting game with local dev config.");
-                    this.game.setServerOptions(config.local.host, config.local.port, username);
+                    this.game.setServerOptions(config.local.host, config.local.port, false, username);
                 } else {
                     log.debug("Starting game with default dev config.");
-                    this.game.setServerOptions(config.local.host, config.local.port, username);
+                    this.game.setServerOptions(config.dev.host, config.dev.port, false, username);
                 }
-                optionsSet = true;
+                // optionsSet = true;  // enable build config
                 //>>includeEnd("devHost");
 
                 //>>includeStart("prodHost", pragmas.prodHost);
                 if(!optionsSet) {
                     log.debug("Starting game with build config.");
-                    this.game.setServerOptions(config.local.host, config.local.port, username);
+
+                    // update TLS settings from config
+                    // commented out because doesnt work. config is read from somewhere unpredictable... decided to hardcode instead
+                    /*
+                    let enable_secure_transport = false;
+                    if (config.build.secure_transport != undefined) {
+                        enable_secure_transport = config.build.secure_transport;
+                    }
+                    */ 
+
+                    this.game.setServerOptions(config.build.host, enable_secure_transport ? 443 : config.build.port, enable_secure_transport, username);
+
                 }
                 //>>includeEnd("prodHost");
 
@@ -126,6 +142,10 @@ define(['jquery', 'storage'], function($, Storage) {
                             case 'userexists':
                                 // Attempted to create a new user, but the username was taken
                                 self.addValidationError(self.$nameinput, 'The username you entered is not available.');
+                                break;
+                            case 'cryptoexists':
+                                // Attempted to create a new user, but the crypto wallet address was already registered
+                                self.addValidationError(self.getUsernameField(), 'Your wallet is already associated with another player.');
                                 break;
                             case 'invalidusername':
                                 // The username contains characters that are not allowed (rejected by the sanitizer)

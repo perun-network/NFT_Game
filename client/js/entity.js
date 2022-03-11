@@ -35,7 +35,7 @@ define(function() {
          * returns if the entitiy can be related to an NFT or multiple. For example may a player wield an nft sword or an item may have nft data.
          */
         hasNftContext: function() {
-            this.nftKey != undefined;
+           return this.nftKey != null; // Returns true if undefined or null
         },
 
         /**

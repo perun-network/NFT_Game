@@ -2,11 +2,12 @@
 define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory, BISON) {
 
     var GameClient = Class.extend({
-        init: function(host, port) {
+        init: function(host, port, secure_transport) {
             this.connection = null;
             this.host = host;
             this.port = port;
-            
+            this.secure_transport = secure_transport;
+
             this.connected_callback = null;
             this.spawn_callback = null;
             this.movement_callback = null;
@@ -51,8 +52,10 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
         },
 
         connect: function(dispatcherMode) {
-            var url = "ws://"+ this.host +":"+ this.port +"/",
+
+            var url = (this.secure_transport ? "wss" : "ws") + "://"+ this.host +":"+ this.port +"/",
                 self = this;
+
 
             log.info("Trying to connect to server : "+url);
 
@@ -86,7 +89,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                         self.isTimeout = true;
                         return;
                     }
-                    if(e === 'invalidlogin' || e === 'userexists' || e === 'loggedin' || e === 'invalidusername' || e === 'invalidcryptoaddress'){
+                    if(e === 'invalidlogin' || e === 'userexists' || e === 'loggedin' || e === 'invalidusername' || e === 'invalidcryptoaddress' || e === 'cryptoexists'){
                         if(self.fail_callback){
                             self.fail_callback(e);
                         }
@@ -116,14 +119,16 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
         },
 
         /**
-         * loads sprite descriptor JSON from metaserver
+         * loads NFT JSON Info from metaserver
          * @param {*} nftKey nft context associated with sprite to be loaded
+         * @param {*} fetchSprite path to insert for /metadata/MDSUBPATH/token.../id...
          * @returns json of sprite description
          */
-        getNFTSpritesJSON: function(nftKey) {
+        getNFTMetadata: function(nftKey, fetchSprite) {
+
             return new Promise(resolve => {
                 const [token, id] = nftKey.split(":");
-                const url = "http://" + this.host + ":" + this.port + "/metadata/sprites/" + token + "/" + id;
+                const url = (this.secure_transport ? "https" : "http") + "://" + this.host + ":" + this.port + "/metadata/" + (fetchSprite ? "sprites" : "") + "/" + token + "/" + id;
                 console.log("Fetching Sprite for NFT " + nftKey + " from address: " + url);
                 var xmlHttp = new XMLHttpRequest();
                 xmlHttp.onreadystatechange = function() { 
@@ -336,6 +341,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                 if (data.length >= 4) {
                     // expect nft data
                     nftKey = data[3];
+                    this.nftrecieved_callback(nftKey);
                 }
 
             if(this.equip_callback) {
@@ -693,6 +699,11 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
         sendAggro: function(mob) {
             this.sendMessage([Types.Messages.AGGRO,
                               mob.id]);
+        },
+
+        // sends a WEAPONSWITCH type message
+        sendWeaponSwitch: function() {
+            this.sendMessage([Types.Messages.WEAPONSWITCH]);
         },
 
         sendAttack: function(mob) {

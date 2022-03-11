@@ -1,4 +1,3 @@
-
 define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
     var app, game;
 
@@ -178,6 +177,16 @@ define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
             if(app.isDesktop && app.supportsWorkers) {
                 game.loadMap();
             }
+
+            /**
+             * Executed when Weapon Button is pressed.
+             * Switches the held weapon to a random NFT owned by the player (can be the same NFT). 
+             * As of now the player is expected to always have at least one NFT in his/her wallet. 
+             */
+            $('#weapon').click(function() {
+                console.log("Weapon Switch Button pressed.");
+                game.client.sendWeaponSwitch();
+            });
 
             game.onGameStart(function() {
                 app.initEquipmentIcons();
