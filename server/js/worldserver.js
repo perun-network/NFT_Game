@@ -716,7 +716,6 @@ module.exports = World = cls.Class.extend({
         let kind_str = Types.getKindAsString(item.kind); // retrieve name, beause sprites are stored with names
 
         // Mint NFT for item
-        //console.log("Minting NFT on item create " + kind_str);
         await erdstallServer.mintNFT().then(async function (mintReceipt) {
 
             var nft = new NFT.default(
@@ -916,16 +915,15 @@ module.exports = World = cls.Class.extend({
 
                 // drop NFT item async
                 if (kind) {
-                    this.dropItem(kind, mob.x, mob.y);
+                    this.dropNFTItem(kind, mob);
                 }
             }
 
             if (entity.type === "player") {
                 this.handlePlayerVanish(entity);
                 this.pushToAdjacentGroups(entity.group, entity.despawn());
+                this.removeEntity(entity);
             }
-
-            this.removeEntity(entity);
         }
     },
 
@@ -1012,19 +1010,25 @@ module.exports = World = cls.Class.extend({
      * generates a new dropped item asynchronously on mob kill (or chest?)
      * @param {*} mob 
      */
-    dropItem: async function (kind, x, y) {
+    dropNFTItem: async function (kind, mob) {
 
-        var item = this.createItem(kind, x, y);
-        item.isFromChest = true;
+        // not null
+        var item = this.createItem(kind, mob.x, mob.y);
 
         // generate fresh nft on chest open
         if (Types.isWeapon(item.kind)) {
             await this.generateNftContext(item);
         }
 
+        // communicate to all players in group
+        this.pushToAdjacentGroups(mob.group, mob.drop(item));
+
         this.handleItemDespawn(item);
 
-        return this.addItem(item);
+        this.addItem(item);
+
+        // remove killed mob
+        this.removeEntity(mob);
     },
 
     getDroppedItem: function (mob) {
@@ -1032,19 +1036,19 @@ module.exports = World = cls.Class.extend({
             drops = Properties[kind].drops,
             v = Utils.random(100),
             p = 0,
-            kind = null;
+            itemKind = null;
 
         for (var itemName in drops) {
             var percentage = drops[itemName];
 
             p += percentage;
             if (v <= p) {
-                kind = Types.getKindFromString(itemName);
+                itemKind = Types.getKindFromString(itemName);
                 break;
             }
         }
 
-        return kind;
+        return itemKind;
     },
 
     onMobMoveCallback: function (mob) {

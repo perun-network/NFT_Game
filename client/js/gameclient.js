@@ -362,6 +362,8 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
             if (data.length >= 6) {
                 // expect nft data
                 nftKey = data[5];
+                // get metadata
+                this.nftrecieved_callback(nftKey);
             }
 
             item.nftKey = nftKey;
