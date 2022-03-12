@@ -189,8 +189,8 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             this.achievements = {
                 A_TRUE_WARRIOR: {
                     id: 1,
-                    name: "A NFT Warrior",
-                    desc: "Find a NFT weapon"
+                    name: "An NFT Warrior",
+                    desc: "Find an NFT weapon"
                 },
                 INTO_THE_WILD: {
                     id: 2,
