@@ -76,7 +76,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
                     .hget(userKey, "achievement8:progress") // 34
                     .hget("cb:" + player.connection._connection.remoteAddress, "etime") // 35
                     .hget(userKey, "nftItemID") // 36
-                    .exec(function (err, replies) {
+                    .exec(async function (err, replies) {
                       var cryptoAddress = replies[0];
                       var armor = replies[1];
                       var weapon = replies[2];
