@@ -82,30 +82,34 @@ Mozilla presents an HTML5 mini-MMORPG by Little Workshop http://www.littleworksh
                     <article id="createcharacter">
           	           <h1>
           	               <span class="left-ornament"></span>
-          	               Create New Character
+          	               Please enter your Character's name
           	               <span class="right-ornament"></span>
                          </h1>
                          <form action="none" method="get" accept-charset="utf-8">
                              <input type="text" id="nameinput" class="stroke" name="player-name" placeholder="Character Name" maxlength="12">
                          </form>
-                         <div class="play">
-                           <span class="link">Create with Metamask</span>
+                         <div class="play button disabled">
+                            <div></div>
+                            <img src="img/common/spinner.gif" alt="">
                          </div>
                          <div class="validation-summary"></div>
+                         <div id="cancel-creation">
+                            <span class="link">Cancel</span>
+                         </div>
                     </article>
                     <article id="loadcharacter">
           	           <h1>
           	               <span class="left-ornament"></span>
-          	               BrowserQuest
+          	               <strong>The BrowserQuest NFT Experience</strong>
           	               <span class="right-ornament"></span>
                          </h1>
-                         <div class="play">
-                           <span class="link">Login with Metamask</span>
+                         <div class="play button">
+                           <div></div>
                            <img src="img/common/spinner2.gif">
                          </div>
                          <div class="validation-summary"></div>
                          <div id="create-new">
-                            <span class="link">New Character</span>
+                            <span class="link">Create a new Character</span>
                          </div>
                     </article>
     	            <article id="credits">
@@ -188,19 +192,6 @@ Mozilla presents an HTML5 mini-MMORPG by Little Workshop http://www.littleworksh
                              We're sorry, but your browser does not support WebSockets.<br>
                              In order to play, we recommend using the latest version of Firefox, Chrome or Safari.
                          </p>
-                    </article>
-                    <article id="legal">
-          	           <h1>
-          	               <span class="left-ornament"></span>
-          	               Privacy
-          	               <span class="right-ornament"></span>
-                         </h1>
-                         <p>
-                             BrowserQuest stores your character name, game achievements and equipment in your browser and does not send them to Mozilla. We do collect server log data (such as IP address) as well as web analytics data. We handle info we receive about you as explained in our <a class="clickable" target="_blank" href="http://www.mozilla.org/en-US/privacy-policy">Privacy Policy</a>.
-                         </p>
- 	                    <div id="close-legal">
- 	                        <span>- click anywhere to close -</span>
-                         </div>
                     </article>
 	            </div>
 	            <div class="parchment-right"></div>
@@ -321,11 +312,8 @@ Mozilla presents an HTML5 mini-MMORPG by Little Workshop http://www.littleworksh
 		    </div>
 		</div>
 		<footer>
-		    <div id="legal-link" class="clickable">
-              <a class="clickable" target="_blank" href="http://www.mozilla.org/en-US/about/legal.html">Legal notices</a>
-		    </div>
 		    <div id="credits-link" class="clickable">
-		      <span class="dash">&ndash;</span> <span id="toggle-credits">Credits</span>
+		      <span id="toggle-credits">Credits</span>
 		    </div>
 		</footer>
 

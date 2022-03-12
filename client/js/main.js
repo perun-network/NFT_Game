@@ -96,7 +96,13 @@ define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
             });
 
             $('#create-new span').click(function() {
+                app.clearValidationErrors();
                 app.animateParchment('loadcharacter', 'createcharacter');
+            });
+
+            $('#cancel-creation span').click(function() {
+                app.clearValidationErrors();
+                app.animateParchment('createcharacter', 'loadcharacter');
             });
 
             $('.ribbon').click(function() {
@@ -145,7 +151,7 @@ define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
                 }
             }
 
-            $('.play span').click(function(event) {
+            $('.play div').click(function(event) {
                 app.tryStartingGame();
             });
 

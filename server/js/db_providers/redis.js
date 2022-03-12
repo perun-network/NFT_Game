@@ -237,15 +237,15 @@ module.exports = DatabaseHandler = cls.Class.extend({
         var self = this;
 
         // Check if username is taken
-        client.sismember('usr', player.name, function(err, reply) {
-            if(reply === 1) {
+        client.sismember('usr', player.name, function(usrErr, usrReply) {
+            if(usrReply === 1) {
                 player.connection.sendUTF8("userexists");
                 player.connection.close("Username not available: " + player.name);
                 return;
             } else {
                 // Check if crypto address is taken
-                client.sismember('cryptoaddresses', player.cryptoAddress, function(err, reply) {
-                  if(reply === 1) {
+                client.sismember('cryptoaddresses', player.cryptoAddress, function(cryptoErr, cryptoReply) {
+                  if(cryptoReply === 1) {
                       player.connection.sendUTF8("cryptoexists");
                       player.connection.close("Crypto address already registered: " + player.cryptoAddress);
                       return;
@@ -255,14 +255,18 @@ module.exports = DatabaseHandler = cls.Class.extend({
                         .sadd("usr", player.name)
                         .sadd("cryptoaddresses", player.cryptoAddress) // Add players crypto address to list of managed crypto addresses
                         .hset(userKey, "cryptoaddress", player.cryptoAddress)
-                        .hset(userKey, "pw", player.pw)
-                        .hset(userKey, "email", player.email)
                         .hset(userKey, "armor", "clotharmor")
                         .hset(userKey, "avatar", "clotharmor")
                         .hset(userKey, "weapon", "sword1")
                         .hset(userKey, "exp", 0)
                         .hset("b:" + player.connection._connection.remoteAddress, "loginTime", curTime)
-                        .exec(function(err, replies){
+                        .exec(function(redisErr, replies){
+                            if(redisErr) {
+                              let error = "Error creating new user " + player.name + " {" + player.cryptoAddress + "}";
+                              log.error(error);
+                              player.connection.close(error);
+                              return;
+                            }
                             log.info("New User: " + player.name + " {" + player.cryptoAddress + "}");
                             // Mint NFT for new user
                             console.log("Minting a fresh NFT for new player " + player.name + "...");

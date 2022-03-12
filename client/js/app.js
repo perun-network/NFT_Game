@@ -145,7 +145,7 @@ define(['jquery', 'storage'], function($, Storage) {
                                 break;
                             case 'cryptoexists':
                                 // Attempted to create a new user, but the crypto wallet address was already registered
-                                self.addValidationError(self.getUsernameField(), 'Your wallet is already associated with another player.');
+                                self.addValidationError(self.$nameinput, 'Your wallet is already associated with another player.');
                                 break;
                             case 'invalidusername':
                                 // The username contains characters that are not allowed (rejected by the sanitizer)
