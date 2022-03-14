@@ -35,7 +35,8 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 			throw new Error("Invalid token address: " + this.tokenAddress);
 		}
 
-		const erdOperatorUrl: URL = new URL("ws://" + config.erdOperatorUrl + "/ws");
+    const ssl: boolean = config.useSSL;
+		const erdOperatorUrl: URL = new URL((ssl ? "wss://" : "ws://") + config.erdOperatorUrl + "/ws");
 
 		// parameters from json file config/clientConfig.json
 		const ethRpcUrl = "ws://"+ config.ethRpcUrl + "/";
