@@ -393,10 +393,13 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                     console.log("Successfully set sprite for " + name);
                 };
 
-                console.log(spritesObj);
-
                 initSprite(nftKey, spritesObj.entity); // load actual character weapon sprite
                 initSprite("item-" + nftKey, spritesObj.item); // load actual item sprite
+
+                // Update icons in case the loaded NFT is the client's equipped NFT
+                if(self.player.nftKey === nftKey && self.equipment_callback) {
+                    self.equipment_callback();
+                }
             });
         },
 
@@ -1618,6 +1621,11 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                         player.setNftKey(nftKey);
                         if(nftKey) {
                             self.nftSpriteCheck(nftKey);
+                        }
+
+                        // Update icons in case of weapon switch
+                        if((player.id === self.player.id) && self.equipment_callback) {
+                            self.equipment_callback();
                         }
                     }
                 });

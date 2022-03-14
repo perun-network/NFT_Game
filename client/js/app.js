@@ -419,7 +419,21 @@ define(['jquery', 'storage'], function($, Storage) {
                 armor = this.game.player.getSpriteName(),
                 weaponPath = getIconPath(weapon),
                 armorPath = getIconPath(armor);
-
+            // Use NFT Sprite if player's got an NFT
+            if(this.game.player.nftKey) {
+                // Try to get item-sprite for NFT
+                let nftSprite = this.game.sprites["item-" + this.game.player.nftKey];
+                if(nftSprite)
+                {
+                    // Try to get filepath property from sprite
+                    let nftWeaponPath = nftSprite.filepath;
+                    if(nftWeaponPath)
+                    {
+                        // Use nft icon path if available
+                        weaponPath = nftWeaponPath;
+                    }
+                }
+            }
             $('#weapon').css('background-image', 'url("' + weaponPath + '")');
             if(armor !== 'firefox') {
                 $('#armor').css('background-image', 'url("' + armorPath + '")');
