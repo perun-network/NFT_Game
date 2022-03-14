@@ -3,7 +3,7 @@ import { Asset, Assets, mapNFTs, Tokens } from "@polycrypt/erdstall/ledger/asset
 import { Session } from "@polycrypt/erdstall";
 import NFT from "./nft";
 import erdstallClientInterface, { getNFTsFromAssets } from "./erdstallclientinterface"
-import { TxReceipt } from "@polycrypt/erdstall/api/responses";
+import { BalanceProof, TxReceipt } from "@polycrypt/erdstall/api/responses";
 import { ethers } from "ethers";
 import config from './config/serverConfig.json';
 import { Burn, Trade, Transfer } from "@polycrypt/erdstall/api/transactions";
@@ -151,7 +151,9 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 	// Registers listener function for transfer and burn events
 	registerCallbacks(transferCallback: (sender: string, recipient: string, nfts: string[]) => void, burnCallback: (nfts: string[]) => void) {
 		if (!this._session) throw new Error("Session uninitialized");
+
 		this._session.on("receipt", (receipt: TxReceipt) => {
+			console.log("Erdstall registered receipt event");
 			if(receipt.tx instanceof Transfer) { // Handle transfer transaction issued by transferTo
 				transferCallback(receipt.tx.sender.toString(), receipt.tx.recipient.toString(), getNFTsFromAssets(receipt.tx.values));
 			} else if(receipt.tx instanceof Trade) { // Handle trade transaction
@@ -159,6 +161,17 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 			} else if(receipt.tx instanceof Burn) { // Handle burn event
 				burnCallback(getNFTsFromAssets(receipt.tx.values));
 			}
+		});
+
+		this._session.on("exitproof", (balanceProof: BalanceProof) => {
+			if(!balanceProof.balance.exit)
+			{
+				console.log("Erdstall exitproof Error: Expected exit proof");
+				return;
+			}
+			console.log("Erdstall registered exitproof event");
+			// Handle players withdrawing from the erdstall network by initiating the transfer callback
+			transferCallback(balanceProof.balance.account.toString(), "", getNFTsFromAssets(balanceProof.balance.values));
 		});
 	}
 }
