@@ -4,11 +4,10 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
     var Player = Character.extend({
         MAX_LEVEL: 10,
 
-        init: function(id, name, pw, kind, guild) {
+        init: function(id, name, kind, guild) {
             this._super(id, kind);
 
             this.name = name;
-            this.pw = pw;
             
             if (typeof guild !== 'undefined') {
 				this.setGuild(guild);

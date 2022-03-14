@@ -23,38 +23,42 @@ export default class erdstallClientInterface {
 		
 		const erdOperatorUrl: URL = new URL((ssl ? "wss://" : "ws://") + config.erdOperatorUrl + "/ws");
 	
-		// parameters from json file config/serverConfig.json
-		const res = await getAccountProvider(networkID);
-		if (!res) {
-			throw new Error("Unable to get Account Provider for network ID " + networkID);
-		}
-		const { account, web3Provider } = res;
-		const address = Address.fromString(account);
-		const signer = web3Provider.getSigner();
-		const session: Session = new Session(
-			address,
-			signer,
-			erdOperatorUrl
-		);
 		try {
+			// parameters from json file config/serverConfig.json
+			const res = await getAccountProvider(networkID);
+			if (!res) {
+				throw new Error("Unable to get MetaMask Account Provider for network ID " + networkID);
+			}
+			const { account, web3Provider } = res;
+			const address = Address.fromString(account);
+			const signer = web3Provider.getSigner();
+			const session: Session = new Session(
+				address,
+				signer,
+				erdOperatorUrl
+			);
+
 			await session.initialize();
 			await session.subscribeSelf();
 			await session.onboard();
+
+			this._session = session;
+			
+			console.log("Initialized new session: " + account);
+
 			session.on("error", (error: string | Error ) => {
 				console.error('Erdstall Error: ' + error);
 			});
+
+			return { account };
 		} catch (error) {
 			if (error) {
-				throw new Error("Error initializing metamask session" + error);
+				throw new Error("Error initializing Metamask session: " + error);
 			}
 			else {
-				throw new Error("Error initializing metamask session");
+				throw new Error("Error initializing Metamask session");
 			}
 		}
-
-		this._session = session;
-		console.log("Initialized new session: " + account);
-		return { account };
 	}
 
 	// Returns nftKeys belonging to specified or own account
@@ -85,8 +89,8 @@ async function getAccountProvider(
 	try {
 		web3Provider = await initWeb3();
 	} catch (e) {
-		if (e instanceof Error) alert([metamaskErr, e.message].join(": "));
-		else alert(metamaskErr);
+		if (e instanceof Error) throw([metamaskErr, e.message].join(": "));
+		else throw new Error(metamaskErr);
 		return;
 	}
 
@@ -97,17 +101,16 @@ async function getAccountProvider(
 	}
 
 	if (!ethereum.isConnected()) {
-		alert(
+		throw new Error(
 			"Provider not properly connected to network, check your (blockchain) network settings",
 		);
-		return;
 	}
 
 	const netid = Number(ethereum.chainId);
 	if (netid !== networkId) {
 		const network = config.NetworkName;
 		const error = `Not connected to correct network, please connect to ${network}`;
-		alert(error);
+		throw new Error(error);
 		return;
 	}
 
@@ -123,7 +126,7 @@ async function getAccountProvider(
 			account = accs[0];
 		});
 	} catch (err) {
-		alert(err);
+		throw err;
 	}
 
 	return { account, web3Provider };

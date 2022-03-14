@@ -1273,9 +1273,9 @@ module.exports = World = cls.Class.extend({
         delete this.players[player.id];
         delete this.outgoingQueues[player.id];
     },
-    loggedInPlayer: function (name) {
+    loggedInPlayer: function (cryptoAddress) {
         for (var id in this.players) {
-            if (this.players[id].name === name) {
+            if (this.players[id].cryptoAddress === cryptoAddress) {
                 if (!this.players[id].isDead)
                     return true;
             }
