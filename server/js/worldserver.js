@@ -282,7 +282,7 @@ module.exports = World = cls.Class.extend({
                 var player = self.players[playerID];
                 // Unequip NFT item in case player is holding burned NFT
                 if (player.nftKey.toUpperCase() === burnedKey.toUpperCase()) {
-                    log.info("#################### Burn Handling: Replacing " + player.name + "'s nft: (" + burnedKey + ") with (sword1, null)");
+                    log.info("#################### Burn Handling: Replacing " + player.name + "'s nft: (" + burnedKey + ") with an NFT in their wallet (if possible)");
                     await player.equipNextNFT();             
                     break;
                 }
