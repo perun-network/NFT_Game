@@ -152,6 +152,7 @@ define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
             }
 
             $('.play div').click(function(event) {
+                app.clearValidationErrors();
                 app.tryStartingGame();
             });
 
@@ -518,6 +519,7 @@ define(['jquery', 'app', 'entrypoint'], function($, App, EntryPoint) {
                     } else {
                         if(app.loginFormActive() || app.createNewCharacterFormActive()) {
                             $('input').blur();      // exit keyboard on mobile
+                            app.clearValidationErrors();
                             app.tryStartingGame();
                             return false;           // prevent form submit
                         }
