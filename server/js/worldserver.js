@@ -282,11 +282,8 @@ module.exports = World = cls.Class.extend({
                 var player = self.players[playerID];
                 // Unequip NFT item in case player is holding burned NFT
                 if (player.nftKey.toUpperCase() === burnedKey.toUpperCase()) {
-                    log.info("#################### Burn Handling: Replacing " + player.name + "'s nft: (" + burnedKey + ") with (sword1, null)");
-                    // TODO: Rotate to next NFT in wallet if possible
-                    player.equipItem(Types.getKindFromString("sword1"));
-                    player.setNftKey(null);
-                    player.broadcast(player.equip(player.weapon, nftKey = null), false);
+                    log.info("#################### Burn Handling: Replacing " + player.name + "'s nft: (" + burnedKey + ") with an NFT in their wallet (if possible)");
+                    await player.equipNextNFT();             
                     break;
                 }
             }
@@ -324,8 +321,6 @@ module.exports = World = cls.Class.extend({
             log.info("#################### Transfer Handling: Transfer initiated by server... ignoring");
             return;
         }
-        // Get List of NFTs transferred
-        // const nfts = getTransferTxNFTs(transfer);
         log.info("#################### Transfer Handling: ...with NFTs: [" + nfts + "]");
 
         var transferredKey = undefined;
@@ -371,11 +366,8 @@ module.exports = World = cls.Class.extend({
                     // Unequip weapon of logged in sender, set nftKey to zero and broadcast changes
                     transferredKey = nftKey;
                     transferredKind = senderPlayer.weapon;
-                    log.info("#################### Transfer Handling: ...replacing sender " + senderPlayer.name + "'s item and nft: (" + Types.getKindAsString(transferredKind) + ", " + transferredKey + ") with (sword1, null)");
-                    // TODO: Rotate to next NFT in wallet if possible
-                    senderPlayer.equipItem(Types.getKindFromString("sword1"));
-                    senderPlayer.setNftKey(null);
-                    senderPlayer.broadcast(senderPlayer.equip(senderPlayer.weapon, nftKey = null), false);
+                    log.info("#################### Transfer Handling: ...replacing sender " + senderPlayer.name + "'s item and nft: (" + Types.getKindAsString(transferredKind) + ", " + transferredKey + ") with an NFT in their wallet (if possible)");
+                    await senderPlayer.equipNextNFT();
                     break;
                 }
             }
@@ -393,7 +385,6 @@ module.exports = World = cls.Class.extend({
                 if (meta) {
                     log.info("#################### Transfer Handling: Got BrowserQuest meta for NFT " + nftKey + ": " + meta.toJSON());
                     // Extract item kind from metadata
-                    // TODO: Fix Metadata attribute access
                     let metaKind = meta.getAttribute("kind");
                     if (metaKind) {
                         log.info("#################### Transfer Handling: Found usable kind for NFT " + nftKey + " with kind \"" + metaKind + "\"!");
@@ -430,7 +421,7 @@ module.exports = World = cls.Class.extend({
             } else {
                 recipientPlayer.equipItem(transferredKind);
                 recipientPlayer.setNftKey(transferredKey);
-                recipientPlayer.broadcast(recipientPlayer.equip(transferredKind, transferredKey), false);
+                recipientPlayer.broadcast(recipientPlayer.equip(transferredKind, nftKey = transferredKey), false);
                 log.info("#################### Transfer Handling: Successfully transferred nft, item: (" + transferredKey + ", " + Types.getKindAsString(transferredKind) + ")");
             }
         }
