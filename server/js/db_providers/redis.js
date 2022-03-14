@@ -706,14 +706,14 @@ module.exports = DatabaseHandler = cls.Class.extend({
     },
 
     getNFTCount: function(){
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         // Get count of all NFTs stored in database
         client.scard('nft', function(err, reply){
           var count = reply;
           if(count === null || err) {
             var error = "NFT Count could not be loaded from database: " + err;
             log.error(error);
-            throw new Error(error);
+            reject(error);
           }
           resolve(count);
         });
@@ -724,12 +724,12 @@ module.exports = DatabaseHandler = cls.Class.extend({
     getPlayerHoldingNFT: function(...nftKeys) {
       // Asynchronously returns the weapon held by player
       var getWeapon = (userKey) => {
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
           client.hget(userKey, "weapon", function(err, weaponReply){
             if(weaponReply == null || err) {
               var error = "Player-holding-NFT's weapon could not be loaded from database: " + err;
               log.error(error);
-              throw new Error(error);
+              reject(error);
             }
             resolve(weaponReply.toString());
           });
@@ -776,7 +776,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
 
     getAllMetadata: function(){
       log.info("Getting all NFT Metadata");
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         var allMetadata = new Array();
         // Get all NFTs stored in database
         client.smembers('nft', function(err, replies){
@@ -791,7 +791,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
                 if(metadata == null || err) {
                   var error = "NFT Metadata for " + nftKey + " could not be loaded from database: " + err;
                   log.error(error);
-                  // throw new Error(error);
+                  reject(error);
                 }
                 allMetadata.push(metadata);
               });
@@ -804,7 +804,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
     getNFTMetadata: function(nftKey){
       nftKey = nftKey.toUpperCase();
       log.info("Getting NFT Metadata: " + nftKey);
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         client.multi()
         .hget(nftKey, 'metadata')
         .exec(function(err, replies){
@@ -812,7 +812,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
           if(metadata == null || err) {
             var error = "NFT Metadata for " + nftKey + " could not be loaded from database: " + err;
             log.error(error);
-            throw new Error(error);
+            reject(error);
           }
           resolve(metadata);
         });
@@ -822,13 +822,13 @@ module.exports = DatabaseHandler = cls.Class.extend({
     putNFTMetadata: function(nftKey, metadata){
       nftKey = nftKey.toUpperCase();
       //log.info("Putting NFT Metadata: " + nftKey);
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         // Check if NFT is already stored
         client.sismember('nft', nftKey, function(err, reply) {
           if(reply === 1) {
             var error = "NFT Metadata already in database: " + nftKey;
             log.error(error);
-            throw new Error(error);
+            reject(error);
           } else {
             // Add the NFT
             client.multi()
@@ -846,7 +846,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
     deleteNFTMetadata: function(nftKey){
       nftKey = nftKey.toUpperCase();
       log.info("Deleting NFT Metadata: " + nftKey);
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         // Check if NFT is stored
         client.sismember('nft', nftKey, function(err, reply) {
           if(!(reply === 1)) {
@@ -861,7 +861,7 @@ module.exports = DatabaseHandler = cls.Class.extend({
               if(err) {
                 var error = "Could not delete all keys for NFT: " + nftKey + ": " + err;
                 log.error(error);
-                throw new Error(error);
+                reject(error);
               }
               log.info("Deleted NFT: " + nftKey);
               resolve();
