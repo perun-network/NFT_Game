@@ -551,36 +551,39 @@ module.exports = Player = Character.extend({
         var nfts = await erdstallServer.getNFTs(self.cryptoAddress);
 
         // Check if nfts were retrieved properly
-        if(!(Array.isArray(nfts) && nfts.length)) {
-            log.info(self.name + " does not have any NFTs to switch to in their wallet");
-            return;
+        if(Array.isArray(nfts)) {
+            let currentIdx = nfts.indexOf(self.nftKey);
+            // Iterate over own NFTs until a BrowserQuest NFT with corresponding metadata has been found
+            for (let i = 0; i < nfts.length; ++i) {
+                // Set the key of the next NFT to the one after the currently equipped, offset by i
+                let nextNft = nfts[(currentIdx + i + 1) % nfts.length];
+                log.info("Trying to equip NFT " + nextNft);
+                // Get metadata from server
+                let parsedKey = parseKey(nextNft);
+                let meta = await nftMetaServer.getMetadata(parsedKey.token, parsedKey.id);
+                // Extract item kind from metadata
+                if (meta) {
+                    // TODO: Fix Metadata attribute access
+                    let metaKind = Types.getKindFromString(meta.getAttribute("kind"));
+                    // Equip and broadcast next item if kind could be determined
+                    if (metaKind) {
+                        self.equipItem(metaKind);
+                        self.setNftKey(nextNft);
+                        self.broadcast(self.equip(self.weapon, nftKey = nextNft), false);
+                        log.info(self.name + " successfully equipped their next NFT " + nextNft);
+                        return;
+                    }
+                }
+                log.info("Item kind for NFT " + nextNft + " could not be derived...");
+            }
+            log.info("List " + nfts + " does not contain any NFTs from which BrowserQuest items could be derived.");
         }
 
-        let currentIdx = nfts.indexOf(self.nftKey);
-        // Iterate over own NFTs until a BrowserQuest NFT with corresponding metadata has been found
-        for (let i = 0; i < nfts.length; ++i) {
-            // Set the key of the next NFT to the one after the currently equipped, offset by i
-            let nextNft = nfts[(currentIdx + i + 1) % nfts.length];
-            log.info("Trying to equip NFT " + nextNft);
-            // Get metadata from server
-            let parsedKey = parseKey(nextNft);
-            let meta = await nftMetaServer.getMetadata(parsedKey.token, parsedKey.id);
-            // Extract item kind from metadata
-            if (meta) {
-                // TODO: Fix Metadata attribute access
-                let metaKind = Types.getKindFromString(meta.getAttribute("kind"));
-                // Equip and broadcast next item if kind could be determined
-                if (metaKind) {
-                    self.equipItem(metaKind);
-                    self.setNftKey(nextNft);
-                    self.broadcast(self.equip(self.weapon, nftKey = nextNft), false);
-                    log.info(self.name + " successfully equipped their next NFT " + nextNft);
-                    return;
-                }
-            }
-            log.info("Item kind for NFT " + nextNft + " could not be derived...");
-        }
-        log.info("List " + nfts + " does not contain any NFTs from which BrowserQuest items could be derived.");
+        // Set sword1 if switch did not occur
+        log.info(self.name + " does not have any applicable NFTs to switch to in their wallet! Setting sword1 instead.");
+        self.equipItem(Types.getKindFromString("sword1"));
+        self.setNftKey(null);
+        self.broadcast(self.equip(self.weapon, nftKey = null), false);
     },
 
     addHater: function(mob) {
