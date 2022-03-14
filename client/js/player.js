@@ -4,11 +4,10 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
     var Player = Character.extend({
         MAX_LEVEL: 10,
 
-        init: function(id, name, pw, kind, guild) {
+        init: function(id, name, kind, guild) {
             this._super(id, kind);
 
             this.name = name;
-            this.pw = pw;
             
             if (typeof guild !== 'undefined') {
 				this.setGuild(guild);
@@ -87,21 +86,18 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
                     rank = Types.getArmorRank(item.kind);
                     currentRank = Types.getArmorRank(Types.getKindFromString(currentArmorName));
                     msg = "You are wearing a better armor";
-                } else if(item.type === "weapon") {
-                    rank = Types.getWeaponRank(item.kind);
-                    currentRank = Types.getWeaponRank(Types.getKindFromString(this.weaponName));
-                    msg = "You are wielding a better weapon";
-                }
+                } 
 
-                if(rank && currentRank) {
+                // disables picking up armor with the same rank or lower
+                if(item.type === "armor" && rank && currentRank) {
                     if(rank === currentRank) {
-                        
-                        // Disabled so that NFTs can be picked up after each other
-                        //throw new Exceptions.LootException("You already have this "+item.type);
+                        throw new Exceptions.LootException("You already have this "+item.type);
                     } else if(rank <= currentRank) {
                         throw new Exceptions.LootException(msg);
                     }
                 }
+
+                // Weapons can allways be picked up 
 
                 log.info('Player '+this.id+' has looted '+item.id);
                 if(Types.isArmor(item.kind) && this.invincible) {

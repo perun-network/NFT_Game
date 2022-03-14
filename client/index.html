@@ -56,14 +56,14 @@ Mozilla presents an HTML5 mini-MMORPG by Little Workshop http://www.littleworksh
     <!--[if lt IE 9]>
 	<body class="intro upscaled">
     <![endif]-->
-    <a href="https://github.com/browserquest/BrowserQuest"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+    <!-- <a href="https://github.com/browserquest/BrowserQuest"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a> -->
 	<body class="intro">
 	    <noscript>
 	       <div class="alert">
 	           You need to enable JavaScript to play BrowserQuest.
 	       </div>
 	    </noscript>
-	    <a id="moztab" class="clickable" target="_blank" href="http://www.mozilla.org/"></a>
+	    <a id="moztab" class="clickable" target="_blank" href="https://erdstall.dev"></a>
 	    <div id="intro">
 	        <h1 id="logo">
 	           <span id="logosparks">
@@ -82,51 +82,34 @@ Mozilla presents an HTML5 mini-MMORPG by Little Workshop http://www.littleworksh
                     <article id="createcharacter">
           	           <h1>
           	               <span class="left-ornament"></span>
-          	               Create New Character
+          	               Please enter your Character's name
           	               <span class="right-ornament"></span>
                          </h1>
                          <form action="none" method="get" accept-charset="utf-8">
                              <input type="text" id="nameinput" class="stroke" name="player-name" placeholder="Character Name" maxlength="12">
-                             <input type="password" id="pwinput" class="stroke" name="player-pw" placeholder="Password" maxlength="15">
-                             <input type="password" id="pwinput2" class="stroke" name="player-pw2" placeholder="Confirm Password" maxlength="15">
-                             <input type="email" id="emailinput" class="stroke" name="player-email" placeholder="Email address" maxlength="48">
                          </form>
-                         <div class="play">
-                           <span class="link">Create</span>
+                         <div class="play button disabled">
+                            <div></div>
+                            <img src="img/common/spinner2.gif" alt="">
                          </div>
                          <div class="validation-summary"></div>
+                         <div id="cancel-creation">
+                            <span class="link">Cancel</span>
+                         </div>
                     </article>
                     <article id="loadcharacter">
           	           <h1>
           	               <span class="left-ornament"></span>
-          	               BrowserQuest
+          	               <strong>The BrowserQuest NFT Experience</strong>
           	               <span class="right-ornament"></span>
                          </h1>
-                         <form action="none" method="get" accept-charset="utf-8">
-                             <input type="text" id="loginnameinput" class="stroke" name="player-name" placeholder="Character Name" maxlength="12" autofocus>
-                             <input type="password" id="loginpwinput" class="stroke" name="player-loginpw" placeholder="Password" maxlength="15">
-                         </form>
-                         <div class="play">
-                           <span class="link">Login</span>
+                         <div class="play button">
+                           <div></div>
                            <img src="img/common/spinner2.gif">
                          </div>
                          <div class="validation-summary"></div>
                          <div id="create-new">
-                            <span class="link">New Character</span>
-                         </div>
-                    </article>
-                    <article id="confirmation">
-          	           <h1>
-          	               <span class="left-ornament"></span>
-                           You need to accept the following terms of usage before creating a new character.<br>
-                           None right now - just Continue!<br><br>
-          	               <span class="right-ornament"></span>
-                         </h1>
-                         <div id="continue">
-                         <span class="link">Continue</span>
-                         </div>
-                         <div id="cancel">
-                            <span class="link">Cancel</span>
+                            <span class="link">Create a new Character</span>
                          </div>
                     </article>
     	            <article id="credits">
@@ -209,19 +192,6 @@ Mozilla presents an HTML5 mini-MMORPG by Little Workshop http://www.littleworksh
                              We're sorry, but your browser does not support WebSockets.<br>
                              In order to play, we recommend using the latest version of Firefox, Chrome or Safari.
                          </p>
-                    </article>
-                    <article id="legal">
-          	           <h1>
-          	               <span class="left-ornament"></span>
-          	               Privacy
-          	               <span class="right-ornament"></span>
-                         </h1>
-                         <p>
-                             BrowserQuest stores your character name, game achievements and equipment in your browser and does not send them to Mozilla. We do collect server log data (such as IP address) as well as web analytics data. We handle info we receive about you as explained in our <a class="clickable" target="_blank" href="http://www.mozilla.org/en-US/privacy-policy">Privacy Policy</a>.
-                         </p>
- 	                    <div id="close-legal">
- 	                        <span>- click anywhere to close -</span>
-                         </div>
                     </article>
 	            </div>
 	            <div class="parchment-right"></div>
@@ -342,19 +312,8 @@ Mozilla presents an HTML5 mini-MMORPG by Little Workshop http://www.littleworksh
 		    </div>
 		</div>
 		<footer>
-		    <div id="sharing" class="clickable">
-		      Share this on
-              <a href="http://twitter.com/share?url=http%3A%2F%2Fbrowserquest.mozilla.org&amp;text=Mozilla%27s%20BrowserQuest%3A%20HTML5%20massively%20multiplayer%20adventure%20game%20%23demo%20%23websockets&amp;related=glecollinet:Creators%20of%20BrowserQuest%2Cwhatthefranck" class="twitter"></a>
-              <a href="http://www.facebook.com/share.php?u=http://browserquest.mozilla.org/" class="facebook"></a>
-		    </div>
-		    <div id="privacy-link" class="clickable">
-		      <span class="dash">&ndash;</span> <span id="toggle-legal">Privacy</span>
-		    </div>
-		    <div id="legal-link" class="clickable">
-		      <span class="dash">&ndash;</span> <a class="clickable" target="_blank" href="http://www.mozilla.org/en-US/about/legal.html">Legal notices</a>
-		    </div>
 		    <div id="credits-link" class="clickable">
-		      <span class="dash">&ndash;</span> <span id="toggle-credits">Credits</span>
+		      <span id="toggle-credits">Credits</span>
 		    </div>
 		</footer>
 

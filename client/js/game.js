@@ -189,8 +189,8 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             this.achievements = {
                 A_TRUE_WARRIOR: {
                     id: 1,
-                    name: "A True Warrior",
-                    desc: "Find a new weapon"
+                    name: "An NFT Warrior",
+                    desc: "Find an NFT weapon"
                 },
                 INTO_THE_WILD: {
                     id: 2,
@@ -393,10 +393,13 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                     console.log("Successfully set sprite for " + name);
                 };
 
-                console.log(spritesObj);
-
                 initSprite(nftKey, spritesObj.entity); // load actual character weapon sprite
                 initSprite("item-" + nftKey, spritesObj.item); // load actual item sprite
+
+                // Update icons in case the loaded NFT is the client's equipped NFT
+                if(self.player.nftKey === nftKey && self.equipment_callback) {
+                    self.equipment_callback();
+                }
             });
         },
 
@@ -694,13 +697,11 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             }
         },
 
-        setServerOptions: function(host, port, secure_transport, username, userpw, email) {
+        setServerOptions: function(host, port, secure_transport, username) {
             this.host = host;
             this.port = port;
             this.secure_transport = secure_transport;
             this.username = username;
-            this.userpw = userpw;
-            this.email = email;
         },
  
         loadAudio: function() {
@@ -838,8 +839,6 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                 log.info("Starting client/server handshake");
 
                 self.player.name = self.username;
-                self.player.pw = self.userpw;
-                self.player.email = self.email;
                 self.started = true;
 
                 if(action === 'create') {
@@ -1622,6 +1621,11 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                         player.setNftKey(nftKey);
                         if(nftKey) {
                             self.nftSpriteCheck(nftKey);
+                        }
+
+                        // Update icons in case of weapon switch
+                        if((player.id === self.player.id) && self.equipment_callback) {
+                            self.equipment_callback();
                         }
                     }
                 });
@@ -2596,8 +2600,6 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
             this.initRenderingGrid();
 
             this.player = new Warrior("player", this.username);
-            this.player.pw = this.userpw;
-            this.player.email = this.email;
             this.initPlayer();
             this.app.initTargetHud();
 
@@ -2859,13 +2861,23 @@ function(InfoManager, BubbleManager, Renderer, Map, Animation, Sprite, AnimatedT
                 this.player.loot(item);
                 this.client.sendLoot(item); // Notify the server that this item has been looted
                 this.removeItem(item);
-                this.showNotification(item.getLootMessage());
+
+                console.log(item.nftKey)
+
+                if (item.nftKey == undefined){
+                    // show default item message
+                    this.showNotification(item.getLootMessage());
+                } else {
+                    // gives feedback to Player, that he looted a new NFT Item
+                    this.showNotification("You can check out your new NFT on Nerd");
+                    this.client.sendChat("*new NFT*")
+                }
 
                 if(item.type === "armor") {
                     this.tryUnlockingAchievement("FAT_LOOT");
                 }
 
-                if(item.type === "weapon") {
+                if(item.type === "weapon" && item.nftKey) {
                     this.tryUnlockingAchievement("A_TRUE_WARRIOR");
                 }
 

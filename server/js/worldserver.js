@@ -58,7 +58,7 @@ module.exports = World = cls.Class.extend({
         this.zoneGroupsReady = false;
 
         // Register handler for NFT transfers and trades
-        erdstallServer.registerNFTOwnerShipTransferCallback(this.handleNFTOwnerShipTransfer.bind(self));
+        erdstallServer.registerCallbacks(this.handleNFTOwnerShipTransfer.bind(self), this.handleBurn.bind(self));
 
         this.onPlayerConnect(function (player) {
             player.onRequestPosition(function () {
@@ -272,11 +272,50 @@ module.exports = World = cls.Class.extend({
         return undefined;
     },
 
+    // Handles NFT burns
+    handleBurn: async function (nfts) {
+        var self = this;
+        log.info("#################### Burn Handling: Noticed burn for NFTs: [" + nfts + "]");
+        // Iterate over all burned NFT keys to check if player is currently holding one
+        for (let burnedKey of nfts) {
+            for (var playerID in self.players) {
+                var player = self.players[playerID];
+                // Unequip NFT item in case player is holding burned NFT
+                if (player.nftKey.toUpperCase() === burnedKey.toUpperCase()) {
+                    log.info("#################### Burn Handling: Replacing " + player.name + "'s nft: (" + burnedKey + ") with (sword1, null)");
+                    // TODO: Rotate to next NFT in wallet if possible
+                    player.equipItem(Types.getKindFromString("sword1"));
+                    player.setNftKey(null);
+                    player.broadcast(player.equip(player.weapon, nftKey = null), false);
+                    break;
+                }
+            }
+            try {
+                // Delete NFT from database
+                await self.databaseHandler.deleteNFTMetadata(burnedKey);
+            }
+            catch (e) {
+                if (e) {
+                    log.error("#################### Burn Handling: Unable to delete metadata from database for " + burnedKey + ": " + e);
+                }
+            }
+            try {
+                // Delete sprite files from file system
+                await nftMetaServer.deleteNFTFile(parseKey(burnedKey).id);
+            }
+            catch (e) {
+                if (e) {
+                    log.error("#################### Burn Handling: Unable to delete sprite file for " + burnedKey + ": " + e);
+                }
+            }
+        }
+    },
+
     // Handles transfer transactions by unequipping NFT items, potentially changing database records and giving the NFT item to the recipient in case he is logged in
     handleNFTOwnerShipTransfer: async function (sender, recipient, nfts) {
         var self = this;
         log.info("#################### Transfer Handling: Noticed transfer TX from \"" + sender + "\" to \"" + recipient + "\":");
-        if(!nfts) {
+        if (!nfts) {
             log.info("#################### Transfer Handling: No NFTs transferred... ignoring");
             return;
         }
@@ -333,6 +372,7 @@ module.exports = World = cls.Class.extend({
                     transferredKey = nftKey;
                     transferredKind = senderPlayer.weapon;
                     log.info("#################### Transfer Handling: ...replacing sender " + senderPlayer.name + "'s item and nft: (" + Types.getKindAsString(transferredKind) + ", " + transferredKey + ") with (sword1, null)");
+                    // TODO: Rotate to next NFT in wallet if possible
                     senderPlayer.equipItem(Types.getKindFromString("sword1"));
                     senderPlayer.setNftKey(null);
                     senderPlayer.broadcast(senderPlayer.equip(senderPlayer.weapon, nftKey = null), false);
@@ -343,19 +383,19 @@ module.exports = World = cls.Class.extend({
         }
 
         // If sender could not be determined or is not holding the item, fetch kind from metadata server
-        if((undefined === transferredKey) || (undefined === transferredKind)) {
+        if ((undefined === transferredKey) || (undefined === transferredKind)) {
             log.info("#################### Transfer Handling: Couldn't determine kind of transferred NFT. Checking Metadata...");
             // Iterate over transferred nfts to find NFT with metadata
             for (let nftKey of nfts) {
                 let parsedKey = parseKey(nftKey);
                 // Fetch metadata from metadataserver
                 let meta = await nftMetaServer.getMetadata(parsedKey.token, parsedKey.id);
-                if(meta) {
+                if (meta) {
                     log.info("#################### Transfer Handling: Got BrowserQuest meta for NFT " + nftKey + ": " + meta.toJSON());
                     // Extract item kind from metadata
                     // TODO: Fix Metadata attribute access
                     let metaKind = meta.getAttribute("kind");
-                    if(metaKind) {
+                    if (metaKind) {
                         log.info("#################### Transfer Handling: Found usable kind for NFT " + nftKey + " with kind \"" + metaKind + "\"!");
                         transferredKey = nftKey;
                         transferredKind = Types.getKindFromString(metaKind);
@@ -375,7 +415,7 @@ module.exports = World = cls.Class.extend({
             // Find recipient, if logged in
             log.info("#################### Transfer Handling: ...Finding recipient...");
             recipientPlayer = self.findPlayerByCrypto(recipient);
-            
+
             // Don't equip NFT item if recipient is not logged in
             if (undefined === recipientPlayer) {
                 log.info("#################### Transfer Handling: Couldn't find logged in player for recipient: " + recipient + ". Ignoring...");
@@ -656,8 +696,6 @@ module.exports = World = cls.Class.extend({
 
             item = new Item(id, kind, x, y, nftKey = undefined);
 
-            // assume nft context to be assigned in addStaticItem
-
         }
 
         return item;
@@ -678,7 +716,6 @@ module.exports = World = cls.Class.extend({
         let kind_str = Types.getKindAsString(item.kind); // retrieve name, beause sprites are stored with names
 
         // Mint NFT for item
-        //console.log("Minting NFT on item create " + kind_str);
         await erdstallServer.mintNFT().then(async function (mintReceipt) {
 
             var nft = new NFT.default(
@@ -688,7 +725,7 @@ module.exports = World = cls.Class.extend({
             );
 
             try {
-                nft.metadata = nftMetaServer.getNewMetaData(kind_str).meta;
+                nft.metadata = nftMetaServer.getNewMetaData(kind_str, mintReceipt.txReceipt.tx.id).meta;
             } catch (error) {
                 console.log(error)
             }
@@ -726,9 +763,16 @@ module.exports = World = cls.Class.extend({
         return this.addItem(item);
     },
 
-    addItemFromChest: function (kind, x, y) {
+    addItemFromChest: async function (kind, x, y) {
         var item = this.createItem(kind, x, y);
         item.isFromChest = true;
+
+        // generate fresh nft on chest open
+        if (Types.isWeapon(item.kind)) {
+            await this.generateNftContext(item);
+        }
+
+        this.handleItemDespawn(item);
 
         return this.addItem(item);
     },
@@ -858,31 +902,28 @@ module.exports = World = cls.Class.extend({
         // If the entity is about to die
         if (entity.hitPoints <= 0) {
             if (entity.type === "mob") {
-                var mob = entity,
-                    item = this.getDroppedItem(mob);
-                var mainTanker = this.getEntityById(mob.getMainTankerId());
+                var mob = entity;
 
-                if (mainTanker && mainTanker instanceof Player) {
-                    mainTanker.incExp(Types.getMobExp(mob.kind));
-                    this.pushToPlayer(mainTanker, new Messages.Kill(mob, mainTanker.level, mainTanker.experience));
-                } else {
-                    attacker.incExp(Types.getMobExp(mob.kind));
-                    this.pushToPlayer(attacker, new Messages.Kill(mob, attacker.level, attacker.experience));
-                }
+                attacker.incExp(Types.getMobExp(mob.kind));
+                this.pushToPlayer(attacker, new Messages.Kill(mob, attacker.level, attacker.experience));
 
-                this.pushToAdjacentGroups(mob.group, mob.despawn()); // Despawn must be enqueued before the item drop
-                if (item) {
-                    this.pushToAdjacentGroups(mob.group, mob.drop(item));
-                    this.handleItemDespawn(item);
+                // Despawn must be enqueued before the item drop
+                this.pushToAdjacentGroups(mob.group, mob.despawn());
+
+                // get Item kind. (nullable)
+                const kind = this.getDroppedItem(mob);
+
+                // drop NFT item async
+                if (kind) {
+                    this.dropNFTItem(kind, mob);
                 }
             }
 
             if (entity.type === "player") {
                 this.handlePlayerVanish(entity);
                 this.pushToAdjacentGroups(entity.group, entity.despawn());
+                this.removeEntity(entity);
             }
-
-            this.removeEntity(entity);
         }
     },
 
@@ -892,6 +933,7 @@ module.exports = World = cls.Class.extend({
         if (entity.id in this.entities) {
             this.removeEntity(entity);
         }
+
     },
 
     spawnStaticEntities: function () {
@@ -964,24 +1006,49 @@ module.exports = World = cls.Class.extend({
         }
     },
 
+    /**
+     * generates a new dropped item asynchronously on mob kill (or chest?)
+     * @param {*} mob 
+     */
+    dropNFTItem: async function (kind, mob) {
+
+        // not null
+        var item = this.createItem(kind, mob.x, mob.y);
+
+        // generate fresh nft on chest open
+        if (Types.isWeapon(item.kind)) {
+            await this.generateNftContext(item);
+        }
+
+        // communicate to all players in group
+        this.pushToAdjacentGroups(mob.group, mob.drop(item));
+
+        this.handleItemDespawn(item);
+
+        this.addItem(item);
+
+        // remove killed mob
+        this.removeEntity(mob);
+    },
+
     getDroppedItem: function (mob) {
         var kind = Types.getKindAsString(mob.kind),
             drops = Properties[kind].drops,
             v = Utils.random(100),
             p = 0,
-            item = null;
+            itemKind = null;
 
         for (var itemName in drops) {
             var percentage = drops[itemName];
 
             p += percentage;
             if (v <= p) {
-                item = this.addItem(this.createItem(Types.getKindFromString(itemName), mob.x, mob.y));
+                itemKind = Types.getKindFromString(itemName);
                 break;
             }
         }
 
-        return item;
+        return itemKind;
     },
 
     onMobMoveCallback: function (mob) {
@@ -1143,7 +1210,29 @@ module.exports = World = cls.Class.extend({
                 blinkingDuration: 4000,
                 despawnCallback: function () {
                     self.pushToAdjacentGroups(item.group, new Messages.Destroy(item));
+
+                    //get parsed NFT Key
+                    if (item.nftKey != null) {
+                        var keyParsed = NFT.parseKey(item.nftKey);
+                    }
+
+                    //remove item from game
                     self.removeEntity(item);
+
+                    //handel NFT burn
+                    if (keyParsed != null) {
+                        // Array with all NFTs to burn
+                        var nftObjects = new Array();
+                        var keyParsed = NFT.parseKey(item.nftKey);
+
+                        console.log("...burning " + item.nftKey);
+
+                        // add despawning NFT to Array
+                        nftObjects.push({ token: keyParsed.token, id: keyParsed.id, owner: erdstallServer._session.address });
+
+                        // burn NFT
+                        erdstallServer.burnNFTs(nftObjects)
+                    }
                 }
             });
         }
@@ -1166,8 +1255,8 @@ module.exports = World = cls.Class.extend({
 
         var kind = chest.getRandomItem();
         if (kind) {
-            var item = this.addItemFromChest(kind, chest.x, chest.y);
-            this.handleItemDespawn(item);
+            // create new NFT item asynchronously
+            this.addItemFromChest(kind, chest.x, chest.y);
         }
     },
     getPlayerByName: function (name) {
@@ -1184,9 +1273,9 @@ module.exports = World = cls.Class.extend({
         delete this.players[player.id];
         delete this.outgoingQueues[player.id];
     },
-    loggedInPlayer: function (name) {
+    loggedInPlayer: function (cryptoAddress) {
         for (var id in this.players) {
-            if (this.players[id].name === name) {
+            if (this.players[id].cryptoAddress === cryptoAddress) {
                 if (!this.players[id].isDead)
                     return true;
             }

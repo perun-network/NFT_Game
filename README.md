@@ -1,15 +1,19 @@
 BrowserQuest
 ============
 
-[![Build Status](https://travis-ci.org/browserquest/BrowserQuest.png)](https://travis-ci.org/browserquest/BrowserQuest) [![Dependency Status](https://gemnasium.com/browserquest/BrowserQuest.png)](https://gemnasium.com/browserquest/BrowserQuest)
+[BrowserQuest NFT Edition](https://bq.erdstall.dev) is a HTML5/JavaScript multiplayer game based on [the original](https://browserquest.herokuapp.com/) with NFT features. All weapons are NFTs with random properties.
 
-[BrowserQuest](http://browserquest-teambq.rhcloud.com:8000) is a HTML5/JavaScript multiplayer game experiment.
-
-It has three major parts:
+The game has three major parts:
 
 * the server side, which runs using Node.js
 * the client side, which runs using javascript in your browser
 * the database side, which runs using Redis
+
+To deliver an NFT experience the game is powered by [Erdstall](https://erdstall.dev/)
+* Metamask Browser Plugin connects a player to the Goerli blockchain
+* An Erdstall Operator handles NFT transactions on a second layer network
+* A metadata server stores in-game item NFT metadata, to be visible on-chain
+* A marketplace is connected to the second layer network and enables management of aquired game NFTs
 
 Browser Support
 ---------------
@@ -22,243 +26,150 @@ Browser Support
 * Safari 6.x - Background music doesn't play.  Everything else works well.
 * IE 10.x - Doesn't work.  Other versions untested.
 
-How to get it going
--------------------
+* Metamask Plugin is required
 
-Getting the server up and running is pretty easy. You need to have the following installed:
+How to get it going on Ubuntu
+-----------------------------
 
-* Node.js ← Versions 0.8.x-0.10.x work.  **Do not use 0.6.x, it [does not work](https://github.com/senchalabs/connect/issues/858).**
-* gcc-c++ ← optional.  Not needed on windows.
-* GNU make ← optional.  Not needed on windows.
-* Memcached ← optional. This is needed to enable metrics.
-* zlib-devel ← this is the Fedora/RHEL package name, others may be sightly different.  Not needed on windows.
-* Redis server ← this is needed for the game to connect to the backend database.
+Prerequisites:
+* Node >= 16.13.1
+* npm >= 8.3.0
+* git
+* Redis up and running
+* blockchain (e.g. Ganache) up and running
+* Erdstall funding operator up and running
+* NERD marketplace up and running (optional)
 
-Ubuntu
-------
-
-    $ sudo apt-get update
-    $ sudo apt-get upgrade
-    $ sudo apt-get install g++ make memcached libncurses5 redis-server git -y
-    $ curl -sL https://deb.nodesource.com/setup | sudo bash -
-    $ sudo apt-get install nodejs
 
 Clone the git repo:
 
-    $ git clone git://github.com/browserquest/BrowserQuest.git
-    $ cd BrowserQuest
+    $ git clone https://github.com/BP-NFT-Game/NFT_Game.git
+    $ cd NFT_game
 
 Then install the Node.js dependencies by running:
 
     $ npm config set registry http://registry.npmjs.org/
     $ npm install -d
     
+Compile Typescript files by running
+
+    $ npm run postinstall
+    
 Before starting the BrowserQuest server, you must start Redis. In Windows, you can simply run `redis-server.exe` in your `redis\bin\release` directory.
+Also make sure Operator, Blockchain are running
 
 Then start the server by running:
 
-    $ node server/js/main.js
+    $ npm run start
 
 The BrowserQuest server should start, showing output like this:
 
     $ node server/js/main.js
     This server can be customized by creating a configuration file named: ./server/config_local.json
-    [Thu Sep 13 2012 17:16:27 GMT-0400 (EDT)] INFO Starting BrowserQuest game server...
-    [Thu Sep 13 2012 17:16:27 GMT-0400 (EDT)] INFO world1 created (capacity: 200 players).
-    [Thu Sep 13 2012 17:16:27 GMT-0400 (EDT)] INFO world2 created (capacity: 200 players).
-    [Thu Sep 13 2012 17:16:27 GMT-0400 (EDT)] INFO world3 created (capacity: 200 players).
-    [Thu Sep 13 2012 17:16:27 GMT-0400 (EDT)] INFO world4 created (capacity: 200 players).
-    [Thu Sep 13 2012 17:16:27 GMT-0400 (EDT)] INFO world5 created (capacity: 200 players).
-    [Thu Sep 13 2012 17:16:27 GMT-0400 (EDT)] INFO Server (everything) is listening on port 8000
+    node_redis: Warning: Redis server does not require a password, but a password was supplied.
+    Initialized new server session: 0xF73C1cdA5bD32E6693D3cB313Bd9B9338d96f184
+    Will start mints with NFT ID 0 on contract 0xF73C1cdA5bD32E6693D3cB313Bd9B9338d96f184
+    [Thu Mar 10 2022 13:01:02 GMT+0100 (Central European Standard Time)] INFO Starting BrowserQuest game server...
+    NFTMetaServer: Object Initialized
+    [Thu Mar 10 2022 13:01:02 GMT+0100 (Central European Standard Time)] INFO Server (everything) is listening on port 8000
+    [Thu Mar 10 2022 13:01:03 GMT+0100 (Central European Standard Time)] INFO Burning 0 NFTs before world initialization...
+    [Thu Mar 10 2022 13:01:03 GMT+0100 (Central European Standard Time)] INFO ...burnt NFTs!
+    [Thu Mar 10 2022 13:01:03 GMT+0100 (Central European Standard Time)] INFO world1 created (capacity: 200 players).
+    [Thu Mar 10 2022 13:01:03 GMT+0100 (Central European Standard Time)] INFO #################### Burn Handling: Noticed burn for NFTs: []
+    Minting NFT 0...
+    [Thu Mar 10 2022 13:01:03 GMT+0100 (Central European Standard Time)] INFO New NFT: 0XF73C1CDA5BD32E6693D3CB313BD9B9338D96F184:0 {{"attributes":[{"trait_type":"kind","value":"bluesword"},{"trait_type":"color_offset_RGB","value":"-66:-118:-109"}],"name":"Penance, Last Hope of Dragonsouls","description":"A nice weapon from the game BrowserQuest.","image":"http://localhost:8000/nfts/showcase/0.png","background_color":"#FFFFFF"}}...
 
-That means its working.  There should not be any warnings or errors.
-
-Using a browser, connect to port 8000 of the server entered above.  The
-BrowserQuest start page should appear, and the game should work.
-
-Mac OS X
---------
-
-Node.js, Memcached, and Redis installed through Homebrew are known to work:
-
-    $ brew install node redis memcached
-    $ ln -sfv /usr/local/opt/redis/*.plist ~/Library/LaunchAgents
-    $ launchctl load ~/Library/LaunchAgents/homebrew.mxcl.redis.plist
-    $ git clone git://github.com/browserquest/BrowserQuest.git
-    $ cd BrowserQuest
-    $ npm install -d
-    $ node server/js/main.js
-
-Or you can download the latest Redis source from http://redis.io/download
-
-    $ tar xzf redis-<version>.tar.gz
-    $ cd redis-<version>
-    $ make
-
-To start Redis now, you can simply run:
-
-    $ src/redis-server
-
-You can try interacting with it by starting another terminal and typing:
-
-    $ redis-<version>/src/redis-cli
-    redis> set foo bar
-    OK
-    redis> get foo
-    "bar"
-
-Node.js, Memcached, and Redis for Fedora 16+ and RHEL/CentOS/SL 6.x
--------------------------------------------------------------------
-
-On Fedora 16+ and RHEL/CentOS/SL 6.x, you can install Redis (required) and Memcached (optional) using
-yum.
-
-For just RHEL/CentOS/SL 6.x, you need to add the EPEL repo first.  Not needed for Fedora:
-
-    $ sudo rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
-
-Then install Node.js and everything else needed:
-
-    $ sudo yum install zlib-devel gcc gcc-c++ autoconf automake make redis nodejs npm memcached
-    $ sudo chkconfig redis on
-    $ sudo chkconfig memcached on
-
-Start Redis and Memcached by running:
-
-    $ sudo service redis start
-    $ sudo service memcached start
-
-Now continue on with the normal steps to clone the BrowserQuest git repo, and start up BrowserQuest:
-
-    $ git clone git://github.com/browserquest/BrowserQuest.git
-    $ cd BrowserQuest
-    $ npm install -d
-    $ node server/js/main.js
-
-Windows
--------
-
-Windows 8 is known to work ok with just the base Node v0.8.18
-installed, without Visual Studio, nor Python, nor the native
-extensions for npm modules installed.
-
-You can download an experimental Win32/64 version of Redis
-from here: http://redis.io/download
-
-You can download the latest version of Memcached for Win32/64 from here:
-http://blog.elijaa.org/index.php?post/2010/10/15/Memcached-for-Windows&similar
-
-Deploying BrowserQuest
-----------------------
-
-Currently, BrowserQuest can run on the following PAAS (Platform as a Service) providers:
-* [OpenShift](https://www.openshift.com)
-* [Heroku](https://www.heroku.com)
-
-### Instructions for OpenShift ###
-1. Follow the instructions to get started with the OpenShift client tools [here](https://www.openshift.com/get-started).
-
-2. Create a new application by running this command:
-
-        $ rhc app create <app-name> nodejs-0.6
-        $ cd <app-name>
-
-   where \<app-name\> is the name of your app, e.g. browserquest.
-
-3. Add the Redis cartridge (necessary for BrowserQuest to be able to store data) with the following command:
-
-        $ rhc add-cartridge \
-          http://cartreflect-claytondev.rhcloud.com/reflect?github=smarterclayton/openshift-redis-cart \
-          --app <app-name>
-
-4. Add the BrowserQuest repository, and pull its contents with the following commands:
-
-        $ git remote add github https://github.com/browserquest/BrowserQuest.git
-        $ git fetch github
-        $ git reset --hard github/master
-        
-5. Copy the BrowserQuest config file with the following command:
-
-        $ cp server/config.json server/config_local.json
+That means its working. If you are using the default Erdstall Operator network configuration and a Ganache blockchain no errors should occur except 
     
-6. Open `server/config_local.json` in a text editor such as Gedit (Linux), TextEdit (OS X), or Vim.
-On the line that reads `"production": "heroku",`, change `"heroku"` to `"openshift"`.
-
-7. Add this file to your repository by running the following commands:
-
-        $ git add server/config_local.json
-        $ git commit -m "Added config_local.json"
-
-8. Now, deploy to OpenShift with one final command (this will take several minutes):
-
-        $ git push -f
-
-Congratulations! You have now deployed BrowserQuest to Openshift! You can see the url of your instance by running
-
-
-    $ rhc app show <app-name>
-
-Visit the url shown by the above command to see BrowserQuest running. You will need to add ":8000" to the end. Use the url below as a guide:
-
-    http://your_openshift_browserquest_url.rhcloud.com:8000/
+    Can't put Metadata to Nerd: http://127.0.0.1:8440/metadata/0xF73C1cdA5bD32E6693D3cB313Bd9B9338d96f184/7 : FetchError: request to http://127.0.0.1:8440/metadata/0xF73C1cdA5bD32E6693D3cB313Bd9B9338d96f184/7 failed, reason: connect ECONNREFUSED 127.0.0.1:8440
     
-### Instructions for Heroku ###
+if the marketplace was not found. All networking can be configured:
 
-1. Install the Heroku toolbelt from [here](https://toolbelt.herokuapp.com/).
+Configuring for development
+---------------------------
 
-2. Create a new application by running the following command:
+We assume that for local development a Ganache blockchain (id 1337) is running localy, listening for remote procedure calls on port 8545, the Erdstall operator is running localy on 8401, and as Redis database is localy listening to port 6379 aswell. The game is setup to run on port 8000. Then the ts/config/serverConfig.json needs to contain
 
-        $ heroku create [NAME]
+    "NetworkID": 1337,
+    "NetworkName": "local",
+    "erdOperatorUrl": "127.0.0.1:8401",
+    "ethRpcUrl": "127.0.0.1:8545"
     
-Where [NAME] is an optional name for your application (Heroku will automatically create one otherwise).
+Similarly the ts/config/clientConfig.json must contain atleast
 
-3. Sign up for a Redis provider, such as [Redis To Go](https://redistogo.com), or host a Redis instance yourself.
-
-4. Run the following commands to allow BrowserQuest to run on Heroku:
-
-        $ heroku config:add HEROKU=true
-        $ heroku config:add HEROKU_REDIS_HOST=[REDIS_HOST]
-        $ heroku config:add HEROKU_REDIS_PORT=[REDIS_PORT]
-        $ heroku config:add HEROKU_REDIS_PASSWORD=[REDIS_PASSWORD]
+    "NetworkID": 1337,
+    "erdOperatorUrl":"localhost:8401",
+    "useSSL": false
     
-Where [REDIS_HOST], [REDIS_PORT], and [REDIS_PASSOWRD] are your Redis hostname, port, and password, respectively.
-If you Redis instance is configued without a password, omit the last command.
+server/config.json must contain atleast
 
-Note: If you use RedisToGo, you will be provided with a URL that looks something like this:
-
-    redis://redistogo:12345678901234567890@something.redistogo.com:9023/
+    "port": 8000,
+    "nb_worlds": 1,
+    "metrics_enabled": false,
+    "use_one_port": true,
+    "redis_port": 6379,
+    "redis_host": "127.0.0.1",
+    "database": "redis"
     
-In this case, your REDIS_HOST is `something.redistogo.com`, your REDIS_PORT is `9023`, and your REDIS_PASSWORD is `12345678901234567890`.
+client/config/config_build.json-dist must contain atleast
 
-5. Deploy to Heroku by running the following command:
+    "host": "localhost",
+    "port": 8000,
+	"secure_transport": false
 
-        $ git push heroku master
+Over the parameters mnemonic, contract and derivation path in ts/config/serverConfig.json the cryptographic identity of the server is configurable. This is neccesary as the server is in possession of all NFTs that have not been collected by a player yet, ergo all weapons lying around.
+
+To connect the NERD marketplace ts/config/serverConfig.json needs to feature the following paremeters:
+* metaDataServer points to the game metadata endpoint, for local testing "127.0.0.1:8000" if the game runs on 8000
+* NerdUrl point to the marketplace backend where the game is to store a copy of all metadata, "http://127.0.0.1:8440" for default local testing
+* PictureHost points to the base URL where all NFT weapon showcase images are stored. This is the game server, so "http://localhost:8000" for local testing
+
+
+After changing the config values you should run
+
+    $ npm run postinstall
     
-6. Enable the Heroku WebSockets lab (needed for communication between the browser and the BrowserQuest server) with the following command:
+to verify all parameters are set for Erdstall.
 
-        $ heroku labs:enable websockets
-    
-
-Congratulations! You have now deployed BrowserQuest to Heroku! To open BrowserQuest in your browser, run `heroku open`.
+After operator and blockchain are running, you can start the game. Make sure to wait a few seconds before you connect the frontend because the server needs some time to mint all static items (swords lying around). These need to be prepared before you login. Five seconds should suffice.
 
 
-Documentation
--------------
+Configuring for deployment
+---------------------------
 
-Lots of useful info on the [wiki](https://github.com/browserquest/BrowserQuest/wiki).
+Assumed is the use of an SSL certificate for deploying the game.
+To enable TLS protected connections you need to set 
 
-Mailing List
-------------
+	"useSSL": true
+	
+in ts/config/clientConfig.json
+Also there is a hardcoded constant that controlls the game internal SSL settings. You can find
 
-The new mailing list for development is [here](https://mail.mozilla.org/listinfo/browserquest). ([archives](https://mail.mozilla.org/pipermail/browserquest/))
+	const enable_secure_transport = false;
 
-The old mailing list on librelist.com is no longer used.  Its archives are online [here](http://librelist.com/browser/browserquest/).
+in client/js/app.js. To enable https and wss you need to change it to true. The game ignores most changes in the client/config/config_build.json-dist therefore changing this variable is required. When enable_secure_transport is set to true the client will ignore the port set in the config and connect to the default https (443) port. Make sure that a forwarding from 443 points to your game instance.
 
-IRC Channel
------------
+The port the game is to run on can be adjusted by 
+	
+	"port"
+	
+in server/config.json. 
 
-\#browserquest on irc.mozilla.org
+Make sure to set the game host in client/config/config_build.json-dist, e.g.:
 
+	"host": "bq.erdstall.dev"
+
+Make sure to set the operator url accordingly in clientConfig.json and serverConfig.json. For a remote operator for example:
+
+	"erdOperatorUrl": "operator.bq.erdstall.dev:8401"
+	
+Your Nerd Marketplace setup might look something like this if you run NERD together with BrowserQuest on a remote server:
+
+	"metaDataServer": "https://bq.erdstall.dev:8000",
+    	"NerdUrl": "http://127.0.0.1:8440",
+    	"PictureHost": "https://bq.erdstall.dev"
+	
+	
 License
 -------
 
@@ -303,3 +214,8 @@ Many other people are contributing through GitHub:
 * Aaron Hill [@Aaron1011](https://github.com/Aaron1011)
 * Fredrik Svantes [@speedis](https://github.com/speedis)
 * Sergey Krilov [@sergkr](https://github.com/sergkr)
+* Silas Jäger [@JaSilasJa](https://github.com/JaSilasJa)
+* Niklas Jüttner [@NiDoJu](https://github.com/NiDoJu)
+* Johannes Scharna [@johannesscha](https://github.com/johannesscha)
+* Erik Porada
+* Martin Bach [@DeltaTecs](https://github.com/DeltaTecs)
