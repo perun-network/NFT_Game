@@ -2,14 +2,17 @@ import { Address } from "@polycrypt/erdstall/ledger";
 import { Asset, Assets, mapNFTs, Tokens } from "@polycrypt/erdstall/ledger/assets";
 import { Session } from "@polycrypt/erdstall";
 import NFT from "./nft";
-import erdstallClientInterface, { getNFTsFromAssets } from "./erdstallclientinterface"
-import { TxReceipt } from "@polycrypt/erdstall/api/responses";
+import { BalanceProof, TxReceipt } from "@polycrypt/erdstall/api/responses";
 import { ethers } from "ethers";
 import config from './config/serverConfig.json';
-import { Burn, Trade, Transfer } from "@polycrypt/erdstall/api/transactions";
+import { Burn, Mint, Trade, Transfer } from "@polycrypt/erdstall/api/transactions";
 import { Mutex } from "async-mutex";
+import { key } from "./nft";
 
-export default class erdstallServerInterface extends erdstallClientInterface {
+import { nftMetaServer } from "./metadata";
+
+export default class erdstallServerInterface {
+	_session: Session | undefined;
 
 	protected nextNftID!: bigint;
 	// Token to mint NFTs on
@@ -67,7 +70,7 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 		return { account: user.address };
 	}
 
-	// Mints a new NFT and returns TxReceipt promise
+	// Mints a new NFT and returns TxReceipt promise. Not to be used externally. Use mintNFTItem instead.
 	async mintNFT(): Promise<{ txReceipt: TxReceipt }> {
 
 		if (!this._session) {
@@ -147,11 +150,28 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 			}
 		}
 	}
+	
+	// Returns nftKeys belonging to specified or own account
+	async getNFTs(address?: string): Promise< string[] > {
+		if (!this._session) return new Array();
+
+		// Return NFTs belonging to other account if address is specified
+		if (address) {
+			const account = await this._session.getAccount(Address.fromString(address));
+			return getNFTsFromAssets(account.values);
+		}
+		else {
+			const account = await this._session.getOwnAccount();
+			return getNFTsFromAssets(account.values);
+		}
+	}
 
 	// Registers listener function for transfer and burn events
 	registerCallbacks(transferCallback: (sender: string, recipient: string, nfts: string[]) => void, burnCallback: (nfts: string[]) => void) {
 		if (!this._session) throw new Error("Session uninitialized");
+
 		this._session.on("receipt", (receipt: TxReceipt) => {
+			console.log("Erdstall registered receipt event");
 			if(receipt.tx instanceof Transfer) { // Handle transfer transaction issued by transferTo
 				transferCallback(receipt.tx.sender.toString(), receipt.tx.recipient.toString(), getNFTsFromAssets(receipt.tx.values));
 			} else if(receipt.tx instanceof Trade) { // Handle trade transaction
@@ -160,10 +180,54 @@ export default class erdstallServerInterface extends erdstallClientInterface {
 				burnCallback(getNFTsFromAssets(receipt.tx.values));
 			}
 		});
+
+		this._session.on("exitproof", (balanceProof: BalanceProof) => {
+			if(!balanceProof.balance.exit)
+			{
+				console.log("Erdstall exitproof Error: Expected exit proof");
+				return;
+			}
+			console.log("Erdstall registered exitproof event");
+			// Handle players withdrawing from the erdstall network by initiating the transfer callback
+			transferCallback(balanceProof.balance.account.toString(), "", getNFTsFromAssets(balanceProof.balance.values));
+		});
 	}
 }
 
+// Global server object
 export var erdstallServer = new erdstallServerInterface();
+
+// Mints an NFT Item, generates corresponding metadata and stores it on the metadata server
+export async function mintNFTItem(kind: string): Promise< NFT >
+{
+	// Mint NFT for item
+	let txReceipt = await erdstallServer.mintNFT();
+	if(!(txReceipt.txReceipt.tx instanceof Mint))
+	{
+		var error = "Error minting NFT for item " + kind + ": Unexpected Tx";
+		console.error(error);
+		throw new Error(error);
+	}
+	let mintTx = txReceipt.txReceipt.tx as Mint;
+	let nft = new NFT(mintTx.token, mintTx.id, mintTx.sender);
+	// Try to generate metadata for item
+	try {
+		nft.metadata = nftMetaServer.getNewMetaData(kind, mintTx.id).meta;
+	} catch (err) {
+		var error = "Error generating NFT Metadata for item " + kind + ": " + err;
+		throw new Error(error);
+	}
+
+	// Save generated metadata to metaserver
+	if(await nftMetaServer.registerNFT(nft)) {
+		console.log("Successfully put NFT metadata for item " + kind);
+		return nft;
+	} else {
+			var error = "Error registering NFT for item " + kind;
+			console.error(error);
+			throw new Error(error);
+	}
+}
 
 // Converts NFT objects to Assets object
 function getAssetsFromNFT(nfts: NFT[]): Assets {
@@ -175,4 +239,13 @@ function getAssetsFromNFT(nfts: NFT[]): Assets {
 		})
 	}
 	return new Assets(...assets);
+}
+
+// Extracts string list of nftKeys from assets
+function getNFTsFromAssets(assets: Assets): string[] {
+	var nfts = new Array();
+	mapNFTs(assets.values, (token, id) => {
+		nfts.push(key(token, id));
+	});
+	return nfts;
 }

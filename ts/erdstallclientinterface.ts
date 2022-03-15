@@ -1,80 +1,17 @@
 
 import { ethers } from "ethers";
-
-import { Assets, mapNFTs } from "@polycrypt/erdstall/ledger/assets";
-import { Address } from "@polycrypt/erdstall/ledger";
-import { Session } from "@polycrypt/erdstall";
 import detectEthereumProvider from "@metamask/detect-provider";
 import config from './config/clientConfig.json';
 
-import { key } from "./nft";
+// Retrieves and returns MetaMask account address as string
+export default async function getAccount(): Promise< { account: String } > {
+	let accountProvider = await getAccountProvider(config.NetworkID);
 
-export default class erdstallClientInterface {
-	_session: Session | undefined;
-
-	constructor() {
-
+	if (undefined === accountProvider) {
+		throw new Error("Error initializing Metamask. Unable to fetch account.");
 	}
 
-	// Initializes _session member and subscribes and onboards session to the erdstall system, returns wallet address as string
-	async init(): Promise<{ account: String }> {
-		const networkID: number = config.NetworkID;
-		const ssl: boolean = config.useSSL;
-		
-		const erdOperatorUrl: URL = new URL((ssl ? "wss://" : "ws://") + config.erdOperatorUrl + "/ws");
-	
-		try {
-			// parameters from json file config/serverConfig.json
-			const res = await getAccountProvider(networkID);
-			if (!res) {
-				throw new Error("Unable to get MetaMask Account Provider for network ID " + networkID);
-			}
-			const { account, web3Provider } = res;
-			const address = Address.fromString(account);
-			const signer = web3Provider.getSigner();
-			const session: Session = new Session(
-				address,
-				signer,
-				erdOperatorUrl
-			);
-
-			await session.initialize();
-			await session.subscribeSelf();
-			await session.onboard();
-
-			this._session = session;
-			
-			console.log("Initialized new session: " + account);
-
-			session.on("error", (error: string | Error ) => {
-				console.error('Erdstall Error: ' + error);
-			});
-
-			return { account };
-		} catch (error) {
-			if (error) {
-				throw new Error("Error initializing Metamask session: " + error);
-			}
-			else {
-				throw new Error("Error initializing Metamask session");
-			}
-		}
-	}
-
-	// Returns nftKeys belonging to specified or own account
-	async getNFTs(address?: string): Promise< string[] > {
-		if (!this._session) return new Array();
-
-		// Return NFTs belonging to other account if address is specified
-		if (address) {
-			const account = await this._session.getAccount(Address.fromString(address));
-			return getNFTsFromAssets(account.values);
-		}
-		else {
-			const account = await this._session.getOwnAccount();
-			return getNFTsFromAssets(account.values);
-		}
-	}
+	return { account: accountProvider.account };
 }
 
 // Returns MetaMask Web3Provider and account address string
@@ -89,7 +26,7 @@ async function getAccountProvider(
 	try {
 		web3Provider = await initWeb3();
 	} catch (e) {
-		if (e instanceof Error) throw([metamaskErr, e.message].join(": "));
+		if (e instanceof Error) throw ([metamaskErr, e.message].join(": "));
 		else throw new Error(metamaskErr);
 		return;
 	}
@@ -130,14 +67,6 @@ async function getAccountProvider(
 	}
 
 	return { account, web3Provider };
-}
-// Extracts string list of nftKeys from assets
-export function getNFTsFromAssets(assets: Assets): string[] {
-	var nfts = new Array();
-	mapNFTs(assets.values, (token, id) => {
-		nfts.push(key(token, id));
-	});
-	return nfts;
 }
 
 // Initializes MetaMask Web3Provider
