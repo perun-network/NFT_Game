@@ -563,7 +563,6 @@ module.exports = Player = Character.extend({
                 let meta = await nftMetaServer.getMetadata(parsedKey.token, parsedKey.id);
                 // Extract item kind from metadata
                 if (meta) {
-                    // TODO: Fix Metadata attribute access
                     let metaKind = Types.getKindFromString(meta.getAttribute("kind"));
                     // Equip and broadcast next item if kind could be determined
                     if (metaKind) {
