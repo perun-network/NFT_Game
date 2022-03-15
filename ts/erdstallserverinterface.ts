@@ -12,7 +12,6 @@ import { key } from "./nft";
 import { nftMetaServer } from "./metadata";
 
 export default class erdstallServerInterface {
-
 	_session: Session | undefined;
 
 	protected nextNftID!: bigint;
@@ -71,7 +70,7 @@ export default class erdstallServerInterface {
 		return { account: user.address };
 	}
 
-	// Mints a new NFT and returns TxReceipt promise
+	// Mints a new NFT and returns TxReceipt promise. Not to be used externally. Use mintNFTItem instead.
 	async mintNFT(): Promise<{ txReceipt: TxReceipt }> {
 
 		if (!this._session) {
@@ -195,8 +194,10 @@ export default class erdstallServerInterface {
 	}
 }
 
+// Global server object
 export var erdstallServer = new erdstallServerInterface();
 
+// Mints an NFT Item, generates corresponding metadata and stores it on the metadata server
 export async function mintNFTItem(kind: string): Promise< NFT >
 {
 	// Mint NFT for item
