@@ -703,40 +703,14 @@ module.exports = World = cls.Class.extend({
      * @param {*} item 
      */
     generateNftContext: async function (item) {
-
-        let kind_str = Types.getKindAsString(item.kind); // retrieve name, beause sprites are stored with names
-
-        // Mint NFT for item
-        await erdstallServer.mintNFT().then(async function (mintReceipt) {
-
-            var nft = new NFT.default(
-                mintReceipt.txReceipt.tx.token,
-                mintReceipt.txReceipt.tx.id,
-                mintReceipt.txReceipt.tx.sender
-            );
-
-            try {
-                nft.metadata = nftMetaServer.getNewMetaData(kind_str, mintReceipt.txReceipt.tx.id).meta;
-            } catch (error) {
-                console.log(error)
-            }
-
-            // save generated metadata to metaserver
-            await nftMetaServer.registerNFT(nft).then(async function (success) {
-                if (!success) {
-                    var error = "Error registering NFT for item " + kind_str;
-                    console.error(error);
-                    throw new Error(error);
-                }
-
-                console.log("Successfully put NFT metadata for item " + kind_str);
-
-                // update nft tag on success. 
-                nftKey = NFT.key(mintReceipt.txReceipt.tx.token, mintReceipt.txReceipt.tx.id);
-                item.nftKey = nftKey;
-            });
-
-        });
+        try {
+            let mintedNFT = await require("../../ts/erdstallserverinterface").mintNFTItem(Types.getKindAsString(item.kind));
+            // Update item NFT tag
+            nftKey = NFT.key(mintedNFT.token, mintedNFT.id);
+            item.nftKey = nftKey;
+        } catch (err) {
+            console.error(err);
+        }
     },
 
     addStaticItem: async function (item) {

@@ -5,9 +5,11 @@ import NFT from "./nft";
 import { BalanceProof, TxReceipt } from "@polycrypt/erdstall/api/responses";
 import { ethers } from "ethers";
 import config from './config/serverConfig.json';
-import { Burn, Trade, Transfer } from "@polycrypt/erdstall/api/transactions";
+import { Burn, Mint, Trade, Transfer } from "@polycrypt/erdstall/api/transactions";
 import { Mutex } from "async-mutex";
 import { key } from "./nft";
+
+import { nftMetaServer } from "./metadata";
 
 export default class erdstallServerInterface {
 
@@ -195,6 +197,37 @@ export default class erdstallServerInterface {
 
 export var erdstallServer = new erdstallServerInterface();
 
+export async function mintNFTItem(kind: string): Promise< NFT >
+{
+	// Mint NFT for item
+	let txReceipt = await erdstallServer.mintNFT();
+	if(!(txReceipt.txReceipt.tx instanceof Mint))
+	{
+		var error = "Error minting NFT for item " + kind + ": Unexpected Tx";
+		console.error(error);
+		throw new Error(error);
+	}
+	let mintTx = txReceipt.txReceipt.tx as Mint;
+	let nft = new NFT(mintTx.token, mintTx.id, mintTx.sender);
+	// Try to generate metadata for item
+	try {
+		nft.metadata = nftMetaServer.getNewMetaData(kind, mintTx.id).meta;
+	} catch (err) {
+		var error = "Error generating NFT Metadata for item " + kind + ": " + err;
+		throw new Error(error);
+	}
+
+	// Save generated metadata to metaserver
+	if(await nftMetaServer.registerNFT(nft)) {
+		console.log("Successfully put NFT metadata for item " + kind);
+		return nft;
+	} else {
+			var error = "Error registering NFT for item " + kind;
+			console.error(error);
+			throw new Error(error);
+	}
+}
+
 // Converts NFT objects to Assets object
 function getAssetsFromNFT(nfts: NFT[]): Assets {
 	var assets: {token: string | Address; asset: Asset}[] = [];
@@ -208,7 +241,7 @@ function getAssetsFromNFT(nfts: NFT[]): Assets {
 }
 
 // Extracts string list of nftKeys from assets
-export function getNFTsFromAssets(assets: Assets): string[] {
+function getNFTsFromAssets(assets: Assets): string[] {
 	var nfts = new Array();
 	mapNFTs(assets.values, (token, id) => {
 		nfts.push(key(token, id));
