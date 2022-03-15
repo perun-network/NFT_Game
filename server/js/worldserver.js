@@ -878,9 +878,13 @@ module.exports = World = cls.Class.extend({
                 // get Item kind. (nullable)
                 const kind = this.getDroppedItem(mob);
 
-                // drop NFT item async
+                //handel item drop and mob remove
                 if (kind) {
+                    // drop NFT item async and delete mob
                     this.dropNFTItem(kind, mob);
+                } else {
+                    // remove killed mob
+                    this.removeEntity(mob);
                 }
             }
 
