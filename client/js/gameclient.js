@@ -639,7 +639,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
 
         sendCreate: function(player) {
             var self = this;
-            erdstallInterface.init().then((acc) => {
+            erdstallClientBundle.default().then((acc) => {
                 console.log("Got MetaMask address: " + acc.account);
                 console.log("Got Name: " + player.name);
                 this.sendMessage([Types.Messages.CREATE,
@@ -653,7 +653,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
 
         sendLogin: function(player) {
             var self = this;
-            erdstallInterface.init().then((acc) => {
+            erdstallClientBundle.default().then((acc) => {
                 console.log("Got MetaMask address: " + acc.account);
                 this.sendMessage([Types.Messages.LOGIN,
                     "",
