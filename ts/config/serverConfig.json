@@ -6,7 +6,7 @@
     "metaDataServer": "https://bq.erdstall.dev:8000",
     "NerdUrl": "https://operator.goerli.erdstall.dev:8440",
     "PictureHost": "https://bq.erdstall.dev",
-	  "contract": "0xF73C1cdA5bD32E6693D3cB313Bd9B9338d96f184",
+	  "contract": "0x0c99078b144DA9677C02D6B480f416e667881aB0",
     "mnemonic": "pistol kiwi shrug future ozone ostrich match remove crucial oblige cream critic",
     "derivationPath": "m/44'/60'/0'/0/9",
     "useSSL": true
