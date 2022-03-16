@@ -50,11 +50,21 @@
     "npm": "1.2.x"
   },
 	"jest": {
+    "preset": "ts-jest",
+    "rootDir": "./ts",
+    "detectOpenHandles": true,
+    "maxWorkers": 1,
+    "testEnvironment": "node",
 	  "verbose": true,
+    "collectCoverage": true,
+    "coverageDirectory": "../coverage",
 	  "testPathIgnorePatterns": ["server/*"],
     "moduleFileExtensions": ["ts", "js"],
-    "transform": {
-      "^.+\\.ts?$": "ts-jest"
+    "globals": {
+      "log": "",
+      "ts-jest": {
+          "isolatedModules": true
+      }
     }
 	}
 }

@@ -4,6 +4,9 @@ import fs from "fs";
 import * as test from "@polycrypt/erdstall/test";
 import supertest from "supertest";
 
+var Log = require('log');
+log = new Log(Log.DEBUG);
+
 import NFTMetaServer, { StatusNotFound } from "./metadata";
 import DatabaseHandler from "../server/js/db_providers/redis.js";
 import NFT from "./nft";
@@ -17,8 +20,9 @@ const NFTServerEndpoint = erdstallServerCfg.NerdUrl;
 const NFTPutEndpoint = `${NFTServerEndpoint}${ENDPOINT}`;
 
 function setup() {
+    const databaseHandler = new DatabaseHandler(bqConfig);
+
     const metaServ = new NFTMetaServer();
-    const databaseHandler = DatabaseHandler(bqConfig);
     metaServ.init(databaseHandler, {serveDummies: false});
 
     const app = express();
@@ -29,7 +33,7 @@ function setup() {
     const id = test.newRandomUint64(rng);
 
     const nft = new NFT(token, id, test.newRandomAddress(rng));
-    nft.metadata = test.newRandomMetadata(rng);
+    nft.metadata = metaServ.dummyMetadata().meta;
 
     return {
         db: databaseHandler,

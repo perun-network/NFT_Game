@@ -58,6 +58,10 @@ export default class NFTMetaServer {
 
 		this.databaseHandler = databaseHandler;
 
+		if(!databaseHandler) {
+			throw new Error("Error initializing Metadata server: databaseHandler is null!");
+		}
+
 		if (!cfg) cfg = {};
 		this.cfg = {
 			serveDummies: !!cfg.serveDummies,
@@ -383,34 +387,6 @@ export default class NFTMetaServer {
 			}
 		}
 	}
-	// /**
-	//  * Deletes NFT from database
-	//  * 
-	//  * ### UNTESTED!!!
-	//  * 
-	//  * @param req http request
-	//  * @param res http response
-	//  */
-	// private async deleteNft(req: Request, res: Response) {
-
-	// 	// params is part of the request f.e. http://yadayada.de/yomama?token=0x69696969696969420...
-	// 	const contractAddr: Address = Address.fromString(req.params.token); // parse Address params field in http request
-	// 	const tokenId: bigint = BigInt(req.params.id); // parse Token identifier (assumed globaly unique) in http request
-
-	// 	try {
-	// 		await this.databaseHandler.deleteNFTMetadata(key(contractAddr, tokenId));
-	// 		await this.deleteNFTFile(tokenId);
-	// 		res.sendStatus(StatusNoContent); // (assuming) success, send nothing
-	// 	} catch (error) {
-	// 		if (error == ("NFT Metadata not in database for NFT: " + tokenId)) {
-	// 			res.status(StatusNotFound).send(error);
-	// 		} else {
-	// 			res.status(500).send(error);
-	// 		}
-	// 	}
-	// }
-
-
 
 	/**
 	 * If given metadata contains kind attribute, loads sprite description json for that item kind and alters it to fit NFT sprite description.
