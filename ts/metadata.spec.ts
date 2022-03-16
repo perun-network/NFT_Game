@@ -4,6 +4,8 @@ import fs from "fs";
 import * as test from "@polycrypt/erdstall/test";
 import supertest from "supertest";
 
+declare var log;
+
 var Log = require('log');
 log = new Log(Log.DEBUG);
 
