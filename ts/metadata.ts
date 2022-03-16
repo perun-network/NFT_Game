@@ -60,7 +60,6 @@ export default class NFTMetaServer {
 
 		if (!cfg) cfg = {};
 		this.cfg = {
-			allowUpdates: !!cfg.allowUpdates,
 			serveDummies: !!cfg.serveDummies,
 			allowEmptyMetadata: !!cfg.allowEmptyMetadata,
 			nftPathPrefix: cfg.nftPathPrefix ? cfg.nftPathPrefix : DEFAULT_NFT_IMAGE_PATH_PREFIX
@@ -84,9 +83,7 @@ export default class NFTMetaServer {
 			.Router()
 			.use(express.json())
 			.get(tokenIdPath, asyncHandler(this.getNft.bind(this)))
-			.get(spritePath, asyncHandler(this.getNftSprites.bind(this)))
-			.put(tokenIdPath, asyncHandler(this.putNft.bind(this)))
-			.delete(tokenIdPath, asyncHandler(this.deleteNft.bind(this)));
+			.get(spritePath, asyncHandler(this.getNftSprites.bind(this)));
 	}
 
 	/**
@@ -167,7 +164,7 @@ export default class NFTMetaServer {
 	 * Deletes NFT sprites from file system
 	 * @param tokenId ID of NFT to be deleted
 	 */
-	async deleteNFTFile(tokenId: bigint) {
+	private async deleteNFTFile(tokenId: bigint) {
 		// name of saved file
 		const fileName = Number(tokenId);
 		for (let index = 1; index <= 3; index++) {
@@ -327,39 +324,12 @@ export default class NFTMetaServer {
 		}
 	}
 
-
-	/**
-	 * Saves a new NFT with metadata to the DB
-	 * Deprecated, superceded by registerNft(). Remaining for legacy REST support and external compatibility.
-	 * 
-	 * ### UNTESTED!!!
-	 * 
-	 * @param req http request
-	 * @param res http response
-	 * @returns 
-	 */
-	private async putNft(req: Request, res: Response) {
-
-		// for dev:
-		// params is part of the request f.e. http://localhost:8000/metadata/{ownerAddr}/{tokenID}
-		const contractAddr: Address = Address.fromString(req.params.token); // parse Address params field in http request
-		const tokenId: bigint = BigInt(req.params.id); // parse Token identifier (assumed globaly unique) in http request
-
-		try {
-			await this.databaseHandler.putNFTMetadata(key(contractAddr, tokenId), req.body);
-			await this.afterMetadataSet(contractAddr, tokenId); // run Observers
-			res.sendStatus(StatusNoContent); // send success without anything else
-		} catch (error) { // Handle NFT already being present in database
-			res.status(StatusConflict).send(error);
-		}
-	}
-
 	/**
 	 * Puts metadata to Nerd metadata DB
 	 * @param nft NFT with token, id and metadata
 	 * @returns connection respones
 	 */
-	public async putNFTtoNerd(nft: NFT): Promise<Response> {
+	private async putNFTtoNerd(nft: NFT): Promise<Response> {
 
 		let response: Response | undefined;
 
@@ -387,31 +357,58 @@ export default class NFTMetaServer {
 	}
 
 	/**
-	 * Deletes NFT from database
+	 * Deletes NFT sprite files and removes database entry
 	 * 
-	 * ### UNTESTED!!!
-	 * 
-	 * @param req http request
-	 * @param res http response
+	 * @param contractAddr Token address of NFT to be deleted
+	 * @param tokenID Token ID of NFT to be deleted 
 	 */
-	private async deleteNft(req: Request, res: Response) {
-
-		// params is part of the request f.e. http://yadayada.de/yomama?token=0x69696969696969420...
-		const contractAddr: Address = Address.fromString(req.params.token); // parse Address params field in http request
-		const tokenId: bigint = BigInt(req.params.id); // parse Token identifier (assumed globaly unique) in http request
-
+	public async deleteNFT(contractAddr: Address, tokenId: bigint)
+	{
 		try {
+			// Delete NFT from database
 			await this.databaseHandler.deleteNFTMetadata(key(contractAddr, tokenId));
-			await this.deleteNFTFile(tokenId);
-			res.sendStatus(StatusNoContent); // (assuming) success, send nothing
-		} catch (error) {
-			if (error == ("NFT Metadata not in database for NFT: " + tokenId)) {
-				res.status(StatusNotFound).send(error);
-			} else {
-				res.status(500).send(error);
+		}
+		catch (e) {
+			if (e) {
+				console.error("Unable to delete metadata from database for " + key(contractAddr, tokenId) + ": " + e);
+			}
+		}
+		try {
+			// Delete sprite files from file system
+			await nftMetaServer.deleteNFTFile(tokenId);
+		}
+		catch (e) {
+			if (e) {
+				console.error("Unable to delete sprite file for " + key(contractAddr, tokenId) + ": " + e);
 			}
 		}
 	}
+	// /**
+	//  * Deletes NFT from database
+	//  * 
+	//  * ### UNTESTED!!!
+	//  * 
+	//  * @param req http request
+	//  * @param res http response
+	//  */
+	// private async deleteNft(req: Request, res: Response) {
+
+	// 	// params is part of the request f.e. http://yadayada.de/yomama?token=0x69696969696969420...
+	// 	const contractAddr: Address = Address.fromString(req.params.token); // parse Address params field in http request
+	// 	const tokenId: bigint = BigInt(req.params.id); // parse Token identifier (assumed globaly unique) in http request
+
+	// 	try {
+	// 		await this.databaseHandler.deleteNFTMetadata(key(contractAddr, tokenId));
+	// 		await this.deleteNFTFile(tokenId);
+	// 		res.sendStatus(StatusNoContent); // (assuming) success, send nothing
+	// 	} catch (error) {
+	// 		if (error == ("NFT Metadata not in database for NFT: " + tokenId)) {
+	// 			res.status(StatusNotFound).send(error);
+	// 		} else {
+	// 			res.status(500).send(error);
+	// 		}
+	// 	}
+	// }
 
 
 
@@ -452,8 +449,6 @@ export var nftMetaServer = new NFTMetaServer();
 export interface MetadataConfig {
 	// Always serve dummy metadata if a token is unknown (default: false)
 	serveDummies?: boolean;
-	// Allow updating of NFT Metadate through multiple PUT requests (default: false)
-	allowUpdates?: boolean;
 	// Wether NFTs without metadata are to be registered and an empty Metadata object stored in the database (default: false)
 	allowEmptyMetadata?: boolean;
 	// Overwrites nft sprite loading path prefix
