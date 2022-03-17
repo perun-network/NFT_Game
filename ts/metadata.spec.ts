@@ -49,23 +49,15 @@ function setup() {
 }
 
 describe("Metadata Server", function () {
+    const { metaServ, request, rng, nft } = setup();
+
+    const path = metaPath(nft);
+    const sprPath = spritePath(nft);
+    const nerdPath = marketPath(nft);
+
+    const invalidNFT = new NFT(test.newRandomAddress(rng), test.newRandomUint64(rng), test.newRandomAddress(rng));
+
     describe("NFT Registration", function () {
-        const { metaServ, request, nft } = setup();
-
-        const path = metaPath(nft);
-        const sprPath = spritePath(nft);
-        const nerdPath = marketPath(nft);
-
-        it(`GET ${path} of non-existend metadata should return 404`, async function () {
-            // request.get(path).expect(StatusNotFound, done);
-            const response = await request.get(path);
-            expect(response.status).toBe(StatusNotFound);
-        });
-
-        it(`GET ${sprPath} of non-existend sprite should return 404`, async function () {
-            const response = await request.get(sprPath);
-            expect(response.status).toBe(StatusNotFound);
-        });
 
         it("registerNFT(nft) should put NFT in database and return true", async function () {
             const success = await metaServ.registerNFT(nft);
@@ -76,12 +68,7 @@ describe("Metadata Server", function () {
             return expectSpriteFiles(nft, true);
         });
 
-        it("registerNFT(nft) second time should return false", async function () {
-            const success = await metaServ.registerNFT(nft);
-            expect(success).toBe(false);
-        });
-
-        it("getMetadata should get same metadata", async function() {
+        it("getMetadata should get same metadata", async function () {
             const fetchedMeta = await metaServ.getMetadata(nft.token, nft.id);
             expect(fetchedMeta.meta).toEqual(nft.metadata);
         });
@@ -98,15 +85,52 @@ describe("Metadata Server", function () {
         });
 
         it(`GET ${nerdPath} should get same metadata`, async function () {
-			const response = await fetchRemoteRequest(nerdPath);
+            const response = await fetchRemoteRequest(nerdPath);
             expect(response.status).toBe(200);
             expect(response.body).toEqual(nft.metadata);
         });
+    });
 
-        it("deleteNFTFile(token, id) should delete metadata and files", function (done) {
-            metaServ.deleteNFT(nft.token, nft.id).then( () => {
-                request.get(path).expect(StatusNotFound, done);
-                return expectSpriteFiles(nft, false);
+    describe("NFT Registration Errors", function () {
+        it("registerNFT(invalidNFT) for nft with no metadata should return false", async function () {
+            const success = await metaServ.registerNFT(invalidNFT);
+            expect(success).toBe(false);
+        });
+
+        it("Sprite files should be missing after failed registration", async function () {
+            expectSpriteFiles(invalidNFT, false);
+        });
+
+        it("registerNFT(nft) second time should return false", async function () {
+            const success = await metaServ.registerNFT(nft);
+            expect(success).toBe(false);
+        });
+        it("Sprite files should still be there after failed second registration", async function () {
+            expectSpriteFiles(nft, true);
+        });
+    });
+
+    describe("NFT Getting Errors", function () {
+        it("getMetadata of non-existend metadata should return undefined", async function () {
+            const fetchedMeta = await metaServ.getMetadata(invalidNFT.token, invalidNFT.id);
+            expect(fetchedMeta).toBeUndefined();
+        });
+        
+        it(`GET ${metaPath(invalidNFT)} of non-existend metadata should return 404`, async function () {
+            const response = await request.get(metaPath(invalidNFT));
+            expect(response.status).toBe(StatusNotFound);
+        });
+
+        it(`GET ${spritePath(invalidNFT)} of non-existend sprite should return 404`, async function () {
+            const response = await request.get(spritePath(invalidNFT));
+            expect(response.status).toBe(StatusNotFound);
+        });
+    });
+
+    describe("NFT Deletion", function () {
+        it("deleteNFTFile(token, id) should delete files", function () {
+            metaServ.deleteNFT(nft.token, nft.id).then(() => {
+                expectSpriteFiles(nft, false);
             });
         });
 
@@ -119,6 +143,24 @@ describe("Metadata Server", function () {
         it(`GET ${sprPath} of deleted sprite should return 404`, async function () {
             const response = await request.get(sprPath);
             expect(response.status).toBe(StatusNotFound);
+        });
+    });
+
+    describe("NFT Deletion Errors", function () {
+        it("deleteNFTFile(token, id) shouldn't throw any errors if NFT doesn't exist", function (done) {
+            metaServ.deleteNFT(invalidNFT.token, invalidNFT.id).then(() => {
+                done();
+            }).catch(() => {
+                fail();
+            });
+        });
+    });
+
+    describe("Metadata generation", function () {
+        it("getFunnyName should return non-empty string", function () {
+            const funnyName = metaServ.getFunnyName();
+            expect(funnyName).toBeDefined();
+            expect(funnyName.length).toBeGreaterThan(0);
         });
     });
 });
@@ -146,7 +188,7 @@ function expectSpriteFiles(nft: NFT, expectToExist: boolean) {
     expect(fs.existsSync(nftPathPrefix + "showcase/" + fileName + ".png")).toBe(expectToExist);
 }
 
-async function fetchRemoteRequest(url: string): Promise< { status: number; body: string; } > {
+async function fetchRemoteRequest(url: string): Promise<{ status: number; body: string; }> {
     console.log("Fetching from address: " + url);
     const response = await fetch(url);
     const body = await response.json();
