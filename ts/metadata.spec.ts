@@ -37,7 +37,7 @@ function setup() {
     const id = test.newRandomUint64(rng);
 
     const nft = new NFT(token, id, test.newRandomAddress(rng));
-    nft.metadata = metaServ.dummyMetadata().meta;
+    nft.metadata = metaServ.getNewMetaData("sword1", id).meta;
 
     return {
         db: databaseHandler,
@@ -48,16 +48,22 @@ function setup() {
     }
 }
 
-describe("NFTMetaServer", function () {
-    describe("Default Configuration", function () {
+describe("Metadata Server", function () {
+    describe("NFT Registration", function () {
         const { metaServ, request, nft } = setup();
 
         const path = metaPath(nft);
+        const sprPath = spritePath(nft);
         const nerdPath = marketPath(nft);
 
         it(`GET ${path} of non-existend metadata should return 404`, async function () {
             // request.get(path).expect(StatusNotFound, done);
             const response = await request.get(path);
+            expect(response.status).toBe(StatusNotFound);
+        });
+
+        it(`GET ${sprPath} of non-existend sprite should return 404`, async function () {
+            const response = await request.get(sprPath);
             expect(response.status).toBe(StatusNotFound);
         });
 
@@ -86,6 +92,11 @@ describe("NFTMetaServer", function () {
             expect(response.text).toEqual(JSON.stringify(nft.metadata));
         });
 
+        it(`GET ${sprPath} should get sprite`, async function () {
+            const response = await request.get(sprPath);
+            expect(response.status).toBe(200);
+        });
+
         it(`GET ${nerdPath} should get same metadata`, async function () {
 			const response = await fetchRemoteRequest(nerdPath);
             expect(response.status).toBe(200);
@@ -98,11 +109,26 @@ describe("NFTMetaServer", function () {
                 return expectSpriteFiles(nft, false);
             });
         });
+
+        it(`GET ${path} of deleted metadata should return 404`, async function () {
+            // request.get(path).expect(StatusNotFound, done);
+            const response = await request.get(path);
+            expect(response.status).toBe(StatusNotFound);
+        });
+
+        it(`GET ${sprPath} of deleted sprite should return 404`, async function () {
+            const response = await request.get(sprPath);
+            expect(response.status).toBe(StatusNotFound);
+        });
     });
 });
 
 function metaPath(nft: NFT): string {
     return `${ENDPOINT}/${nft.token.toString().toLowerCase()}/${nft.id}`;
+}
+
+function spritePath(nft: NFT): string {
+    return `${ENDPOINT}/sprites/${nft.token.toString().toLowerCase()}/${nft.id}`;
 }
 
 function marketPath(nft: NFT): string {
