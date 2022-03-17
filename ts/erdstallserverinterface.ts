@@ -61,12 +61,7 @@ export default class erdstallServerInterface {
 			await session.subscribe();
 			await session.onboard();
 		} catch (error) {
-			if (error) {
-				throw new Error("Error initializing server session" + error);
-			}
-			else {
-				throw new Error("Error initializing server session");
-			}
+			throw new Error("Error initializing server session: " + error);
 		}
 
 		this._session = session;
@@ -99,22 +94,16 @@ export default class erdstallServerInterface {
 				release();
 				return { txReceipt };
 			} catch (error) {
-				if (error) {
-					if(error instanceof Error) {
-						// Retry minting with next ID if error is due to duplicate ID
-						if (error.message.includes("duplicate")) {
-							console.log("Server unable to mint " + id + " due to duplicate NFT ID...Retrying with " + this.nextNftID + " ...");
-							continue;
-						}
+				if(error instanceof Error) {
+					// Retry minting with next ID if error is due to duplicate ID
+					if (error.message.includes("duplicate")) {
+						console.log("Server unable to mint " + id + " due to duplicate NFT ID...Retrying with " + this.nextNftID + " ...");
+						continue;
 					}
-					// Release Mutex
-					release();
-					throw new Error("Server unable to mint NFT: " + error);
-				} else {
-					// Release Mutex
-					release();
-					throw new Error("Server unable to mint NFT");
 				}
+				// Release Mutex
+				release();
+				throw new Error("Server unable to mint NFT");
 			}
 		}
 	}
@@ -129,11 +118,7 @@ export default class erdstallServerInterface {
 		try {
 			return { txReceipt: await this._session.burn(getAssetsFromNFT(nfts)) };
 		} catch (error) {
-			if (error) {
-				throw new Error("Server unable to burn NFT " + error);
-			} else {
-				throw new Error("Server unable to burn NFT");
-			}
+			throw new Error("Server unable to burn NFT: " + error);
 		}
 	}
 
@@ -148,11 +133,7 @@ export default class erdstallServerInterface {
 		try {
 			return { txReceipt: await this._session.transferTo(getAssetsFromNFT(new Array(nft)), Address.fromString(to)) };
 		} catch (error) {
-			if (error) {
-				throw new Error("Server unable to transfer NFT " + error);
-			} else {
-				throw new Error("Server unable to transfer NFT");
-			}
+			throw new Error("Server unable to transfer NFT: " + error);
 		}
 	}
 	

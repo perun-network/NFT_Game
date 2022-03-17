@@ -291,5 +291,13 @@ describe("Erdstall Server Interface", function () {
                 // Expected...
             }
         });
+        it("Transferring zero NFTs should throw error", function (done) {
+            erdstallServer.transferTo(null, test.newRandomAddress(rng).toString())
+            .then(() => {
+                fail();
+            }).catch(() => {
+                done();
+            });
+        });
     });
 });
