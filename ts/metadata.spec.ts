@@ -10,12 +10,11 @@ declare var log;
 var Log = require('log');
 log = new Log(Log.DEBUG);
 
-import NFTMetaServer, { StatusNotFound } from "./metadata";
+import NFTMetaServer, { nftMetaServer, StatusNotFound } from "./metadata";
 import DatabaseHandler from "../server/js/db_providers/redis.js";
 import NFT from "./nft";
 import erdstallServerCfg from "./config/serverConfig.json";
 import RawItemMeta from "./itemmeta";
-import { nftMetaServer } from "./metadata";
 
 const bqConfig = "../server/config.json";
 const ENDPOINT = "/metadata";
@@ -65,6 +64,10 @@ describe("Metadata Server", function () {
                 let errorServ = new NFTMetaServer();
                 errorServ.init(null);
               }).toThrow();
+        });
+
+        it("global nftMetaServer should be initialized", function () {
+            expect(nftMetaServer).toBeDefined();
         });
     });
 
@@ -193,7 +196,7 @@ function marketPath(nft: NFT): string {
     return `${NFTPutEndpoint}/${nft.token}/${nft.id}`;
 }
 
-function expectSpriteFiles(nft: NFT, expectToExist: boolean) {
+export function expectSpriteFiles(nft: NFT, expectToExist: boolean) {
     const nftPathPrefix = "nfts/";
     const fileName = nft.id.toString();
     console.log("Checking: " + nftPathPrefix + "../../" + fileName + ".png");

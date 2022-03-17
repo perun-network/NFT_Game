@@ -43,7 +43,7 @@
     "build": "./node_modules/typescript/bin/tsc",
     "bundle": "./node_modules/browserify/bin/cmd.js ./ts/erdstallclientinterface.js --standalone erdstallClientBundle > ./shared/js/erdstallclientinterfacebundle.js",
     "postinstall": "npm run build && npm run bundle",
-    "test": "jest"
+    "test": "jest --runInBand"
   },
   "engines": {
     "node": "0.10.x",
@@ -53,6 +53,7 @@
     "preset": "ts-jest",
     "rootDir": "./ts",
     "detectOpenHandles": true,
+    "forceExit": true,
     "maxWorkers": 1,
     "testEnvironment": "node",
 	  "verbose": true,
