@@ -11,21 +11,16 @@ import jimp from "jimp";
 import config from './config/serverConfig.json';
 import fetch from 'node-fetch';
 
-export const DB_PREFIX_METADATA = "md";
-export const DEFAULT_NFT_IMAGE_PATH_PREFIX = "nfts/sprites/"; // default folder for nft sprite cacheing, overwritten by config
+const DEFAULT_NFT_IMAGE_PATH_PREFIX = "nfts/"; // default folder for nft sprite cacheing, overwritten by config
 
-
-export const StatusNoContent = 204;
 export const StatusNotFound = 404;
-export const StatusConflict = 409;
 
-export const addrRE = "0x[0-9a-fA-F]{40}";
-export const tokenIdPath = "/:token(" + addrRE + ")/:id(\\d+)";
-export const spritePath = "/sprites" + tokenIdPath;
+const addrRE = "0x[0-9a-fA-F]{40}";
+const tokenIdPath = "/:token(" + addrRE + ")/:id(\\d+)";
+const spritePath = "/sprites" + tokenIdPath;
 
 // Pathes to save and accesss Metadata
 const NFTPutEndpointPath = "/metadata";
-const pathToShowcasePNG = "nfts/" + "showcase";
 
 // links for Metadata and Nerd 
 const NFTServerEndpoint = config.NerdUrl;
@@ -64,8 +59,6 @@ export default class NFTMetaServer {
 
 		if (!cfg) cfg = {};
 		this.cfg = {
-			serveDummies: !!cfg.serveDummies,
-			allowEmptyMetadata: !!cfg.allowEmptyMetadata,
 			nftPathPrefix: cfg.nftPathPrefix ? cfg.nftPathPrefix : DEFAULT_NFT_IMAGE_PATH_PREFIX
 		};
 
@@ -75,8 +68,6 @@ export default class NFTMetaServer {
 	protected log(msg: string): void {
 		console.log("NFTMetaServer: " + msg);
 	}
-
-
 
 	/**
 	 * Creates handler for requests
@@ -100,17 +91,9 @@ export default class NFTMetaServer {
 
 		try {
 			const meta = await this.databaseHandler.getNFTMetadata(key(contractAddr, tokenId));
-			if ((meta == undefined) && this.cfg!.serveDummies) {
-				return this.dummyMetadata();
-			}
-
 			return RawItemMeta.getMetaFromJSON(meta);
 		} catch (error) {
-			if (this.cfg!.serveDummies) {
-				return this.dummyMetadata();
-			}
-
-			console.log(error);
+			console.error(error);
 			return undefined;
 		}
 	}
@@ -128,8 +111,6 @@ export default class NFTMetaServer {
 
 		// Where to find png
 		const readImgsFrom = "client/img/";
-		// Where to save
-		const saveTo = "nfts/";
 		// name of saved file
 		const fileName = tokenId.toString();
 
@@ -144,8 +125,8 @@ export default class NFTMetaServer {
 			img_item.color([{ apply: 'red', params: [rgb?.r] }, { apply: 'green', params: [rgb?.g] }, { apply: 'blue', params: [rgb?.b] }]);
 
 
-			img_base.write(saveTo + `sprites/${index}/` + fileName + ".png");
-			img_item.write(saveTo + `sprites/${index}/item-` + fileName + ".png");
+			img_base.write(this.cfg.nftPathPrefix + `sprites/${index}/` + fileName + ".png");
+			img_item.write(this.cfg.nftPathPrefix + `sprites/${index}/item-` + fileName + ".png");
 		}
 
 		// Create and Save PNG for Marketplaces
@@ -159,7 +140,7 @@ export default class NFTMetaServer {
 		img_item.color([{ apply: 'red', params: [rgb?.r] }, { apply: 'green', params: [rgb?.g] }, { apply: 'blue', params: [rgb?.b] }]);
 
 		//save file
-		img_item.write(saveTo + "showcase/" + fileName + ".png");		
+		img_item.write(this.cfg.nftPathPrefix + "showcase/" + fileName + ".png");		
 	}
 
 	/**
@@ -169,24 +150,32 @@ export default class NFTMetaServer {
 	private async deleteNFTFile(tokenId: bigint) {
 		// name of saved file
 		const fileName = tokenId.toString();
+		var success: boolean = true;
 		for (let index = 1; index <= 3; index++) {
 			try {
-				fs.unlinkSync(this.cfg.nftPathPrefix + `/${index}/` + fileName + ".png");
+				fs.unlinkSync(this.cfg.nftPathPrefix + `sprites/${index}/` + fileName + ".png");
 			} catch (error) {
-				this.log("Unable to delete file " + this.cfg.nftPathPrefix + `/${index}/` + fileName + ".png");
+				this.log("Unable to delete file " + this.cfg.nftPathPrefix + `sprites/${index}/` + fileName + ".png");
+				success = false;
 			}
 			try {
-				fs.unlinkSync(this.cfg.nftPathPrefix + `/${index}/item-` + fileName + ".png");
+				fs.unlinkSync(this.cfg.nftPathPrefix + `sprites/${index}/item-` + fileName + ".png");
 			} catch (error) {
-				this.log("Unable to delete file " + this.cfg.nftPathPrefix + `/${index}/item-` + fileName + ".png");
+				this.log("Unable to delete file " + this.cfg.nftPathPrefix + `sprites/${index}/item-` + fileName + ".png");
+				success = false;
 			}
 		}
 		try {
-			fs.unlinkSync(pathToShowcasePNG + "/" + fileName + ".png");
+			fs.unlinkSync(this.cfg.nftPathPrefix + "showcase/" + fileName + ".png");
 		} catch (error) {
-			this.log("Unable to delete file " + pathToShowcasePNG + "/" + fileName + ".png");
+			this.log("Unable to delete file " + this.cfg.nftPathPrefix + "showcase/" + fileName + ".png");
+			success = false;
 		}
-		this.log("Successfully deleted files for NFT " + tokenId);
+		if(success) {
+			this.log("Successfully deleted files for NFT " + tokenId);
+		} else {
+			throw new Error("Couldn't delete (all) NFT files for " + tokenId);
+		}
 	}
 
 	/**
@@ -201,7 +190,7 @@ export default class NFTMetaServer {
 		let metadata: RawItemMeta = new RawItemMeta([]);
 		metadata.meta.name = this.getFunnyName();
 		metadata.meta.description = "A nice weapon from the game BrowserQuest.";
-		metadata.meta.image = `${picServerHost}/${pathToShowcasePNG}/${tokenId}.png`;
+		metadata.meta.image = `${picServerHost}/${this.cfg.nftPathPrefix}showcase/${tokenId}.png`;
 		//Must be a six-character hexadecimal without a pre-pended #. 
 		metadata.meta.background_color = "#FFFFFF"; //White
 		metadata.addAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND, kind);
@@ -215,23 +204,8 @@ export default class NFTMetaServer {
 	 * @returns a funny name for a sword
 	 */
 	getFunnyName() {
-		//TODO: More names.
 		let names: string[] = ["Lifebinder", "Snowflake", "Covergence", "Starlight", "Vanquisher Idol", "Wrathful CruxRuby Infused Bead", "Nightfall, Pledge of the Prince", "Shadowfall, Ferocity of Titans", "Penance, Last Hope of Dragonsouls", "DEEZ NUTZ"]
 		return names[this.getRandomInt(9)];
-	}
-
-	/**
-	 * Creates representative, on the fly generated, Metadata for token. Used as fallback in the case that saved MetaData can not be found
-	 * @returns dummy meta data object
-	 */
-	dummyMetadata(): RawItemMeta {
-		let metadata: RawItemMeta = new RawItemMeta([]);
-		metadata.meta.name = "Dummy Item";
-		metadata.meta.description = "placeholder item";
-		metadata.meta.image = "https://static.wikia.nocookie.net/minecraft_gamepedia/images/d/d5/Wooden_Sword_JE2_BE2.png/revision/latest/scale-to-width-down/160?cb=20200217235747"; // minecraft wooden sword
-		metadata.addAttribute(RawItemMeta.ATTRIBUTE_ITEM_KIND, "sword1");
-		metadata.setRgbOffset(this.getRandomInt(255) - 128, this.getRandomInt(255) - 128, this.getRandomInt(255) - 128);
-		return metadata;
 	}
 
 	/**
@@ -261,8 +235,6 @@ export default class NFTMetaServer {
 		res.send(meta.toJSON());
 	}
 
-
-
 	/**
 	 * looks up sprites for token in request and sends it to the response
 	 * @param req 
@@ -290,28 +262,26 @@ export default class NFTMetaServer {
 	 */
 	public async registerNFT(nft: NFT): Promise<boolean> {
 
-
 		// check if metadata set or absence permitted
-		if (!nft.metadata && !this.cfg!.allowEmptyMetadata) {
-			this.log("registerNFT: NFT medata can not be saved bc no metadata for NFT present. Enable allowEmptyMetadata to circumvent");
+		if (!nft.metadata) {
+			this.log("registerNFT: NFT medata can not be saved because no metadata for NFT present.");
 			return false; // return error
-		}
-
-		if (nft.metadata == undefined) {
-			console.log("WARN: No metadata present on NFT register");
 		}
 
 		// gather values
 		const contractAddr: Address = nft.token;
 		const tokenId: bigint = nft.id;
-		const metadata: RawItemMeta = nft.metadata == undefined ? this.dummyMetadata() : RawItemMeta.getMetaFromNFTMetadata(<NFTMetadata>nft.metadata); // init if empty
+		const metadata: RawItemMeta = RawItemMeta.getMetaFromNFTMetadata(<NFTMetadata>nft.metadata); // init if empty
 
-
-		// save values to db
 		try {
+			// save values to db
 			await this.databaseHandler.putNFTMetadata(key(contractAddr, tokenId), metadata.toJSON());
-			//await this.afterMetadataSet(contractAddr, tokenId); // run Observers  commented out bc so far there are none
+		} catch (error) { // Handle NFT already being present in database
+			console.error(error);
+			return false; // return error
+		}
 
+		try {
 			//create corresponding pngs
 			await this.createAndSavePng(tokenId, metadata);
 
@@ -319,9 +289,10 @@ export default class NFTMetaServer {
 			await this.putNFTtoNerd(nft);
 
 			return true; // return success
-		} catch (error) { // Handle NFT already being present in database
-			console.log(error)
-			return false; // return error
+		} catch (error) { // Delete NFT if something went wrong with png creation/marketplace registration
+			console.error(error);
+			await this.deleteNFT(nft.token, nft.id);
+			return false;
 		}
 	}
 
@@ -347,14 +318,9 @@ export default class NFTMetaServer {
 
 			// catch possible errors and log them
 		} catch (error) {
-			console.log("Can't put Metadata to Nerd: " + `${NFTPutEndpoint}/${nft.token}/${nft.id}` + " : " + error)
+			console.error("Can't put Metadata to Nerd: " + `${NFTPutEndpoint}/${nft.token}/${nft.id}` + " : " + error)
 		}
 		return response;
-	}
-
-	// can be overridden in derived classes
-	protected async afterMetadataSet(contractAddr: Address, tokenId: bigint): Promise<void> {
-		return;
 	}
 
 	/**
@@ -414,16 +380,11 @@ export default class NFTMetaServer {
 	private getRandomInt(max) {
 		return Math.floor(Math.random() * max);
 	}
-
 }
 
 export var nftMetaServer = new NFTMetaServer();
 
 export interface MetadataConfig {
-	// Always serve dummy metadata if a token is unknown (default: false)
-	serveDummies?: boolean;
-	// Wether NFTs without metadata are to be registered and an empty Metadata object stored in the database (default: false)
-	allowEmptyMetadata?: boolean;
 	// Overwrites nft sprite loading path prefix
 	nftPathPrefix?: string;
 }
