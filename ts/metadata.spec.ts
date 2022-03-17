@@ -14,6 +14,8 @@ import NFTMetaServer, { StatusNotFound } from "./metadata";
 import DatabaseHandler from "../server/js/db_providers/redis.js";
 import NFT from "./nft";
 import erdstallServerCfg from "./config/serverConfig.json";
+import RawItemMeta from "./itemmeta";
+import { nftMetaServer } from "./metadata";
 
 const bqConfig = "../server/config.json";
 const ENDPOINT = "/metadata";
@@ -56,6 +58,15 @@ describe("Metadata Server", function () {
     const nerdPath = marketPath(nft);
 
     const invalidNFT = new NFT(test.newRandomAddress(rng), test.newRandomUint64(rng), test.newRandomAddress(rng));
+
+    describe("Metadata server initialization", function () {
+        it("initializing databaseHandler to null should throw error", function () {
+            expect(() => {
+                let errorServ = new NFTMetaServer();
+                errorServ.init(null);
+              }).toThrow();
+        });
+    });
 
     describe("NFT Registration", function () {
 
@@ -161,6 +172,11 @@ describe("Metadata Server", function () {
             const funnyName = metaServ.getFunnyName();
             expect(funnyName).toBeDefined();
             expect(funnyName.length).toBeGreaterThan(0);
+        });
+
+        it("generateNFTSpriteJSON(metadata, id) should return undefined if no kind is defined in metadata", function () {
+            let invalidMeta = new RawItemMeta(null);
+            expect(nftMetaServer.generateNFTSpriteJSON(invalidMeta, test.newRandomUint64(rng))).toBeUndefined();
         });
     });
 });
