@@ -1,5 +1,6 @@
 import express from "express";
 import fs from "fs";
+import fetch from 'node-fetch';
 
 import * as test from "@polycrypt/erdstall/test";
 import supertest from "supertest";
@@ -22,10 +23,11 @@ const NFTServerEndpoint = erdstallServerCfg.NerdUrl;
 const NFTPutEndpoint = `${NFTServerEndpoint}${ENDPOINT}`;
 
 function setup() {
+    jest.setTimeout(15000);
     const databaseHandler = new DatabaseHandler(bqConfig);
 
     const metaServ = new NFTMetaServer();
-    metaServ.init(databaseHandler, {serveDummies: false});
+    metaServ.init(databaseHandler);
 
     const app = express();
     app.use(ENDPOINT, metaServ.router());
@@ -42,18 +44,21 @@ function setup() {
         metaServ: metaServ,
         request: supertest(app),
         rng: rng,
-        nft: nft,
-        path: metaPath(nft),
-        nerdPath: nerdPath(nft)
+        nft: nft
     }
 }
 
 describe("NFTMetaServer", function () {
     describe("Default Configuration", function () {
-        const { metaServ, request, nft, path, nerdPath } = setup();
+        const { metaServ, request, nft } = setup();
 
-        it("GET ${path} of non-existend metadata should return 404", function (done) {
-            request.get(path).expect(StatusNotFound, done);
+        const path = metaPath(nft);
+        const nerdPath = marketPath(nft);
+
+        it(`GET ${path} of non-existend metadata should return 404`, async function () {
+            // request.get(path).expect(StatusNotFound, done);
+            const response = await request.get(path);
+            expect(response.status).toBe(StatusNotFound);
         });
 
         it("registerNFT(nft) should put NFT in database and return true", async function () {
@@ -72,15 +77,19 @@ describe("NFTMetaServer", function () {
 
         it("getMetadata should get same metadata", async function() {
             const fetchedMeta = await metaServ.getMetadata(nft.token, nft.id);
-            expect(Object.is(nft.metadata, fetchedMeta)).toBe(true);
+            expect(fetchedMeta.meta).toEqual(nft.metadata);
         });
 
-        it("GET ${path} should get same metadata", function (done) {
-            request.get(path).expect(200, nft.metadata, done);
+        it(`GET ${path} should get same metadata`, async function () {
+            const response = await request.get(path);
+            expect(response.status).toBe(200);
+            expect(response.text).toEqual(JSON.stringify(nft.metadata));
         });
 
-        it("GET ${nerdPath} should get same metadata", function (done) {
-            request.get(nerdPath).expect(200, nft.metadata, done);
+        it(`GET ${nerdPath} should get same metadata`, async function () {
+			const response = await fetchRemoteRequest(nerdPath);
+            expect(response.status).toBe(200);
+            expect(response.body).toEqual(nft.metadata);
         });
 
         it("deleteNFTFile(token, id) should delete metadata and files", function (done) {
@@ -96,16 +105,24 @@ function metaPath(nft: NFT): string {
     return `${ENDPOINT}/${nft.token.toString().toLowerCase()}/${nft.id}`;
 }
 
-function nerdPath(nft: NFT): string {
+function marketPath(nft: NFT): string {
     return `${NFTPutEndpoint}/${nft.token}/${nft.id}`;
 }
 
 function expectSpriteFiles(nft: NFT, expectToExist: boolean) {
     const nftPathPrefix = "nfts/";
-    const fileName = Number(nft.id);
+    const fileName = nft.id.toString();
+    console.log("Checking: " + nftPathPrefix + "../../" + fileName + ".png");
     for (let scaleIdx = 1; scaleIdx <= 3; ++scaleIdx) {
-        expect(fs.existsSync(nftPathPrefix + `/sprites/${scaleIdx}/` + fileName + ".png")).toBe(expectToExist);
-        expect(fs.existsSync(nftPathPrefix + `/sprites/${scaleIdx}/item-` + fileName + ".png")).toBe(expectToExist);
+        expect(fs.existsSync(nftPathPrefix + `sprites/${scaleIdx}/` + fileName + ".png")).toBe(expectToExist);
+        expect(fs.existsSync(nftPathPrefix + `sprites/${scaleIdx}/item-` + fileName + ".png")).toBe(expectToExist);
     }
-    expect(fs.existsSync(nftPathPrefix + "/showcase/" + fileName + ".png")).toBe(expectToExist);
+    expect(fs.existsSync(nftPathPrefix + "showcase/" + fileName + ".png")).toBe(expectToExist);
+}
+
+async function fetchRemoteRequest(url: string): Promise< { status: number; body: string; } > {
+    console.log("Fetching from address: " + url);
+    const response = await fetch(url);
+    const body = await response.json();
+    return { status: response.status, body: body };
 }

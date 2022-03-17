@@ -131,11 +131,11 @@ export default class NFTMetaServer {
 		// Where to save
 		const saveTo = "nfts/";
 		// name of saved file
-		const fileName = Number(tokenId);
+		const fileName = tokenId.toString();
 
 		// Creat and Save PNG for Ingame Items
 
-		// reads, manipulates and saves Png in all three scales
+		// Reads, manipulates and saves Png in all three scales
 		for (let index = 1; index <= 3; index++) {
 			const img_base = await jimp.read(readImgsFrom + `${index}/` + kind + ".png");
 			const img_item = await jimp.read(readImgsFrom + `${index}/item-` + kind + ".png");
@@ -144,13 +144,11 @@ export default class NFTMetaServer {
 			img_item.color([{ apply: 'red', params: [rgb?.r] }, { apply: 'green', params: [rgb?.g] }, { apply: 'blue', params: [rgb?.b] }]);
 
 
-			img_base.write(saveTo + `/sprites/${index}/` + fileName + ".png");
-			img_item.write(saveTo + `/sprites/${index}/item-` + fileName + ".png");
+			img_base.write(saveTo + `sprites/${index}/` + fileName + ".png");
+			img_item.write(saveTo + `sprites/${index}/item-` + fileName + ".png");
 		}
 
 		// Create and Save PNG for Marketplaces
-
-		let pngName = metaData.meta.image?.split('/')[metaData.meta.image?.split('/').length - 1];
 
 		//read file 
 		const img_item = await jimp.read(readImgsFrom + "3/item-" + kind + ".png");
@@ -161,7 +159,7 @@ export default class NFTMetaServer {
 		img_item.color([{ apply: 'red', params: [rgb?.r] }, { apply: 'green', params: [rgb?.g] }, { apply: 'blue', params: [rgb?.b] }]);
 
 		//save file
-		img_item.write(saveTo + "/showcase/" + pngName);		
+		img_item.write(saveTo + "showcase/" + fileName + ".png");		
 	}
 
 	/**
@@ -170,7 +168,7 @@ export default class NFTMetaServer {
 	 */
 	private async deleteNFTFile(tokenId: bigint) {
 		// name of saved file
-		const fileName = Number(tokenId);
+		const fileName = tokenId.toString();
 		for (let index = 1; index <= 3; index++) {
 			try {
 				fs.unlinkSync(this.cfg.nftPathPrefix + `/${index}/` + fileName + ".png");
@@ -379,7 +377,7 @@ export default class NFTMetaServer {
 		}
 		try {
 			// Delete sprite files from file system
-			await nftMetaServer.deleteNFTFile(tokenId);
+			await this.deleteNFTFile(tokenId);
 		}
 		catch (e) {
 			if (e) {
