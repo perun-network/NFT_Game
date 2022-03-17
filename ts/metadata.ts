@@ -369,9 +369,9 @@ export default class NFTMetaServer {
 			const spriteJsonItemString = fs.readFileSync('./client/sprites/item-' + itemKind + '.json').toString();
 			var spriteEntityJSON = JSON.parse(spriteJsonEntityString);
 			var spriteItemJSON = JSON.parse(spriteJsonItemString);
-			spriteEntityJSON.image_path_prefix = this.cfg.nftPathPrefix;
+			spriteEntityJSON.image_path_prefix = this.cfg.nftPathPrefix + "sprites/";
 			spriteEntityJSON.id = "" + tokenId;
-			spriteItemJSON.image_path_prefix = this.cfg.nftPathPrefix;
+			spriteItemJSON.image_path_prefix = this.cfg.nftPathPrefix + "sprites/";
 			spriteItemJSON.id = "item-" + tokenId;
 			return { item: spriteItemJSON, entity: spriteEntityJSON };
 		}
