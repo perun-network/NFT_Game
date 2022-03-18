@@ -139,10 +139,10 @@ Browser Support
 * Firefox - Works well.
 * Chrome - Works well.
 * Chromium - Works well.
-* Opera 15.x - Works well.
-* Opera 12.16 - Background music doesn't play.  Everything else works (Very slow though).
-* Safari 6.x - Background music doesn't play.  Everything else works well.
-* IE 10.x - Doesn't work.  Other versions untested.
+* ~~Opera 15.x - Works well.~~ Doesn't work because Metamask Plugin is unavailable.
+* ~~Opera 12.16 - Background music doesn't play.  Everything else works (Very slow though).~~ Doesn't work because Metamask Plugin is unavailable.
+* ~~Safari 6.x - Background music doesn't play.  Everything else works well.~~ Doesn't work because Metamask Plugin is unavailable.
+* ~~IE 10.x - Doesn't work.  Other versions untested.~~ Doesn't work because Metamask Plugin is unavailable.
 
 * Metamask Plugin is required
 
