@@ -17,8 +17,10 @@ To deliver an NFT experience the game is powered by [Erdstall](https://erdstall.
 
 Implementation details below
 
-Erdstall Interaction
+Erdstall Integration
 ---------------
+
+This section aims to provide an overview of the integration of Erdstall functionality with the game's core. For more details, view the corresponding well documented files.
 
 ### Client Side
 
@@ -111,7 +113,7 @@ This class handles the world's logic and implements the transfer- and burn-callb
 
 These methods ensure that the NFTs are equipped by the correct players after burning and transferring. handleBurn also carries out the sprite deletion on the _nftMetaServer_. This is not handled in _erdstallServer_ directly to ensure that sprites are only deleted if no player carries an item with said sprite.
 
-handleNFTOwnershipTransfer is also called when a user withdraws their NFTs from the erdstall network.
+handleNFTOwnershipTransfer is also called when a user withdraws their NFTs from the Erdstall network.
 
 It also implements the generateNftContext method responsible for NFT generation using the mintNFTItem method. This method is called when adding a static NFT item, adding an NFT item from a chest and when an NFT item is dropped by a mob.
 
