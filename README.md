@@ -333,8 +333,8 @@ Many other people are contributing through GitHub:
 * Aaron Hill [@Aaron1011](https://github.com/Aaron1011)
 * Fredrik Svantes [@speedis](https://github.com/speedis)
 * Sergey Krilov [@sergkr](https://github.com/sergkr)
+* Johannes Scharna [@johannesscha](https://github.com/johannesscha)
 * Silas Jäger [@JaSilasJa](https://github.com/JaSilasJa)
 * Niklas Jüttner [@NiDoJu](https://github.com/NiDoJu)
-* Johannes Scharna [@johannesscha](https://github.com/johannesscha)
 * Erik Porada
 * Martin Bach [@DeltaTecs](https://github.com/DeltaTecs)
