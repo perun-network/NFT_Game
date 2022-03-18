@@ -15,19 +15,6 @@ export default class RawItemMeta {
 
     public meta : NFTMetadata;
 
-    // NFTMetadata variables
-    //image?: string; // externaly displayed image, unused as of rn
-    //image_data?: string; // unused
-    //external_url?: string; // unused
-    //description?: string; // Item description
-    //name?: string; // Item name
-    //background_color?: string; // unused
-    //animation_url?: string; // unused
-    //youtube_url?: string; // unused
-
-    // NFTMetadata variable attributes
-    //attributes: Attribute[]; // further attributes like colorcodes
-
     /**
      * Creates a raw item metadata object from a name and an extension map
      * @param attributes attributes array

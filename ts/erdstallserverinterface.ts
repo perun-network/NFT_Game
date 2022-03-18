@@ -4,7 +4,7 @@ import { Session } from "@polycrypt/erdstall";
 import NFT from "./nft";
 import { BalanceProof, TxReceipt } from "@polycrypt/erdstall/api/responses";
 import { ethers } from "ethers";
-import config from './config/serverConfig.json';
+import serverConfig from './config/serverConfig.json';
 import { Burn, Mint, Trade, Transfer } from "@polycrypt/erdstall/api/transactions";
 import { Mutex } from "async-mutex";
 import { key } from "./nft";
@@ -16,15 +16,21 @@ export default class erdstallServerInterface {
 
 	protected nextNftID!: bigint;
 	// Token to mint NFTs on
-	public readonly tokenAddress: Address = Address.fromString(config.contract);
+	public tokenAddress!: Address;
 	// Required to make asynchronous minting atomic
 	mintMutex: Mutex = new Mutex();
 
 	// Initializes _session member and subscribes and onboards session to the erdstall system, returns wallet address as string
-	async init(databaseHandler?: any): Promise<{ account: String }> {
+	async init(databaseHandler?: any, config?: any): Promise<{ account: String }> {
 		if (databaseHandler == null) {
 			throw new Error("Invalid databaseHandler: null");
 		}
+
+		if(config == null) {
+			config = serverConfig;
+		}
+		
+		this.tokenAddress = Address.fromString(config.contract);
 
 		// Set ID of next NFT to be minted to the count of NFTs stored in database
 		this.nextNftID = BigInt(await databaseHandler.getNFTCount());
@@ -41,7 +47,6 @@ export default class erdstallServerInterface {
     const ssl: boolean = config.useSSL;
 		const erdOperatorUrl: URL = new URL((ssl ? "wss://" : "ws://") + config.erdOperatorUrl + "/ws");
 
-		// parameters from json file config/clientConfig.json
 		const ethRpcUrl = "ws://"+ config.ethRpcUrl + "/";
 		const provider = new ethers.providers.JsonRpcProvider(ethRpcUrl);
 		if (provider == null) {
@@ -57,12 +62,7 @@ export default class erdstallServerInterface {
 			await session.subscribe();
 			await session.onboard();
 		} catch (error) {
-			if (error) {
-				throw new Error("Error initializing server session" + error);
-			}
-			else {
-				throw new Error("Error initializing server session");
-			}
+			throw new Error("Error initializing server session: " + error);
 		}
 
 		this._session = session;
@@ -95,22 +95,16 @@ export default class erdstallServerInterface {
 				release();
 				return { txReceipt };
 			} catch (error) {
-				if (error) {
-					if(error instanceof Error) {
-						// Retry minting with next ID if error is due to duplicate ID
-						if (error.message.includes("duplicate")) {
-							console.log("Server unable to mint " + id + " due to duplicate NFT ID...Retrying with " + this.nextNftID + " ...");
-							continue;
-						}
+				if(error instanceof Error) {
+					// Retry minting with next ID if error is due to duplicate ID
+					if (error.message.includes("duplicate")) {
+						console.log("Server unable to mint " + id + " due to duplicate NFT ID...Retrying with " + this.nextNftID + " ...");
+						continue;
 					}
-					// Release Mutex
-					release();
-					throw new Error("Server unable to mint NFT: " + error);
-				} else {
-					// Release Mutex
-					release();
-					throw new Error("Server unable to mint NFT");
 				}
+				// Release Mutex
+				release();
+				throw new Error("Server unable to mint NFT");
 			}
 		}
 	}
@@ -125,11 +119,7 @@ export default class erdstallServerInterface {
 		try {
 			return { txReceipt: await this._session.burn(getAssetsFromNFT(nfts)) };
 		} catch (error) {
-			if (error) {
-				throw new Error("Server unable to burn NFT " + error);
-			} else {
-				throw new Error("Server unable to burn NFT");
-			}
+			throw new Error("Server unable to burn NFT: " + error);
 		}
 	}
 
@@ -144,11 +134,7 @@ export default class erdstallServerInterface {
 		try {
 			return { txReceipt: await this._session.transferTo(getAssetsFromNFT(new Array(nft)), Address.fromString(to)) };
 		} catch (error) {
-			if (error) {
-				throw new Error("Server unable to transfer NFT " + error);
-			} else {
-				throw new Error("Server unable to transfer NFT");
-			}
+			throw new Error("Server unable to transfer NFT: " + error);
 		}
 	}
 	
@@ -172,7 +158,6 @@ export default class erdstallServerInterface {
 		if (!this._session) throw new Error("Session uninitialized");
 
 		this._session.on("receipt", (receipt: TxReceipt) => {
-			console.log("Erdstall registered receipt event");
 			if(receipt.tx instanceof Transfer) { // Handle transfer transaction issued by transferTo
 				transferCallback(receipt.tx.sender.toString(), receipt.tx.recipient.toString(), getNFTsFromAssets(receipt.tx.values));
 			} else if(receipt.tx instanceof Trade) { // Handle trade transaction
@@ -188,7 +173,6 @@ export default class erdstallServerInterface {
 				console.log("Erdstall exitproof Error: Expected exit proof");
 				return;
 			}
-			console.log("Erdstall registered exitproof event");
 			// Handle players withdrawing from the erdstall network by initiating the transfer callback
 			transferCallback(balanceProof.balance.account.toString(), "", getNFTsFromAssets(balanceProof.balance.values));
 		});
@@ -211,13 +195,8 @@ export async function mintNFTItem(kind: string): Promise< NFT >
 	}
 	let mintTx = txReceipt.txReceipt.tx as Mint;
 	let nft = new NFT(mintTx.token, mintTx.id, mintTx.sender);
-	// Try to generate metadata for item
-	try {
-		nft.metadata = nftMetaServer.getNewMetaData(kind, mintTx.id).meta;
-	} catch (err) {
-		var error = "Error generating NFT Metadata for item " + kind + ": " + err;
-		throw new Error(error);
-	}
+	// Generate metadata for item
+	nft.metadata = nftMetaServer.getNewMetaData(kind, mintTx.id).meta;
 
 	// Save generated metadata to metaserver
 	if(await nftMetaServer.registerNFT(nft)) {
