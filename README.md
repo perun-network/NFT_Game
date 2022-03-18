@@ -211,7 +211,8 @@ We assume that for local development a Ganache blockchain (id 1337) is running l
     "NetworkID": 1337,
     "NetworkName": "local",
     "erdOperatorUrl": "127.0.0.1:8401",
-    "ethRpcUrl": "127.0.0.1:8545"
+    "ethRpcUrl": "127.0.0.1:8545",
+    "useSSL": false
     
 Similarly the ts/config/clientConfig.json must contain atleast
 
@@ -260,7 +261,7 @@ To enable TLS protected connections you need to set
 
 	"useSSL": true
 	
-in ts/config/clientConfig.json
+in ts/config/clientConfig.json for a TLS browser client to game server connection, and in ts/config/serverConfig.json for a TLS gameserver to remote Erdstall Operator connection.
 Also there is a hardcoded constant that controlls the game internal SSL settings. You can find
 
 	const enable_secure_transport = false;
