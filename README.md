@@ -87,7 +87,7 @@ The server is mounted to the /metadata endpoint in _ws.js_.
 
 **NFT.ts**
 
-Class for managing NFT objects.
+Class representing NFT objects.
 
 **itemmeta.ts**
 
