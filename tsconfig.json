@@ -2,7 +2,7 @@
 	"compilerOptions": {
 		"target": "es5",
 		"lib": ["dom", "dom.iterable", "esnext"],
-		"allowJs": true,
+		"allowJs": false,
 		"checkJs": false,
 		"skipLibCheck": true,
 		"sourceMap": false,
@@ -17,12 +17,12 @@
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"jsx": "react-jsx",
-		"rootDir": "ts",
+		"rootDir": ".",
 
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
 		"downlevelIteration": true
 	},
 	"include": ["ts/**/*"],
-	"exclude": ["ts/**/*.js", "ts/*.js"]
+	"exclude": ["**/*.spec.ts"]
 }
