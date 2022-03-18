@@ -15,12 +15,10 @@ To deliver an NFT experience the game is powered by [Erdstall](https://erdstall.
 * A metadata server stores in-game item NFT metadata, to be visible on-chain
 * A marketplace is connected to the second layer network and enables management of aquired game NFTs
 
-Implementation details below
-
 Erdstall Integration
 ---------------
 
-This section aims to provide an overview of the integration of Erdstall functionality with the game's core. For more details, view the corresponding well documented files.
+This section aims to provide an overview of the integration of Erdstall functionality with the game's core. For implementation-specific details, refer to the corresponding well documented files.
 
 ### Client Side
 
