@@ -15,6 +15,52 @@ To deliver an NFT experience the game is powered by [Erdstall](https://erdstall.
 * A metadata server stores in-game item NFT metadata, to be visible on-chain
 * A marketplace is connected to the second layer network and enables management of aquired game NFTs
 
+Implementation details below
+
+Erdstall Interaction
+---------------
+
+#### Client Side
+
+**erdstallclientinterface.ts**
+
+_erdstallclientinterface.ts_ exports the function getAccount(), which utilizes the detectEthereumProvider method from Metamask to let the user pick an account in their Metamask plugin and returns the corresponding wallet address.
+
+This method is called in _gameclient.js_ when the client sends a player create or login function.
+
+**gameclient.js**
+
+The login and create requests were modified so that they no longer send an e-mail and user password for the player. Instead, only the player's metamask address (or in case of player creation also the desired name) is sent, which is used to identify the player's record in the database.
+
+Gameclient.js was also extended with the function getNFTMetadata, which fetches NFT Metadata or sprite, and onNftReceived, which lets the game.js register a callback for when a message with nft information (when players with NFTs spawn, when an NFT is picked up by some other player, when a player receives an NFT from transfer or when a mob drops an NFT item) is received.
+
+
+**game.js**
+
+game.js was extended with the nftSpriteCheck method, which checks if a sprite for an NFT has already been loaded and if not, calls the loadNFTSprite method and stores the request to avoid duplicate requests. This method is registered as the nft callback in _gameclient.js_ using its onNftReceived method. It is also called whenever the logged in player picks up an NFT item, as that does not trigger the onEquip function in _gameclient.js_ , and in the method handling the server's welcome message, which also transmits the player's equipped NFT.
+
+The loadNFTSprite method calls the _gameclient.js_ 's method getNFTMetadata to fetch the sprite JSON for the requested NFT. The JSON is then used in _sprite.js_ to load the sprite from the server. Once an NFT sprite for the logged in player is loaded, the equipment_callback is called to update the item icon in the inventory.
+
+The class also handles the chat messages/achievements shown when picking up an NFT.
+
+**app.js**
+
+App.js's initEquipmentIcons function was modified to load NFT icons when the player holds an NFT.
+
+**sprite.js**
+
+**renderer.js**
+
+The drawEntity method was altered so that weapons with an NFT context are drawn using the NFTs sprite. The drawing of entities holding NFT weapons carried out in the same method was modified similarly.
+
+**item.js / entity.js**
+
+The classes were extended with the nftKey-Attribute to store nft context.
+
+**player.js**
+
+The switchWeapon method was modified so that weapons are always switched (i.e. when looting) if the weapon is an NFT, disregarding the weapon's rank.
+
 Browser Support
 ---------------
 
