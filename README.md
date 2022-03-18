@@ -81,7 +81,7 @@ It also exports a global erdstallServer object to use these methods on and a sta
 
 **metadata.ts**
 
-A metadata server class for generating metadata using getNewMetaData, storing metadata using registerNFT (which also generates corresponding sprite files and puts the metadata to the nerd marketplace) and fetching metadata and sprites either using a REST GET request or the getMetadata method. This class also encapsules the NFT _redis.s_ database interaction. It also defines and exports a global nftMetaServer object.
+A metadata server class for generating metadata using getNewMetaData, storing metadata using registerNFT (which also generates corresponding sprite files and puts the metadata to the nerd marketplace) and fetching metadata and sprites either using a REST GET request or the getMetadata method. This class also encapsules the NFT _redis.js_ database interaction. It also defines and exports a global nftMetaServer object.
 
 The server is mounted to the /metadata endpoint in _ws.js_.
 
