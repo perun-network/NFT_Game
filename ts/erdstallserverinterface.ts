@@ -3,7 +3,7 @@ import { Asset, Assets, mapNFTs, Tokens } from "@polycrypt/erdstall/ledger/asset
 import { Session } from "@polycrypt/erdstall";
 import NFT from "./nft";
 import { BalanceProof, TxReceipt } from "@polycrypt/erdstall/api/responses";
-import { ethers } from "ethers";
+import { ethers, Signer } from "ethers";
 import serverConfig from './config/serverConfig.json';
 import { Burn, Mint, Trade, Transfer } from "@polycrypt/erdstall/api/transactions";
 import { Mutex } from "async-mutex";
@@ -56,7 +56,7 @@ export default class erdstallServerInterface {
 
 		var session;
 		try {
-			session = new Session(Address.fromString(user.address), user.connect(provider), erdOperatorUrl);
+			session = new Session(Address.fromString(user.address), user.connect(provider) as Signer, erdOperatorUrl);
 			await session.initialize();
 			await session.subscribe();
 			await session.onboard();
@@ -89,7 +89,7 @@ export default class erdstallServerInterface {
 				this.nextNftID++;
 				// Mints NFT
 				console.log("Minting NFT " + id + "...");
-				var txReceipt = await this._session.mint(this.tokenAddress, id);
+				var txReceipt = await (await this._session.mint(this.tokenAddress, id)).receipt;
 				// Release Mutex
 				release();
 				return { txReceipt };
@@ -116,7 +116,7 @@ export default class erdstallServerInterface {
 			throw new Error("Server session uninitialized");
 		}
 		try {
-			return { txReceipt: await this._session.burn(getAssetsFromNFT(nfts)) };
+			return { txReceipt: await (await this._session.burn(getAssetsFromNFT(nfts))).receipt };
 		} catch (error) {
 			throw new Error("Server unable to burn NFT: " + error);
 		}
@@ -131,7 +131,7 @@ export default class erdstallServerInterface {
 			throw new Error("Server session uninitialized");
 		}
 		try {
-			return { txReceipt: await this._session.transferTo(getAssetsFromNFT(new Array(nft)), Address.fromString(to)) };
+			return { txReceipt: await (await this._session.transferTo(getAssetsFromNFT(new Array(nft)), Address.fromString(to))).receipt };
 		} catch (error) {
 			throw new Error("Server unable to transfer NFT: " + error);
 		}
