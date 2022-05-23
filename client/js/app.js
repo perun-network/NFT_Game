@@ -81,7 +81,7 @@ define(['jquery', 'storage'], function($, Storage) {
         startGame: function(action, username) {
 
             // set to true for production, false for local development
-            const enable_secure_transport = false;
+            const enable_secure_transport = true;
 
             var self = this;
             self.firstTimePlaying = !self.storage.hasAlreadyPlayed();

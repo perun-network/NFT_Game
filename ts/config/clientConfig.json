@@ -1,6 +1,6 @@
 {
-    "NetworkID": 1337,
-    "NetworkName": "Erdstall BQ",
-    "erdOperatorUrl":"localhost:8401",
-    "useSSL": false
+    "NetworkID": 5,
+    "NetworkName": "goerli",
+    "erdOperatorUrl":"operator.goerli.erdstall.dev:8401",
+    "useSSL": true
 }

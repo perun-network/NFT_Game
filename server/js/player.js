@@ -9,7 +9,6 @@ var cls = require("./lib/class"),
     Formulas = require("./formulas"),
     check = require("./format").check,
     Types = require("../../shared/js/gametypes")
-    bcrypt = require('bcrypt');
 
 var erdstallServer = require("../../ts/erdstallserverinterface").erdstallServer;
 var nftMetaServer = require("../../ts/metadata").nftMetaServer;

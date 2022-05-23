@@ -1,5 +1,5 @@
 {
-    "host": "Set production websocket host here",
-    "port": 8000,
-	"secure_transport": false
+  "host": "bq.erdstall.dev",
+  "port": 443,
+	"secure_transport": true
 }
